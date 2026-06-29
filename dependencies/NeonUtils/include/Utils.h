@@ -29,7 +29,7 @@ struct AABB
 	glm::vec2 max;
 };
 
-enum ValueType
+enum class ValueType
 {
 	AUTO = 0,
 	FIXED = 1,
@@ -39,7 +39,7 @@ enum ValueType
 struct ValueDefinition
 {
 	float value = 0.0f;
-	ValueType type = AUTO;
+	ValueType type = ValueType::AUTO;
 };
 
 /**

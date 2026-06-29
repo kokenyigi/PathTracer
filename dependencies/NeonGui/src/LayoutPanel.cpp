@@ -26,14 +26,14 @@ void LayoutPanel::SetLayoutType(LayoutType type)
     //Do some scrollbar recalc.
     if(_layoutType == LAYOUT_FLOW || _layoutType == LAYOUT_VERTICAL)
     {
-        _scrollBar.SetMargin(MARGIN_LEFT,0.0f,AUTO);
+        _scrollBar.SetMargin(MARGIN_LEFT,0.0f,ValueType::AUTO);
         _scrollBar.SetMargin(MARGIN_TOP,0.0f);
         _scrollBar.SetWidth(_scrollBarSizeDefinition.value,_scrollBarSizeDefinition.type);
         _scrollBar.SetSliderDirection(SLIDER_DIRECTION_VERTICAL);
     }
     else
     {
-        _scrollBar.SetMargin(MARGIN_TOP,0.0f,AUTO);
+        _scrollBar.SetMargin(MARGIN_TOP,0.0f,ValueType::AUTO);
         _scrollBar.SetMargin(MARGIN_LEFT,0.0f);
         _scrollBar.SetHeight(_scrollBarSizeDefinition.value,_scrollBarSizeDefinition.type);
         _scrollBar.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
@@ -123,20 +123,20 @@ void LayoutPanel::CalculateChildrenBox()
         */
 
         float scrollBarWidthFixed = 0.0f;
-        if(_scrollBarSizeDefinition.type != AUTO && isScrollable)
+        if(_scrollBarSizeDefinition.type != ValueType::AUTO && isScrollable)
         {
             scrollBarWidthFixed = CalculateValuebasedOnType(_scrollBarSizeDefinition.type,_scrollBarSizeDefinition.value,ownWidthFixed);
         }
 
 
-        if(_paddingDefinitions[PADDING_LEFT].type != AUTO)
+        if(_paddingDefinitions[PADDING_LEFT].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_LEFT].type,
                 _paddingDefinitions[PADDING_LEFT].value,ownWidthFixed);
             newChildrenBoxFixed.min.x = ownMinFixed.x + calculatedPaddingValue;
         }
 
-        if(_paddingDefinitions[PADDING_RIGHT].type != AUTO)
+        if(_paddingDefinitions[PADDING_RIGHT].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_RIGHT].type,
                 _paddingDefinitions[PADDING_RIGHT].value,ownWidthFixed);
@@ -144,7 +144,7 @@ void LayoutPanel::CalculateChildrenBox()
             newChildrenBoxFixed.max.x = ownMaxFixed.x - calculatedPaddingValue - scrollBarWidthFixed;
         }
 
-        if(_paddingDefinitions[PADDING_TOP].type != AUTO)
+        if(_paddingDefinitions[PADDING_TOP].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_TOP].type,
                 _paddingDefinitions[PADDING_TOP].value,ownHeightFixed);
@@ -160,7 +160,7 @@ void LayoutPanel::CalculateChildrenBox()
             paddingFrontRelative = 0.0f;
         }
 
-        if(_paddingDefinitions[PADDING_BOTTOM].type != AUTO)
+        if(_paddingDefinitions[PADDING_BOTTOM].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_BOTTOM].type,
                 _paddingDefinitions[PADDING_BOTTOM].value,ownHeightFixed);
@@ -174,24 +174,24 @@ void LayoutPanel::CalculateChildrenBox()
         
         float calculatedFixedWidthValue = 0.0f;
 
-        if(_childrenWidthDefinition.type != AUTO)
+        if(_childrenWidthDefinition.type != ValueType::AUTO)
         {
             calculatedFixedWidthValue= CalculateValuebasedOnType(_childrenWidthDefinition.type,_childrenWidthDefinition.value,ownWidthFixed);
 
             childrenRelativeWidth = calculatedFixedWidthValue / windowRes.x;
             /*
-            If both padding definitions are auto or not auto at the same time, then we allign the children towards the middle.
+            If both padding definitions are ValueType::AUTO or not ValueType::AUTO at the same time, then we allign the children towards the middle.
             This is because with a widthdefinition in place, we can not allow to have padding definitions on both sides.
             */
-            if((_paddingDefinitions[PADDING_LEFT].type == AUTO && _paddingDefinitions[PADDING_RIGHT].type == AUTO) ||
-                (_paddingDefinitions[PADDING_LEFT].type != AUTO && _paddingDefinitions[PADDING_RIGHT].type != AUTO))
+            if((_paddingDefinitions[PADDING_LEFT].type == ValueType::AUTO && _paddingDefinitions[PADDING_RIGHT].type == ValueType::AUTO) ||
+                (_paddingDefinitions[PADDING_LEFT].type != ValueType::AUTO && _paddingDefinitions[PADDING_RIGHT].type != ValueType::AUTO))
             {
                 float centerValueFixed = ownMinFixed.x + ownWidthFixed * 0.5f;
                 
                 newChildrenBoxFixed.min.x = centerValueFixed - calculatedFixedWidthValue * 0.5f;
                 newChildrenBoxFixed.max.x = centerValueFixed + calculatedFixedWidthValue * 0.5f;
             }
-            else if(_paddingDefinitions[PADDING_LEFT].type != AUTO)
+            else if(_paddingDefinitions[PADDING_LEFT].type != ValueType::AUTO)
             {
                 float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_LEFT].type,
                 _paddingDefinitions[PADDING_LEFT].value,ownWidthFixed);
@@ -200,7 +200,7 @@ void LayoutPanel::CalculateChildrenBox()
                 newChildrenBoxFixed.max.x = ownMinFixed.x + calculatedPaddingValue + calculatedFixedWidthValue;
 
             }
-            else if(_paddingDefinitions[PADDING_RIGHT].type != AUTO)
+            else if(_paddingDefinitions[PADDING_RIGHT].type != ValueType::AUTO)
             {
                 float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_RIGHT].type,
                 _paddingDefinitions[PADDING_RIGHT].value,ownWidthFixed);
@@ -224,7 +224,7 @@ void LayoutPanel::CalculateChildrenBox()
         For this, we have to calculate some components like: gapHeight, children Height
         */
         float childrenHeightFixed = 0.0f;
-        if(_childrenHeightDefinition.type != AUTO)
+        if(_childrenHeightDefinition.type != ValueType::AUTO)
         {
             childrenHeightFixed = CalculateValuebasedOnType(_childrenHeightDefinition.type,_childrenHeightDefinition.value,ownHeightFixed);
 
@@ -237,7 +237,7 @@ void LayoutPanel::CalculateChildrenBox()
         }
 
         float childrenHeightGapFixed = 0.0f;
-        if(_gapHeightDefinition.type != AUTO)
+        if(_gapHeightDefinition.type != ValueType::AUTO)
         {
             childrenHeightGapFixed = CalculateValuebasedOnType(_gapHeightDefinition.type,_gapHeightDefinition.value,ownHeightFixed);
 
@@ -262,20 +262,20 @@ void LayoutPanel::CalculateChildrenBox()
 
         
         float scrollBarHeightFixed = 0.0f;
-        if(_scrollBarSizeDefinition.type != AUTO && isScrollable)
+        if(_scrollBarSizeDefinition.type != ValueType::AUTO && isScrollable)
         {
             scrollBarHeightFixed = CalculateValuebasedOnType(_scrollBarSizeDefinition.type,_scrollBarSizeDefinition.value,ownHeightFixed);
         }
 
 
-        if(_paddingDefinitions[PADDING_TOP].type != AUTO)
+        if(_paddingDefinitions[PADDING_TOP].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_TOP].type,
                 _paddingDefinitions[PADDING_TOP].value,ownHeightFixed);
             newChildrenBoxFixed.min.y = ownMinFixed.y + calculatedPaddingValue;
         }
 
-        if(_paddingDefinitions[PADDING_BOTTOM].type != AUTO)
+        if(_paddingDefinitions[PADDING_BOTTOM].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_BOTTOM].type,
                 _paddingDefinitions[PADDING_BOTTOM].value,ownHeightFixed);
@@ -283,7 +283,7 @@ void LayoutPanel::CalculateChildrenBox()
             newChildrenBoxFixed.max.y = ownMaxFixed.y - calculatedPaddingValue - scrollBarHeightFixed;
         }
 
-        if(_paddingDefinitions[PADDING_LEFT].type != AUTO)
+        if(_paddingDefinitions[PADDING_LEFT].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_LEFT].type,
                 _paddingDefinitions[PADDING_LEFT].value,ownWidthFixed);
@@ -299,7 +299,7 @@ void LayoutPanel::CalculateChildrenBox()
             paddingFrontRelative = 0.0f;
         }
 
-        if(_paddingDefinitions[PADDING_RIGHT].type != AUTO)
+        if(_paddingDefinitions[PADDING_RIGHT].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_RIGHT].type,
                 _paddingDefinitions[PADDING_RIGHT].value,ownWidthFixed);
@@ -313,27 +313,27 @@ void LayoutPanel::CalculateChildrenBox()
         
         float calculatedFixedHeightValue = 0.0f;
 
-        if(_childrenHeightDefinition.type != AUTO)
+        if(_childrenHeightDefinition.type != ValueType::AUTO)
         {
             calculatedFixedHeightValue= CalculateValuebasedOnType(_childrenHeightDefinition.type,_childrenHeightDefinition.value,ownHeightFixed);
 
             childrenRelativeHeight = calculatedFixedHeightValue / windowRes.y;
 
-            if((_paddingDefinitions[PADDING_TOP].type == AUTO && _paddingDefinitions[PADDING_TOP].type == AUTO) ||
-                (_paddingDefinitions[PADDING_BOTTOM].type != AUTO && _paddingDefinitions[PADDING_BOTTOM].type != AUTO))
+            if((_paddingDefinitions[PADDING_TOP].type == ValueType::AUTO && _paddingDefinitions[PADDING_TOP].type == ValueType::AUTO) ||
+                (_paddingDefinitions[PADDING_BOTTOM].type != ValueType::AUTO && _paddingDefinitions[PADDING_BOTTOM].type != ValueType::AUTO))
             {
                 float centerValueFixed = ownMinFixed.y + ownHeightFixed * 0.5f;
                 
                 newChildrenBoxFixed.min.y = centerValueFixed - calculatedFixedHeightValue * 0.5f;
                 newChildrenBoxFixed.max.y = centerValueFixed + calculatedFixedHeightValue * 0.5f;
             }
-            else if(_paddingDefinitions[PADDING_TOP].type != AUTO)
+            else if(_paddingDefinitions[PADDING_TOP].type != ValueType::AUTO)
             {
                 float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_TOP].type,
                 _paddingDefinitions[PADDING_TOP].value,ownHeightFixed);                
                 newChildrenBoxFixed.max.y = ownMinFixed.y + calculatedPaddingValue + calculatedFixedHeightValue;
             }
-            else if(_paddingDefinitions[PADDING_BOTTOM].type != AUTO)
+            else if(_paddingDefinitions[PADDING_BOTTOM].type != ValueType::AUTO)
             {
                 float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_BOTTOM].type,
                 _paddingDefinitions[PADDING_BOTTOM].value,ownHeightFixed);
@@ -346,7 +346,7 @@ void LayoutPanel::CalculateChildrenBox()
         }
 
         float childrenWidthFixed = 0.0f;
-        if(_childrenWidthDefinition.type != AUTO)
+        if(_childrenWidthDefinition.type != ValueType::AUTO)
         {
             childrenWidthFixed = CalculateValuebasedOnType(_childrenWidthDefinition.type,_childrenWidthDefinition.value,ownWidthFixed);
 
@@ -358,7 +358,7 @@ void LayoutPanel::CalculateChildrenBox()
         }
 
         float childrenWidthGapFixed = 0.0f;
-        if(_gapWidthDefinition.type != AUTO)
+        if(_gapWidthDefinition.type != ValueType::AUTO)
         {
             childrenWidthGapFixed = CalculateValuebasedOnType(_gapWidthDefinition.type,_gapWidthDefinition.value,ownWidthFixed);
 
@@ -376,13 +376,13 @@ void LayoutPanel::CalculateChildrenBox()
     {
 
         float scrollBarWidthFixed = 0.0f;
-        if(_scrollBarSizeDefinition.type != AUTO && isScrollable)
+        if(_scrollBarSizeDefinition.type != ValueType::AUTO && isScrollable)
         {
             scrollBarWidthFixed = CalculateValuebasedOnType(_scrollBarSizeDefinition.type,_scrollBarSizeDefinition.value,ownWidthFixed);
         }
 
 
-        if(_paddingDefinitions[PADDING_LEFT].type != AUTO)
+        if(_paddingDefinitions[PADDING_LEFT].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_LEFT].type,
                 _paddingDefinitions[PADDING_LEFT].value,ownWidthFixed);
@@ -393,7 +393,7 @@ void LayoutPanel::CalculateChildrenBox()
             newChildrenBoxFixed.min.x = ownMinFixed.x;
         }
 
-        if(_paddingDefinitions[PADDING_RIGHT].type != AUTO)
+        if(_paddingDefinitions[PADDING_RIGHT].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_RIGHT].type,
                 _paddingDefinitions[PADDING_RIGHT].value,ownWidthFixed);
@@ -405,7 +405,7 @@ void LayoutPanel::CalculateChildrenBox()
             newChildrenBoxFixed.max.x = ownMaxFixed.x - scrollBarWidthFixed;
         }
 
-        if(_paddingDefinitions[PADDING_TOP].type != AUTO)
+        if(_paddingDefinitions[PADDING_TOP].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_TOP].type,
                 _paddingDefinitions[PADDING_TOP].value,ownHeightFixed);
@@ -421,7 +421,7 @@ void LayoutPanel::CalculateChildrenBox()
             paddingFrontRelative = 0.0f;
         }
 
-        if(_paddingDefinitions[PADDING_BOTTOM].type != AUTO)
+        if(_paddingDefinitions[PADDING_BOTTOM].type != ValueType::AUTO)
         {
             float calculatedPaddingValue = CalculateValuebasedOnType(_paddingDefinitions[PADDING_BOTTOM].type,
                 _paddingDefinitions[PADDING_BOTTOM].value,ownHeightFixed);
@@ -434,7 +434,7 @@ void LayoutPanel::CalculateChildrenBox()
         }
         
         float calculatedFixedWidthValue = 0.0f;
-        if(_childrenWidthDefinition.type != AUTO)
+        if(_childrenWidthDefinition.type != ValueType::AUTO)
         {
             calculatedFixedWidthValue= CalculateValuebasedOnType(_childrenWidthDefinition.type,_childrenWidthDefinition.value,ownWidthFixed);
 
@@ -450,7 +450,7 @@ void LayoutPanel::CalculateChildrenBox()
         For this, we have to calculate some components like: gapHeight, children Height
         */
         float childrenHeightFixed = 0.0f;
-        if(_childrenHeightDefinition.type != AUTO)
+        if(_childrenHeightDefinition.type != ValueType::AUTO)
         {
             childrenHeightFixed = CalculateValuebasedOnType(_childrenHeightDefinition.type,_childrenHeightDefinition.value,ownHeightFixed);
 
@@ -464,14 +464,14 @@ void LayoutPanel::CalculateChildrenBox()
 
         
         float childrenGapWidthFixed = 0.0f;
-        if(_gapWidthDefinition.type != AUTO)
+        if(_gapWidthDefinition.type != ValueType::AUTO)
         {
             childrenGapWidthFixed = CalculateValuebasedOnType(_gapWidthDefinition.type,_gapWidthDefinition.value,ownWidthFixed);
         }
         gapRelativeWidth = childrenGapWidthFixed / windowRes.x;
 
         float childrenHeightGapFixed = 0.0f;
-        if(_gapHeightDefinition.type != AUTO)
+        if(_gapHeightDefinition.type != ValueType::AUTO)
         {
             childrenHeightGapFixed = CalculateValuebasedOnType(_gapHeightDefinition.type,_gapHeightDefinition.value,ownHeightFixed);
         }
@@ -532,7 +532,7 @@ void LayoutPanel::CalculateChildrenBox()
             newSliderHeadSizeRelative = (_box.max.x - _box.min.x) / (_baseChildrenBox.max.x - _baseChildrenBox.min.x);
         }
         //std::cout<<newSliderHeadSizeRelative<<"\n";
-        _scrollBar.SetSliderHeadSize(newSliderHeadSizeRelative,RELATIVE);
+        _scrollBar.SetSliderHeadSize(newSliderHeadSizeRelative,ValueType::RELATIVE);
     }
     
 }
@@ -583,7 +583,7 @@ void LayoutPanel::CalculateChildrenPositions()
     /*
     Invariant: 
         we assume that the _childrenBox is fully calculated, and ready to be used.
-        we assume that the four needed childrenDatas: relative width/height/gapWidth/gapheight have been calculated before
+        we assume that the four needed childrenDatas: ValueType::RELATIVE width/height/gapWidth/gapheight have been calculated before
     */
 
     //This is only used in Flow state

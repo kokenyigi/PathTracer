@@ -216,11 +216,11 @@ bool Control::IsCursorOnControl(const glm::vec2& cursorPos)
 
 float Control::CalculateValuebasedOnType(ValueType type, float value, float relativeTo)
 {
-    if(type == FIXED)
+    if(type == ValueType::FIXED)
 	{
 		return value;
 	}
-	else if(type == RELATIVE)
+	else if(type == ValueType::RELATIVE)
 	{
 		return value * relativeTo;
 	}
@@ -234,11 +234,11 @@ float Control::CalculateValuebasedOnType(ValueType type, float value,int axis)
 
 	float multiplier = axis == 0 ? guiContext->windowWidth : guiContext->windowHeight;
 
-	if(type == FIXED)
+	if(type == ValueType::FIXED)
 	{
 		return value;
 	}
-	else if(type == RELATIVE)
+	else if(type == ValueType::RELATIVE)
 	{
 		return value * multiplier;
 	}
@@ -274,16 +274,16 @@ void Control::SetWidth(float value, ValueType type)
 	_widthDefinition.value = value;
 	_widthDefinition.type = type;
 
-	//If both margins have been previously declared to be something other than AUTO
+	//If both margins have been previously declared to be something other than ValueType::AUTO
 	//then they become invalidated.
-	if(_marginDefinitions[MARGIN_LEFT].type != AUTO && 
-	_marginDefinitions[MARGIN_RIGHT].type != AUTO)
+	if(_marginDefinitions[MARGIN_LEFT].type != ValueType::AUTO && 
+	_marginDefinitions[MARGIN_RIGHT].type != ValueType::AUTO)
 	{
 		_marginDefinitions[MARGIN_LEFT].value = 0.0f;
-		_marginDefinitions[MARGIN_LEFT].type = AUTO;
+		_marginDefinitions[MARGIN_LEFT].type = ValueType::AUTO;
 
 		_marginDefinitions[MARGIN_RIGHT].value = 0.0f;
-		_marginDefinitions[MARGIN_RIGHT].type = AUTO;
+		_marginDefinitions[MARGIN_RIGHT].type = ValueType::AUTO;
 	}
 
 	//TODO: Recalculate minmaxPos
@@ -295,16 +295,16 @@ void Control::SetHeight(float value, ValueType type)
 	_heightDefinition.value = value;
 	_heightDefinition.type = type;
 
-	//If both margins have been previously declared to be something other than AUTO
+	//If both margins have been previously declared to be something other than ValueType::AUTO
 	//then they become invalidated.
-	if(_marginDefinitions[MARGIN_TOP].type != AUTO && 
-	_marginDefinitions[MARGIN_BOTTOM].type != AUTO)
+	if(_marginDefinitions[MARGIN_TOP].type != ValueType::AUTO && 
+	_marginDefinitions[MARGIN_BOTTOM].type != ValueType::AUTO)
 	{
 		_marginDefinitions[MARGIN_TOP].value = 0.0f;
-		_marginDefinitions[MARGIN_TOP].type = AUTO;
+		_marginDefinitions[MARGIN_TOP].type = ValueType::AUTO;
 
 		_marginDefinitions[MARGIN_BOTTOM].value = 0.0f;
-		_marginDefinitions[MARGIN_BOTTOM].type = AUTO;
+		_marginDefinitions[MARGIN_BOTTOM].type = ValueType::AUTO;
 	}
 
 	//TODO: Recalculate minmaxPos
@@ -318,23 +318,23 @@ void Control::SetMargin(MarginType margin, float value, ValueType type)
 
 	if(margin == MARGIN_BOTTOM || margin == MARGIN_TOP)
 	{
-		if(_marginDefinitions[MARGIN_BOTTOM].type != AUTO &&
-			 _marginDefinitions[MARGIN_TOP].type != AUTO && 
-			 _heightDefinition.type != AUTO)
+		if(_marginDefinitions[MARGIN_BOTTOM].type != ValueType::AUTO &&
+			 _marginDefinitions[MARGIN_TOP].type != ValueType::AUTO && 
+			 _heightDefinition.type != ValueType::AUTO)
 		{
 			//if both margins on this axis have been defined already, we invalidate the height definition.
-			_heightDefinition.type = AUTO;
+			_heightDefinition.type = ValueType::AUTO;
 			_heightDefinition.value = 0.0f;
 		}
 	}
 	else
 	{
-		if(_marginDefinitions[MARGIN_LEFT].type != AUTO &&
-			 _marginDefinitions[MARGIN_RIGHT].type != AUTO && 
-			 _widthDefinition.type != AUTO)
+		if(_marginDefinitions[MARGIN_LEFT].type != ValueType::AUTO &&
+			 _marginDefinitions[MARGIN_RIGHT].type != ValueType::AUTO && 
+			 _widthDefinition.type != ValueType::AUTO)
 		{
 			//same here as above
-			_widthDefinition.type = AUTO;
+			_widthDefinition.type = ValueType::AUTO;
 			_widthDefinition.value = 0.0f;
 		}
 	}
@@ -379,59 +379,59 @@ void Control::RecalculatePosition()
 	glm::vec2 ownMaxFixed = _box.max * windowResolution;
 
 	//If there is a marginDefinition for Left margin, we determine its impact on the control.
-	if(_marginDefinitions[MARGIN_LEFT].type == FIXED)
+	if(_marginDefinitions[MARGIN_LEFT].type == ValueType::FIXED)
 	{
 		ownMinFixed.x = parentMinFixed.x + _marginDefinitions[MARGIN_LEFT].value;
 	}
-	else if(_marginDefinitions[MARGIN_LEFT].type == RELATIVE)
+	else if(_marginDefinitions[MARGIN_LEFT].type == ValueType::RELATIVE)
 	{
 		ownMinFixed.x = parentMinFixed.x + _marginDefinitions[MARGIN_LEFT].value * parentFixedResolution.x;
 	}
 
 	//Same procedure for the top margin.
-	if(_marginDefinitions[MARGIN_TOP].type == FIXED)
+	if(_marginDefinitions[MARGIN_TOP].type == ValueType::FIXED)
 	{
 		ownMinFixed.y = parentMinFixed.y + _marginDefinitions[MARGIN_TOP].value;
 	}
-	else if(_marginDefinitions[MARGIN_TOP].type == RELATIVE)
+	else if(_marginDefinitions[MARGIN_TOP].type == ValueType::RELATIVE)
 	{
 		ownMinFixed.y = parentMinFixed.y + _marginDefinitions[MARGIN_TOP].value * parentFixedResolution.y;
 	}
 
 
 	//Now it calculates the other two margins
-	if(_marginDefinitions[MARGIN_RIGHT].type == FIXED)
+	if(_marginDefinitions[MARGIN_RIGHT].type == ValueType::FIXED)
 	{
 		ownMaxFixed.x = parentMaxFixed.x - _marginDefinitions[MARGIN_RIGHT].value;
 	}
-	else if(_marginDefinitions[MARGIN_RIGHT].type == RELATIVE)
+	else if(_marginDefinitions[MARGIN_RIGHT].type == ValueType::RELATIVE)
 	{
 		ownMaxFixed.x = parentMaxFixed.x - _marginDefinitions[MARGIN_RIGHT].value * parentFixedResolution.x;
 	}
 
-	if(_marginDefinitions[MARGIN_BOTTOM].type == FIXED)
+	if(_marginDefinitions[MARGIN_BOTTOM].type == ValueType::FIXED)
 	{
 		ownMaxFixed.y = parentMaxFixed.y - _marginDefinitions[MARGIN_BOTTOM].value;
 	}
-	else if(_marginDefinitions[MARGIN_BOTTOM].type == RELATIVE)
+	else if(_marginDefinitions[MARGIN_BOTTOM].type == ValueType::RELATIVE)
 	{
 		ownMaxFixed.y = parentMaxFixed.y - _marginDefinitions[MARGIN_BOTTOM].value * parentFixedResolution.y;
 	}
 
 	//Properly adjusting to the width
-	if(_widthDefinition.type != AUTO)
+	if(_widthDefinition.type != ValueType::AUTO)
 	{
-		if(_widthDefinition.type == FIXED)
+		if(_widthDefinition.type == ValueType::FIXED)
 		{
-			if(_marginDefinitions[MARGIN_LEFT].type != AUTO)
+			if(_marginDefinitions[MARGIN_LEFT].type != ValueType::AUTO)
 			{
 				ownMaxFixed.x = ownMinFixed.x + _widthDefinition.value;
 			}
-			else if(_marginDefinitions[MARGIN_RIGHT].type != AUTO)
+			else if(_marginDefinitions[MARGIN_RIGHT].type != ValueType::AUTO)
 			{
 				ownMinFixed.x = ownMaxFixed.x - _widthDefinition.value;
 			}
-			else if(_marginDefinitions[MARGIN_RIGHT].type == AUTO && _marginDefinitions[MARGIN_LEFT].type == AUTO)
+			else if(_marginDefinitions[MARGIN_RIGHT].type == ValueType::AUTO && _marginDefinitions[MARGIN_LEFT].type == ValueType::AUTO)
 			{
 				//we center the control based on its width
 				float centerValueX = parentMinFixed.x + parentFixedResolution.x * 0.5f;
@@ -439,17 +439,17 @@ void Control::RecalculatePosition()
 				ownMaxFixed.x = centerValueX + _widthDefinition.value / 2.0f;
 			}
 		}
-		else if(_widthDefinition.type == RELATIVE)
+		else if(_widthDefinition.type == ValueType::RELATIVE)
 		{
-			if(_marginDefinitions[MARGIN_LEFT].type != AUTO)
+			if(_marginDefinitions[MARGIN_LEFT].type != ValueType::AUTO)
 			{
 				ownMaxFixed.x = ownMinFixed.x + _widthDefinition.value * parentFixedResolution.x;
 			}
-			else if(_marginDefinitions[MARGIN_RIGHT].type != AUTO)
+			else if(_marginDefinitions[MARGIN_RIGHT].type != ValueType::AUTO)
 			{
 				ownMinFixed.x = ownMaxFixed.x - _widthDefinition.value * parentFixedResolution.x;
 			}
-			else if(_marginDefinitions[MARGIN_RIGHT].type == AUTO && _marginDefinitions[MARGIN_LEFT].type == AUTO)
+			else if(_marginDefinitions[MARGIN_RIGHT].type == ValueType::AUTO && _marginDefinitions[MARGIN_LEFT].type == ValueType::AUTO)
 			{
 				float centerValueX = parentMinFixed.x + parentFixedResolution.x * 0.5f;
 				ownMinFixed.x = centerValueX - _widthDefinition.value * parentFixedResolution.x / 2.0f;
@@ -459,36 +459,36 @@ void Control::RecalculatePosition()
 	}
 
 	//Properly Adjusting height
-	if(_heightDefinition.type != AUTO)
+	if(_heightDefinition.type != ValueType::AUTO)
 	{
-		if(_heightDefinition.type == FIXED)
+		if(_heightDefinition.type == ValueType::FIXED)
 		{
-			if(_marginDefinitions[MARGIN_TOP].type != AUTO)
+			if(_marginDefinitions[MARGIN_TOP].type != ValueType::AUTO)
 			{
 				ownMaxFixed.y = ownMinFixed.y + _heightDefinition.value;
 			}
-			else if(_marginDefinitions[MARGIN_BOTTOM].type != AUTO)
+			else if(_marginDefinitions[MARGIN_BOTTOM].type != ValueType::AUTO)
 			{
 				ownMinFixed.y = ownMaxFixed.y - _heightDefinition.value;
 			}
-			else if(_marginDefinitions[MARGIN_TOP].type == AUTO && _marginDefinitions[MARGIN_BOTTOM].type == AUTO)
+			else if(_marginDefinitions[MARGIN_TOP].type == ValueType::AUTO && _marginDefinitions[MARGIN_BOTTOM].type == ValueType::AUTO)
 			{
 				float centerValueY = parentMinFixed.y + parentFixedResolution.y * 0.5f;
 				ownMinFixed.y = centerValueY - _heightDefinition.value / 2.0f;
 				ownMaxFixed.y = centerValueY + _heightDefinition.value / 2.0f;
 			}
 		}
-		else if(_heightDefinition.type == RELATIVE)
+		else if(_heightDefinition.type == ValueType::RELATIVE)
 		{
-			if(_marginDefinitions[MARGIN_TOP].type != AUTO)
+			if(_marginDefinitions[MARGIN_TOP].type != ValueType::AUTO)
 			{
 				ownMaxFixed.y = ownMinFixed.y + _heightDefinition.value * parentFixedResolution.y;
 			}
-			else if(_marginDefinitions[MARGIN_BOTTOM].type != AUTO)
+			else if(_marginDefinitions[MARGIN_BOTTOM].type != ValueType::AUTO)
 			{
 				ownMinFixed.y = ownMaxFixed.y - _heightDefinition.value * parentFixedResolution.y;
 			}
-			else if(_marginDefinitions[MARGIN_TOP].type == AUTO && _marginDefinitions[MARGIN_BOTTOM].type == AUTO)
+			else if(_marginDefinitions[MARGIN_TOP].type == ValueType::AUTO && _marginDefinitions[MARGIN_BOTTOM].type == ValueType::AUTO)
 			{
 				float centerValueY = parentMinFixed.y + parentFixedResolution.y * 0.5f;
 				ownMinFixed.y = centerValueY - _heightDefinition.value * parentFixedResolution.y / 2.0f;

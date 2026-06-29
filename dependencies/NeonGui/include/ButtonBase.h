@@ -40,7 +40,7 @@ public:
     inline void* GetCallBackContext() {return _callBackContext;}
 
     void SetText(const std::string& newText);
-    void SetTextSize(float value, ValueType type = FIXED);
+    void SetTextSize(float value, ValueType type = ValueType::FIXED);
     void SetTextColor(float r, float g, float b);
     void SetTextAllignment(TextAllignmentType allignemnt) {_label.SetTextAllignment(allignemnt);}
 

@@ -4,30 +4,30 @@
 
 Dropdown::Dropdown()
 {
-    _chosenOptionLabel.SetHeight(0.5f,RELATIVE);
-    _chosenOptionLabel.SetMargin(MARGIN_LEFT,5.0f,FIXED);
+    _chosenOptionLabel.SetHeight(0.5f,ValueType::RELATIVE);
+    _chosenOptionLabel.SetMargin(MARGIN_LEFT,5.0f,ValueType::FIXED);
     //_chosenOptionLabel.SetMargin(MARGIN_RIGHT,5.0f);
     _chosenOptionLabel.SetTextAllignment(TEXT_ALLIGNMENT_LEFT);
     _chosenOptionLabel.SetParent(this);
 	_chosenOptionLabel.SetText("none");
 
 	_optionsPanel.SetScrollbarSize(20.0f);
-    _optionsPanel.SetMargin(MARGIN_BOTTOM,0.0f,AUTO);
-	_optionsPanel.SetMargin(MARGIN_LEFT,0.0f,AUTO);
-	_optionsPanel.SetMargin(MARGIN_RIGHT,0.0f,AUTO);
-    _optionsPanel.SetMargin(MARGIN_TOP,0.0f,AUTO);
-	_optionsPanel.SetHeight(0.0f,AUTO);
-    _optionsPanel.SetWidth(0.0f,AUTO);
+    _optionsPanel.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::AUTO);
+	_optionsPanel.SetMargin(MARGIN_LEFT,0.0f,ValueType::AUTO);
+	_optionsPanel.SetMargin(MARGIN_RIGHT,0.0f,ValueType::AUTO);
+    _optionsPanel.SetMargin(MARGIN_TOP,0.0f,ValueType::AUTO);
+	_optionsPanel.SetHeight(0.0f,ValueType::AUTO);
+    _optionsPanel.SetWidth(0.0f,ValueType::AUTO);
 	_optionsPanel.SetBGColor(0,0,0.0);
-	_optionsPanel.SetChildrenHeight(0.2f,RELATIVE);//no good
-	_optionsPanel.SetChildrenWidth(0.0f,AUTO);
+	_optionsPanel.SetChildrenHeight(0.2f,ValueType::RELATIVE);//no good
+	_optionsPanel.SetChildrenWidth(0.0f,ValueType::AUTO);
 	_optionsPanel.SetLayoutType(LAYOUT_VERTICAL);
-	_optionsPanel.SetGapHeight(0.0f,AUTO);
-	_optionsPanel.SetGapWidth(0.0f,AUTO);
-	_optionsPanel.SetPadding(PADDING_RIGHT,0.0f,AUTO);
-	_optionsPanel.SetPadding(PADDING_LEFT,0.0f,AUTO);
-	_optionsPanel.SetPadding(PADDING_TOP,0.0f,AUTO);
-	_optionsPanel.SetPadding(PADDING_BOTTOM,0.0f,AUTO);
+	_optionsPanel.SetGapHeight(0.0f,ValueType::AUTO);
+	_optionsPanel.SetGapWidth(0.0f,ValueType::AUTO);
+	_optionsPanel.SetPadding(PADDING_RIGHT,0.0f,ValueType::AUTO);
+	_optionsPanel.SetPadding(PADDING_LEFT,0.0f,ValueType::AUTO);
+	_optionsPanel.SetPadding(PADDING_TOP,0.0f,ValueType::AUTO);
+	_optionsPanel.SetPadding(PADDING_BOTTOM,0.0f,ValueType::AUTO);
 	_optionsPanel.SetParent(this);
 	
 
@@ -59,11 +59,11 @@ void Dropdown::AddOption(const std::string &optionName, int optionIndex)
 
 	if(_currentOptionCount > _maxVisibleOptionCount)
 	{
-		_optionsPanel.SetChildrenHeight(1.0f / (float)_maxVisibleOptionCount,RELATIVE);
+		_optionsPanel.SetChildrenHeight(1.0f / (float)_maxVisibleOptionCount,ValueType::RELATIVE);
 	}
 	else
 	{
-		_optionsPanel.SetChildrenHeight((1.0f / (float)_currentOptionCount),RELATIVE);
+		_optionsPanel.SetChildrenHeight((1.0f / (float)_currentOptionCount),ValueType::RELATIVE);
 	}
 }
 

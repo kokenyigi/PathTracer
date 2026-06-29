@@ -49,12 +49,20 @@ target_include_directories(PathTracer PRIVATE
 	dependencies/NeonOpenGL/include
 	dependencies/NeonUtils/include
 	dependencies/NeonGui/include
-	dependencies/Neon2DRenderer/include)
+	dependencies/Neon2DRenderer/include
+	dependencies/OPENCL/include)
+
+target_link_directories(PathTracer PRIVATE
+	dependencies/OPENCL/lib)
+
 
 # Linkelés GLFW-vel és GLAD-al
 find_package(OpenGL REQUIRED)
+find_package(OpenCL REQUIRED)
+
 target_link_libraries(PathTracer 
     glfw 
     OpenGL::GL
     glad
+	OpenCL::OpenCL
 )

@@ -42,8 +42,8 @@ private:
      These variables contain how big the children boxes should be.
      Invariants:
     */
-    ValueDefinition _childrenWidthDefinition = {20,FIXED};
-    ValueDefinition _childrenHeightDefinition = {20,FIXED};
+    ValueDefinition _childrenWidthDefinition = {20,ValueType::FIXED};
+    ValueDefinition _childrenHeightDefinition = {20,ValueType::FIXED};
 
     /*
      These definitions are similiar to that of margins, however these act Inside the LayoutPanel,
@@ -66,7 +66,7 @@ private:
     float childrenRelativeHeight = 0.0f;
     float gapRelativeWidth = 0.0f;
     float gapRelativeHeight = 0.0f;
-    float paddingFrontRelative = 0.0f; //The amount of relative padding top when vertical,flow  / left when horizontal
+    float paddingFrontRelative = 0.0f; //The amount of ValueType::RELATIVE padding top when vertical,flow  / left when horizontal
     float paddingEndRelative = 0.0f;
 
     float interpolateZeroValue  = 0.0f;
@@ -77,7 +77,7 @@ private:
 
     Slider _scrollBar;
 
-    ValueDefinition _scrollBarSizeDefinition = {30.0f,FIXED};
+    ValueDefinition _scrollBarSizeDefinition = {30.0f,ValueType::FIXED};
 
 
 public:
@@ -122,15 +122,15 @@ public:
     //[TODO] Mousemove is also gonna be different
 
     void SetLayoutType(LayoutType type);
-    void SetChildrenWidth(float value, ValueType type = FIXED);
-    void SetChildrenHeight(float value, ValueType type = FIXED);
-    void SetPadding(PaddingType paddingType, float value, ValueType type = FIXED);
-    void SetGapWidth(float value, ValueType type = FIXED);
-    void SetGapHeight(float value, ValueType type = FIXED);
+    void SetChildrenWidth(float value, ValueType type = ValueType::FIXED);
+    void SetChildrenHeight(float value, ValueType type = ValueType::FIXED);
+    void SetPadding(PaddingType paddingType, float value, ValueType type = ValueType::FIXED);
+    void SetGapWidth(float value, ValueType type = ValueType::FIXED);
+    void SetGapHeight(float value, ValueType type = ValueType::FIXED);
 
     void SetScrollValue(float value);
 
-    void SetScrollbarSize(float value, ValueType = FIXED);
+    void SetScrollbarSize(float value, ValueType = ValueType::FIXED);
 
     //inline AABB GetChildrenBox() const {return _childrenBox;}
     inline bool GetIsObstructed() const {return isLayoutObstructed;}
@@ -159,7 +159,7 @@ protected:
 
     /*
     Holy procedure...
-    This procedure calculates the relative height/width values the scrolling interpolates between.
+    This procedure calculates the ValueType::RELATIVE height/width values the scrolling interpolates between.
     It also checks if scrolling is possible or not, if not, then it sets a boolean value to false.
     */
     void CalculateInterpolatingBorders();
@@ -170,7 +170,7 @@ protected:
     void CalculateChildrenPositions();
 
     /*
-    This procedure simply moves the calculated _childrenBox by the specified relative normalized amount.
+    This procedure simply moves the calculated _childrenBox by the specified ValueType::RELATIVE normalized amount.
     It is mainly used when scrolling.
     */
     void MoveChildrenBox(float amount);

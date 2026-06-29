@@ -1,10 +1,15 @@
 #include "Scene.h"
-
 #include <iostream>
+
+#ifdef _WIN32
+
+    #include <windows.h>
+
+#endif
 
 
 Scene::Scene()
-{
+{    
     _camera.Init(glm::vec3(0,0,4.0f),glm::vec3(0,0,0),glm::vec3(0,1,0),_viewportWidth,_viewportHeight);
 }
 
@@ -20,6 +25,29 @@ void Scene::Init()
 
     testMesh.Load("assets/models/Suzanne.obj");
     testShader.Init("assets/shaders/testVertex.vert","assets/shaders/testFragment.frag");
+
+
+    //Initialization of OpenCL
+    cl_int clError;
+
+    //Querry how many platforms (Runtimes) are currently present on the computer 
+    cl_uint clPlatformCount = 0;
+    clError = clGetPlatformIDs(0,nullptr,&clPlatformCount);
+
+    //Querry each of these runtime IDs
+    std::vector<cl_platform_id> clPlatformIDs(clPlatformCount);
+    clError = clGetPlatformIDs(clPlatformIDs.size(), clPlatformIDs.data(), nullptr);
+    CHECK_ERROR(clError);
+
+    //Print these platforms on the console
+    for(int i=0;i<clPlatformIDs.size();++i)
+    {
+        char buffer[256];
+
+        clGetPlatformInfo(clPlatformIDs[i],CL_PLATFORM_NAME,sizeof(buffer),buffer,nullptr);
+
+        std::cout<< "Platform name: "<<buffer<<"\n";
+    }
 }
 
 void Scene::Resize(int newWidth, int newHeight)

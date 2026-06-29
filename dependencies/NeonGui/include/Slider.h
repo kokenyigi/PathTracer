@@ -17,7 +17,7 @@ protected:
     SliderDirection _sliderDirection = SLIDER_DIRECTION_VERTICAL;
 
     // This value ranges [0,1], interpolational value. 
-    // It is determined by the relative position of the sliderhead inside the slider
+    // It is determined by the ValueType::RELATIVE position of the sliderhead inside the slider
     float _sliderValue = 0.0f; 
 
     // This box represents the rectangular area of the moving slider head.
@@ -29,8 +29,8 @@ protected:
     // On the other hand, this color is the background color of the whole slider bg body.
     glm::vec3 _baseSliderBGColor = glm::vec3(0.1,0,0.2);
 
-    // THis definition determines the non-fixed side of the sliderhead.
-    ValueDefinition _sliderHeadSizeDefinition = {20.0f,FIXED};
+    // THis definition determines the non-ValueType::FIXED side of the sliderhead.
+    ValueDefinition _sliderHeadSizeDefinition = {20.0f,ValueType::FIXED};
     
 
     // Helper variables
@@ -68,7 +68,7 @@ public:
 
     void SetSliderDirection(SliderDirection direction);
     void SetSliderValue(float value);
-    void SetSliderHeadSize(float value, ValueType type = FIXED);
+    void SetSliderHeadSize(float value, ValueType type = ValueType::FIXED);
     void SetSliderBaseBGColor(float r, float g, float b);
     void SetSliderBaseColor(float r, float g, float b) {_baseBGColor = glm::vec3(r,g,b);}
     void SetSliderHoveredColor(float r, float g, float b) {_hoverBGColor = glm::vec3(r,g,b);}

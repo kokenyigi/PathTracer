@@ -2,6 +2,14 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+
+#define CL_TARGET_OPENCL_VERSION 300
+//Platform dependent includes
+
+
+#include <CL/cl.h>
+#include <CL/cl_gl.h>
+
 #include "MyOpenGL.h"
 #include "Camera.h"
 

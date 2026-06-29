@@ -219,15 +219,15 @@ public:
 
 	//Sets the width of the Control.
 	//By setting the Height of a Control, both left and right margins will be invalidated.
-	void SetWidth(float value, ValueType type = FIXED);
+	void SetWidth(float value, ValueType type = ValueType::FIXED);
 	
 	//Sets the height of the Control.
 	//By setting the Width of a Control, both top and bottom margin will be invalidated.
-	void SetHeight(float value, ValueType type = FIXED);
+	void SetHeight(float value, ValueType type = ValueType::FIXED);
 
 	//Sets the margin of the Control in a specific direction.
 	//If Both top-bottom or both left-right margins are set, the height or width of the Control will be invalidated.
-	void SetMargin(MarginType margin, float value, ValueType type = FIXED);
+	void SetMargin(MarginType margin, float value, ValueType type = ValueType::FIXED);
 
 	void SetRelativePlacement(const glm::vec2& minPos,const glm::vec2& maxPos);
 

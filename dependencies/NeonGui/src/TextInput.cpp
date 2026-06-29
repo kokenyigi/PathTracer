@@ -2,7 +2,7 @@
 
 TextInput::TextInput()
 {
-    _textLabel.SetHeight(0.5f,RELATIVE);
+    _textLabel.SetHeight(0.5f,ValueType::RELATIVE);
     _textLabel.SetMargin(MARGIN_LEFT,5.0f);
     _textLabel.SetMargin(MARGIN_RIGHT,5.0f);
     _textLabel.SetTextAllignment(TEXT_ALLIGNMENT_LEFT);

@@ -2,7 +2,7 @@
 
 ButtonBase::ButtonBase()
 {
-    _label.SetHeight(0.5f,RELATIVE);
+    _label.SetHeight(0.5f,ValueType::RELATIVE);
     _label.SetMargin(MARGIN_LEFT,0.0f);
     _label.SetMargin(MARGIN_RIGHT,0.0f);
     _label.SetTextAllignment(TEXT_ALLIGNMENT_MID);

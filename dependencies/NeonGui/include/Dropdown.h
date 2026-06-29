@@ -66,7 +66,7 @@ public:
     void SetCallback(void (*callback)(void*,int)){_callback = callback;}
     void SetMaxVisibleOptionCount(int count) {_maxVisibleOptionCount = count; DropdownResize();}
     void SetChosenOption(int index); //TODO
-    void SetScrollBarSize(float size, ValueType type = FIXED) {_optionsPanel.SetScrollbarSize(size,type);}
+    void SetScrollBarSize(float size, ValueType type = ValueType::FIXED) {_optionsPanel.SetScrollbarSize(size,type);}
 
     void AddOption(const std::string& optionName, int optionIndex);
 

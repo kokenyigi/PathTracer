@@ -50,7 +50,7 @@ public:
 
     void SetEditHeadColor(float r, float g, float b) {_editHeadColor = glm::vec3(r,g,b);}
     void SetTextColor(float r, float g, float b) {_textLabel.SetTextColor(r,g,b);};
-    void SetTextSize(float value, ValueType type = FIXED) {_textLabel.SetHeight(value,type);};
+    void SetTextSize(float value, ValueType type = ValueType::FIXED) {_textLabel.SetHeight(value,type);};
 
     void SetText(const std::string& text) {_textLabel.SetText(text);}
 

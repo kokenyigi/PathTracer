@@ -22,18 +22,18 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	std::cout<<"Initialization of Gui\n";
 	m_GUI.Init(windowWidth,windowHeight);
     
-	containerLeft.SetMargin(MARGIN_TOP,50.0f,FIXED);
-	containerLeft.SetMargin(MARGIN_BOTTOM,0.0f,FIXED);
-	containerLeft.SetMargin(MARGIN_LEFT,0.0f,FIXED);
-	containerLeft.SetWidth(250.0f,FIXED);
+	containerLeft.SetMargin(MARGIN_TOP,50.0f,ValueType::FIXED);
+	containerLeft.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::FIXED);
+	containerLeft.SetMargin(MARGIN_LEFT,0.0f,ValueType::FIXED);
+	containerLeft.SetWidth(250.0f,ValueType::FIXED);
 	containerLeft.SetBGColor(0.2,0.2,0.2);
 
 	m_GUI.AddControl(&containerLeft);
 
-	containerRight.SetMargin(MARGIN_TOP,50.0f,FIXED);
-	containerRight.SetMargin(MARGIN_BOTTOM,0.0f,FIXED);
-	containerRight.SetMargin(MARGIN_RIGHT,0.0f,FIXED);
-	containerRight.SetWidth(500.0f,FIXED);
+	containerRight.SetMargin(MARGIN_TOP,50.0f,ValueType::FIXED);
+	containerRight.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::FIXED);
+	containerRight.SetMargin(MARGIN_RIGHT,0.0f,ValueType::FIXED);
+	containerRight.SetWidth(500.0f,ValueType::FIXED);
 	containerRight.SetBGColor(0.2,0.2,0.2);
 	
 	containerMeshData.SetMargin(MARGIN_TOP,10.0f);
@@ -344,10 +344,10 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	
 
-	meshPanel.SetMargin(MARGIN_BOTTOM,0.0f,FIXED);
-	meshPanel.SetMargin(MARGIN_LEFT,250.0f,FIXED);
-	meshPanel.SetMargin(MARGIN_RIGHT,500.0f,FIXED);
-	meshPanel.SetHeight(250.0f,FIXED);
+	meshPanel.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::FIXED);
+	meshPanel.SetMargin(MARGIN_LEFT,250.0f,ValueType::FIXED);
+	meshPanel.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
+	meshPanel.SetHeight(250.0f,ValueType::FIXED);
 	meshPanel.SetBGColor(0.3,0.3,0.3);
 	meshPanel.SetChildrenHeight(100.0f);
 	meshPanel.SetChildrenWidth(200.0f);
@@ -370,10 +370,10 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	m_GUI.AddControl(&meshPanel);
 
 	
-	texturePanel.SetMargin(MARGIN_BOTTOM,0.0f,FIXED);
-	texturePanel.SetMargin(MARGIN_LEFT,250.0f,FIXED);
-	texturePanel.SetMargin(MARGIN_RIGHT,500.0f,FIXED);
-	texturePanel.SetHeight(250.0f,FIXED);
+	texturePanel.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::FIXED);
+	texturePanel.SetMargin(MARGIN_LEFT,250.0f,ValueType::FIXED);
+	texturePanel.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
+	texturePanel.SetHeight(250.0f,ValueType::FIXED);
 	texturePanel.SetBGColor(0.3,0.3,0.3);
 	texturePanel.SetChildrenHeight(100.0f);
 	texturePanel.SetChildrenWidth(200.0f);
@@ -398,10 +398,10 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	texturePanel.SetInactive();
 
 
-	materialPanel.SetMargin(MARGIN_BOTTOM,0.0f,FIXED);
-	materialPanel.SetMargin(MARGIN_LEFT,250.0f,FIXED);
-	materialPanel.SetMargin(MARGIN_RIGHT,500.0f,FIXED);
-	materialPanel.SetHeight(250.0f,FIXED);
+	materialPanel.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::FIXED);
+	materialPanel.SetMargin(MARGIN_LEFT,250.0f,ValueType::FIXED);
+	materialPanel.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
+	materialPanel.SetHeight(250.0f,ValueType::FIXED);
 	materialPanel.SetBGColor(0.3,0.3,0.3);
 	materialPanel.SetChildrenHeight(100.0f);
 	materialPanel.SetChildrenWidth(200.0f);
@@ -427,10 +427,10 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 
 
-	modelPanel.SetMargin(MARGIN_BOTTOM,0.0f,FIXED);
-	modelPanel.SetMargin(MARGIN_LEFT,250.0f,FIXED);
-	modelPanel.SetMargin(MARGIN_RIGHT,500.0f,FIXED);
-	modelPanel.SetHeight(250.0f,FIXED);
+	modelPanel.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::FIXED);
+	modelPanel.SetMargin(MARGIN_LEFT,250.0f,ValueType::FIXED);
+	modelPanel.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
+	modelPanel.SetHeight(250.0f,ValueType::FIXED);
 	modelPanel.SetBGColor(0.3,0.3,0.3);
 	modelPanel.SetChildrenHeight(100.0f);
 	modelPanel.SetChildrenWidth(200.0f);
@@ -455,10 +455,10 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	modelPanel.SetInactive();
 
 
-	objectPanel.SetMargin(MARGIN_BOTTOM,0.0f,FIXED);
-	objectPanel.SetMargin(MARGIN_LEFT,250.0f,FIXED);
-	objectPanel.SetMargin(MARGIN_RIGHT,500.0f,FIXED);
-	objectPanel.SetHeight(250.0f,FIXED);
+	objectPanel.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::FIXED);
+	objectPanel.SetMargin(MARGIN_LEFT,250.0f,ValueType::FIXED);
+	objectPanel.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
+	objectPanel.SetHeight(250.0f,ValueType::FIXED);
 	objectPanel.SetBGColor(0.3,0.3,0.3);
 	objectPanel.SetChildrenHeight(100.0f);
 	objectPanel.SetChildrenWidth(200.0f);
@@ -484,10 +484,10 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 
 
-	containerCanvas.SetMargin(MARGIN_BOTTOM,310.0f,FIXED);
-	containerCanvas.SetMargin(MARGIN_LEFT,250.0f,FIXED);
-	containerCanvas.SetMargin(MARGIN_RIGHT,500.0f,FIXED);
-	containerCanvas.SetMargin(MARGIN_TOP,50.0f,FIXED);
+	containerCanvas.SetMargin(MARGIN_BOTTOM,310.0f,ValueType::FIXED);
+	containerCanvas.SetMargin(MARGIN_LEFT,250.0f,ValueType::FIXED);
+	containerCanvas.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
+	containerCanvas.SetMargin(MARGIN_TOP,50.0f,ValueType::FIXED);
 	containerCanvas.SetBGColor(0,0,0);
 
 	sceneCanvas.SetMargin(MARGIN_LEFT,0.0f);
@@ -511,24 +511,24 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	
 	mainButtonsGroup.SetCallback(MainButtonsNeonGUICallback);
 
-	containerMainButtons.SetMargin(MARGIN_BOTTOM,250.0f,FIXED);
-	containerMainButtons.SetMargin(MARGIN_LEFT,250.0f,FIXED);
-	containerMainButtons.SetMargin(MARGIN_RIGHT,500.0f,FIXED);
-	containerMainButtons.SetHeight(60.0f,FIXED);
+	containerMainButtons.SetMargin(MARGIN_BOTTOM,250.0f,ValueType::FIXED);
+	containerMainButtons.SetMargin(MARGIN_LEFT,250.0f,ValueType::FIXED);
+	containerMainButtons.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
+	containerMainButtons.SetHeight(60.0f,ValueType::FIXED);
 	containerMainButtons.SetBGColor(0,0,0);
 
 	m_GUI.AddControl(&containerMainButtons);
 
 	meshButton.SetMargin(MARGIN_BOTTOM,0.0f);
 	meshButton.SetMargin(MARGIN_TOP,0.0f);
-	meshButton.SetMargin(MARGIN_LEFT,0.0f,RELATIVE);
-	meshButton.SetMargin(MARGIN_RIGHT,0.8f,RELATIVE);
+	meshButton.SetMargin(MARGIN_LEFT,0.0f,ValueType::RELATIVE);
+	meshButton.SetMargin(MARGIN_RIGHT,0.8f,ValueType::RELATIVE);
 	meshButton.SetBGColor(0.1,0.1,0.1);
 	meshButton.SetHoverColor(0.2,0.2,0.2);
 	meshButton.SetClickColor(0.3,0.3,0.3);
 	meshButton.SetText("Meshes");
 	meshButton.SetTextColor(0,1,0);
-	meshButton.SetTextSize(30.0,FIXED);
+	meshButton.SetTextSize(30.0,ValueType::FIXED);
 	meshButton.SetCallBackContext(this);
 	meshButton.SetIndex(0);
 
@@ -537,8 +537,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	textureButton.SetMargin(MARGIN_BOTTOM,0.0f);
 	textureButton.SetMargin(MARGIN_TOP,0.0f);
-	textureButton.SetMargin(MARGIN_LEFT,0.2f,RELATIVE);
-	textureButton.SetMargin(MARGIN_RIGHT,0.6f,RELATIVE);
+	textureButton.SetMargin(MARGIN_LEFT,0.2f,ValueType::RELATIVE);
+	textureButton.SetMargin(MARGIN_RIGHT,0.6f,ValueType::RELATIVE);
 	textureButton.SetBGColor(0.1,0.1,0.1);
 	textureButton.SetHoverColor(0.2,0.2,0.2);
 	textureButton.SetClickColor(0.3,0.3,0.3);
@@ -554,8 +554,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	
 	materialButton.SetMargin(MARGIN_BOTTOM,0.0f);
 	materialButton.SetMargin(MARGIN_TOP,0.0f);
-	materialButton.SetMargin(MARGIN_LEFT,0.4f,RELATIVE);
-	materialButton.SetMargin(MARGIN_RIGHT,0.4f,RELATIVE);
+	materialButton.SetMargin(MARGIN_LEFT,0.4f,ValueType::RELATIVE);
+	materialButton.SetMargin(MARGIN_RIGHT,0.4f,ValueType::RELATIVE);
 	materialButton.SetBGColor(0.1,0.1,0.1);
 	materialButton.SetHoverColor(0.2,0.2,0.2);
 	materialButton.SetClickColor(0.3,0.3,0.3);
@@ -571,13 +571,13 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	
 	modelButton.SetMargin(MARGIN_BOTTOM,0.0f);
 	modelButton.SetMargin(MARGIN_TOP,0.0f);
-	modelButton.SetMargin(MARGIN_LEFT,0.6f,RELATIVE);
-	modelButton.SetMargin(MARGIN_RIGHT,0.2f,RELATIVE);
+	modelButton.SetMargin(MARGIN_LEFT,0.6f,ValueType::RELATIVE);
+	modelButton.SetMargin(MARGIN_RIGHT,0.2f,ValueType::RELATIVE);
 	modelButton.SetBGColor(0.1,0.1,0.1);
 	modelButton.SetHoverColor(0.2,0.2,0.2);
 	modelButton.SetClickColor(0.3,0.3,0.3);
 	modelButton.SetText("Models");
-	modelButton.SetTextSize(30.0f,FIXED);
+	modelButton.SetTextSize(30.0f,ValueType::FIXED);
 	modelButton.SetTextColor(0,1,0);
 	modelButton.SetCallBackContext(this);
 	modelButton.SetIndex(3);
@@ -588,14 +588,14 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	
 	objectButton.SetMargin(MARGIN_BOTTOM,0.0f);
 	objectButton.SetMargin(MARGIN_TOP,0.0f);
-	objectButton.SetMargin(MARGIN_LEFT,0.8f,RELATIVE);
-	objectButton.SetMargin(MARGIN_RIGHT,0.0f,RELATIVE);
+	objectButton.SetMargin(MARGIN_LEFT,0.8f,ValueType::RELATIVE);
+	objectButton.SetMargin(MARGIN_RIGHT,0.0f,ValueType::RELATIVE);
 	objectButton.SetBGColor(0.1,0.1,0.1);
 	objectButton.SetHoverColor(0.2,0.2,0.2);
 	objectButton.SetClickColor(0.3,0.3,0.3);
 	objectButton.SetText("Objects");
 	objectButton.SetTextColor(0.0,1,0.0);
-	objectButton.SetTextSize(30.0f,FIXED);
+	objectButton.SetTextSize(30.0f,ValueType::FIXED);
 	objectButton.SetCallBackContext(this);
 	objectButton.SetIndex(4);
 
@@ -895,7 +895,7 @@ void App::Render()
 		
 	}
 	*/
-	//auto start = std::chrono::steady_clock::now();
+	//ValueType::AUTO start = std::chrono::steady_clock::now();
 
 	
 	m_GUI.Render();
@@ -918,8 +918,8 @@ void App::Render()
 
 	glfwSwapBuffers(m_window);
 
-	//auto end = std::chrono::steady_clock::now();
-	//auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	//ValueType::AUTO end = std::chrono::steady_clock::now();
+	//ValueType::AUTO diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
 	//std::cout<<"App:" << diff.count() << std::endl;
 
