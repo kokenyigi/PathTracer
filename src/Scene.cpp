@@ -152,6 +152,11 @@ void Scene::Resize(int newWidth, int newHeight)
 {
     if(newWidth <= 0 || newHeight <= 0) return;
 
+    cl_int clError;
+
+    clError = clReleaseMemObject(clOpenglInteropTex);
+    CHECK_ERROR(clError);
+
     _renderTexture.Resize(newWidth,newHeight);
     _renderBuffer.Resize(newWidth,newHeight);
 
@@ -159,6 +164,9 @@ void Scene::Resize(int newWidth, int newHeight)
 
     _viewportWidth = newWidth;
     _viewportHeight = newHeight;
+
+    clOpenglInteropTex = clCreateFromGLTexture(clContext,CL_MEM_WRITE_ONLY,GL_TEXTURE_2D,0,_renderTexture.GetId(),&clError);
+    CHECK_ERROR(clError);
 }
 
 void Scene::Render()
@@ -202,6 +210,35 @@ void Scene::PathTracedRender()
     CHECK_ERROR(clError);
 
     CameraData cameraData;
+    cameraData.position = GlmToCl(glm::vec4(_camera.GetPosition(),1));
+    cameraData.forward = GlmToCl(glm::vec4(_camera.GetFront(),1));
+    cameraData.upward = GlmToCl(glm::vec4(_camera.GetUp(),1));
+    cameraData.leftward = GlmToCl(glm::vec4(_camera.GetRight(),1));
+    cameraData.fovx = _camera.GetFovx();
+    cameraData.aspect = _camera.GetAspect();
+    cameraData.zNear = _camera.GetZNear();
+    cameraData.zNear = _camera.GetZFar();
+
+    clError = clEnqueueWriteBuffer(clCommandQueue,clCameraDataBuffer,CL_TRUE,0,sizeof(CameraData),&cameraData,0,nullptr,nullptr);
+    CHECK_ERROR(clError);
+
+    clError = clSetKernelArg(clPathTracerKernel,0,sizeof(cl_mem),&clOpenglInteropTex);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,1,sizeof(int),&_viewportWidth);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,2,sizeof(int),&_viewportHeight);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,3,sizeof(cl_mem),&clCameraDataBuffer);CHECK_ERROR(clError);
+
+    size_t localSize[2] = { 16, 16 };
+    size_t globalSize[2] = {((_viewportWidth + localSize[0] -1) / localSize[0]) * localSize[0],
+                            ((_viewportHeight + localSize[1] -1) / localSize[1]) * localSize[1]};
+    clError = clEnqueueNDRangeKernel(clCommandQueue,clPathTracerKernel,2,nullptr,globalSize,localSize,0,nullptr,nullptr);
+    CHECK_ERROR(clError);
+
+    clFinish(clCommandQueue);
+
+    clError = clEnqueueReleaseGLObjects(clCommandQueue,1,&clOpenglInteropTex, 0, nullptr, nullptr);
+    CHECK_ERROR(clError);
+
+    clFinish(clCommandQueue);
 }
 
 void Scene::Update(float deltaTime)

@@ -13,6 +13,28 @@
 #include "MyOpenGL.h"
 #include "Camera.h"
 
+static cl_float4 GlmToCl(const glm::vec4& glm)
+{
+    cl_float4 retval;
+    retval.x = glm.x;
+    retval.y = glm.y;
+    retval.z = glm.z;
+    retval.w = glm.w;
+
+    return retval;
+}
+
+static glm::vec4 ClToGlm(const cl_float4& cl)
+{
+    glm::vec4 retval;
+    retval.x = cl.x;
+    retval.y = cl.y;
+    retval.z = cl.z;
+    retval.w = cl.w;
+
+    return retval;
+}
+
 struct CameraData
 {
     cl_float4 position;
