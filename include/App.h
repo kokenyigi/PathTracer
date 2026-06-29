@@ -1,0 +1,152 @@
+#pragma once
+
+#ifndef APP_H
+#define APP_H
+
+//#include "GL/glew.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
+#include "Gui.h"
+#include "Button.h"
+#include "Container.h"
+#include "Label.h"
+#include "LayoutPanel.h"
+#include "RadioButton.h"
+#include "Dropdown.h"
+#include "TextInput.h"
+#include "FloatInput.h"
+#include "Canvas.h"
+
+#include "Scene.h"
+
+class App
+{
+private:
+	//Window data
+	GLFWwindow* m_window = nullptr;
+	int m_windowHeight = 0;
+	int m_windowWidth = 0;
+	bool isWindowMinimized = false;
+    float lastMouseX = 0.0f;
+	float lastMouseY = 0.0f;
+	bool isMouseDisabled = false;
+    
+
+	//Virtual World Data
+	float deltaTime = 0.0f;
+	float lastFrameTime = 0.0f;
+	float timeSinceStart = 0.0f;
+
+
+	
+	Scene _scene;
+
+	//GUI Data
+	GUI m_GUI;
+
+	Container containerRight;
+
+	Container containerMeshData;
+	Label labelVertexCount;
+	Label labelTriangleCount;
+	Label labelBVHNodeCount;
+	Label labelBVHDepth;
+
+	Container containerTextureData;
+	Label labelWidth;
+	Label labelHeight;
+
+	Container containerMaterialData;
+	Label labelTexture;Dropdown dropdownTexture;
+	Label labelColor;FloatInput inputRed;
+	Label labelGreen;FloatInput inputGreen;
+	Label labelBlue; FloatInput inputBlue;
+	Label labelRoughness; FloatInput inputRoughness;
+	Label labelReflectivity; FloatInput inputReflectivity;
+	Label labelFresnel; FloatInput inputFresnel;
+
+	Container containerModelData;
+	Label labelMesh;Dropdown dropdownMesh;
+	Label labelMaterial;Dropdown dropdownMaterial;
+
+	Container containerObjectData;
+	Label labelModel; Dropdown dropdownModel;
+
+
+	Container containerLeft;
+
+
+	
+
+	
+	Container containerCanvas;
+	Canvas sceneCanvas;Texture testTexture;
+
+	
+	Container containerMainButtons;
+
+	RadioButtonGroup mainButtonsGroup;
+	RadioButton meshButton;
+	RadioButton textureButton;
+	RadioButton materialButton;
+	RadioButton modelButton;
+	RadioButton objectButton;
+
+	LayoutPanel meshPanel;
+	LayoutPanel texturePanel;
+	LayoutPanel materialPanel;
+	LayoutPanel modelPanel;
+	LayoutPanel objectPanel;
+
+
+	Container containerFileMenu;
+	Container containerExecutionStats;
+	Container containerExtreSettings;
+	
+	
+
+	
+
+	
+
+public:
+	App(int windowWidth = 1000, int windowHeight = 800, const char* windowTitle = "_debugTitle");
+	~App();
+	void Run();
+
+	static void WindowSizeCallback(GLFWwindow* window, int width, int height);
+	static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
+	static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+	static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+	
+	static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+	/*
+	static void WindowIconifiedCallback(GLFWwindow* window, int isIconified);
+	*/
+
+	/*
+	template<int index, bool isIncrement>
+	static void GuiIncrementDecrementCallback(void* context);
+
+	static void GuiRollEnquedDiceCallback(void* context);
+	*/
+
+	static void MainButtonsNeonGUICallback(void * context, int index);
+	static void CanvasResizeCallback(void * context, int newW, int newH);
+	static void CanvasRenderCallback(void* context);
+	static void CanvasUpdateCallback(void* context, float deltaTime);
+	static void CanvasKeyCallback(void* context, int key, int action, int mods);
+	static void CanvasMouseMoveCallback(void * context , float newX, float newY);
+	//static void TestFloatInputNeonGuiCallback(void* context, float f) {std::cout<<"The recieved float: "<<f<<"\n";}
+
+private:
+	void GlfwInit(int windowWidth, int windowHeight, const char* windowTitle);
+	void GladInit(int windowWidth, int windowHeight);
+	void ImGuiInit();
+	void Update();
+	void Render();
+};
+
+
+#endif
