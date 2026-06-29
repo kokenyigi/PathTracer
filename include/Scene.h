@@ -38,6 +38,15 @@ private:
     Mesh<VertexP3N3T2> testMesh;
     Shader testShader;
 
+
+    //OpenCL related variables
+    cl_platform_id clPlatform;
+    cl_device_id clDevice;
+    cl_context clContext;
+    cl_command_queue clCommandQueue;
+    cl_kernel clPathTracerKernel;
+    cl_mem clOpenglInteropTex;
+
 public:
     Scene();
     ~Scene(){}
@@ -58,6 +67,8 @@ public:
     void Delete();
 
 private:
+    void InitCL();
+    cl_kernel InitKernel(const std::string& filePath);
 
     void RasterizeRender();
 

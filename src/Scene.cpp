@@ -1,5 +1,8 @@
 #include "Scene.h"
 #include <iostream>
+#include <string>
+#include <fstream>
+#include <vector>
 
 #ifdef _WIN32
 
@@ -13,20 +16,9 @@ Scene::Scene()
     _camera.Init(glm::vec3(0,0,4.0f),glm::vec3(0,0,0),glm::vec3(0,1,0),_viewportWidth,_viewportHeight);
 }
 
-void Scene::Init()
+
+void Scene::InitCL()
 {
-    _renderTexture.Init(_viewportWidth,_viewportHeight);
-    _renderBuffer.Init(_viewportWidth,_viewportHeight);
-
-    _renderFrameBuffer.Init();
-
-    _renderFrameBuffer.AttachTexture(_renderTexture);
-    _renderFrameBuffer.AttachRenderBuffer(_renderBuffer);
-
-    testMesh.Load("assets/models/Suzanne.obj");
-    testShader.Init("assets/shaders/testVertex.vert","assets/shaders/testFragment.frag");
-
-
     //Initialization of OpenCL
     cl_int clError;
 
@@ -48,6 +40,104 @@ void Scene::Init()
 
         std::cout<< "Platform name: "<<buffer<<"\n";
     }
+
+    clPlatform = clPlatformIDs[0];
+
+    cl_uint clPlatformDeviceCount;
+    clError = clGetDeviceIDs(clPlatform,CL_DEVICE_TYPE_GPU,0,nullptr,&clPlatformDeviceCount);
+    CHECK_ERROR(clError);
+
+    std::vector<cl_device_id> clPlatformDeviceIDs(clPlatformDeviceCount);
+    clError = clGetDeviceIDs(clPlatform,CL_DEVICE_TYPE_GPU,clPlatformDeviceCount,clPlatformDeviceIDs.data(),nullptr);
+    CHECK_ERROR(clError);
+
+    std::cout<<"The devices on platform 0. :\n";
+    for(int i=0;i<clPlatformDeviceCount;++i)
+    {
+        char buffer[256];
+        clGetDeviceInfo(clPlatformDeviceIDs[i],CL_DEVICE_NAME,sizeof(buffer),buffer,nullptr);
+        std::cout<<"    Name: " << buffer<<"\n";
+
+        unsigned int computeUnitCount = 0;
+        clGetDeviceInfo(clPlatformDeviceIDs[i],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(unsigned int),&computeUnitCount,nullptr);
+        std::cout<<"    Compute Units: "<<computeUnitCount <<"\n";
+
+        cl_ulong deviceMemory = 0;
+        clGetDeviceInfo(clPlatformDeviceIDs[i],CL_DEVICE_GLOBAL_MEM_SIZE,sizeof(cl_ulong),&deviceMemory,nullptr);
+        std::cout<<"    Global Memory: "<<deviceMemory <<"\n\n";
+    }
+
+    clDevice = clPlatformDeviceIDs[0];
+
+
+    cl_context_properties clContextProperties[] =
+    {
+        CL_GL_CONTEXT_KHR,   (cl_context_properties)wglGetCurrentContext(),
+        CL_WGL_HDC_KHR,      (cl_context_properties)wglGetCurrentDC(),
+        CL_CONTEXT_PLATFORM, (cl_context_properties)clPlatform,
+        0
+    };
+
+    clContext = clCreateContext(clContextProperties,1,&clDevice,nullptr,nullptr,&clError);
+    CHECK_ERROR(clError);
+
+    clCommandQueue = clCreateCommandQueueWithProperties(clContext,clDevice,nullptr,&clError);
+    CHECK_ERROR(clError);
+
+    clPathTracerKernel = InitKernel("assets/kernels/pathtracer_kernel.cl");
+
+
+}
+
+cl_kernel Scene::InitKernel(const std::string &filePath)
+{
+    cl_int error;
+    std::string kernelSource = "";
+
+    std::ifstream file(filePath);
+
+    std::string linebuffer;
+    while (std::getline(file, linebuffer))
+    {
+        kernelSource.append(linebuffer + '\n');
+    }
+
+    file.close();
+
+    const char* kernelSourceC = kernelSource.c_str();
+
+    cl_program program = clCreateProgramWithSource(clContext, 1,&kernelSourceC, nullptr, &error);
+    CHECK_ERROR(error);
+
+    error = clBuildProgram(program, 1, &clDevice, nullptr, nullptr, nullptr);
+    if (error != CL_SUCCESS) {
+        size_t log_size;
+        clGetProgramBuildInfo(program, clDevice, CL_PROGRAM_BUILD_LOG, 0, nullptr, &log_size);
+        std::vector<char> log(log_size);
+        clGetProgramBuildInfo(program, clDevice, CL_PROGRAM_BUILD_LOG, log_size, log.data(), nullptr);
+        std::cerr << "Build log:\n" << log.data() << std::endl;
+    }
+
+    cl_kernel kernel = clCreateKernel(program, "renderimage", &error);
+    CHECK_ERROR(error);
+
+    return kernel;
+}
+
+void Scene::Init()
+{
+    _renderTexture.Init(_viewportWidth,_viewportHeight);
+    _renderBuffer.Init(_viewportWidth,_viewportHeight);
+
+    _renderFrameBuffer.Init();
+
+    _renderFrameBuffer.AttachTexture(_renderTexture);
+    _renderFrameBuffer.AttachRenderBuffer(_renderBuffer);
+
+    testMesh.Load("assets/models/Suzanne.obj");
+    testShader.Init("assets/shaders/testVertex.vert","assets/shaders/testFragment.frag");
+
+    InitCL();
 }
 
 void Scene::Resize(int newWidth, int newHeight)
@@ -166,3 +256,4 @@ void Scene::KeyInput(int key, int action, int mods)
     }
     
 }
+
