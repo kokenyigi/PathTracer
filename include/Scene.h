@@ -13,6 +13,18 @@
 #include "MyOpenGL.h"
 #include "Camera.h"
 
+struct CameraData
+{
+    cl_float4 position;
+    cl_float4 forward;
+    cl_float4 upward;
+    cl_float4 leftward;
+    float fovx;
+    float aspect;
+    float zNear;
+    float zFar;
+};
+
 /**
  * This class is basically a renderer, it handles IO, and renders the given scene into a texture.
  * In our application it is used to render the scene inside a canvas control.
@@ -22,8 +34,7 @@ class Scene
 private:
     Texture _renderTexture;
 
-    RenderBuffer _renderBuffer;
-    FrameBuffer _renderFrameBuffer;
+    
 
     int _viewportWidth = 100;
     int _viewportHeight = 100;
@@ -34,9 +45,19 @@ private:
     glm::vec2 _previousMousePos = glm::vec2(0,0);
     glm::vec2 _currentMousePos = glm::vec2(0,0);
 
+    bool _isRenderingPathTraced = true;
+
+    //variables related to Pathtraced rendering
+
+
+    //Variables related to Rasterized rendering
+    RenderBuffer _renderBuffer;
+    FrameBuffer _renderFrameBuffer;
+
     //Extra variables
     Mesh<VertexP3N3T2> testMesh;
     Shader testShader;
+    
 
 
     //OpenCL related variables
@@ -45,7 +66,9 @@ private:
     cl_context clContext;
     cl_command_queue clCommandQueue;
     cl_kernel clPathTracerKernel;
+
     cl_mem clOpenglInteropTex;
+    cl_mem clCameraDataBuffer;
 
 public:
     Scene();

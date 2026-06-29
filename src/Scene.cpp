@@ -87,6 +87,12 @@ void Scene::InitCL()
     clPathTracerKernel = InitKernel("assets/kernels/pathtracer_kernel.cl");
 
 
+    clOpenglInteropTex = clCreateFromGLTexture(clContext,CL_MEM_WRITE_ONLY,GL_TEXTURE_2D,0,_renderTexture.GetId(),&clError);
+    CHECK_ERROR(clError);
+
+    clCameraDataBuffer = clCreateBuffer(clContext,CL_MEM_READ_ONLY,sizeof(CameraData),nullptr,&clError);
+    CHECK_ERROR(clError);
+
 }
 
 cl_kernel Scene::InitKernel(const std::string &filePath)
@@ -124,6 +130,8 @@ cl_kernel Scene::InitKernel(const std::string &filePath)
     return kernel;
 }
 
+
+
 void Scene::Init()
 {
     _renderTexture.Init(_viewportWidth,_viewportHeight);
@@ -153,10 +161,20 @@ void Scene::Resize(int newWidth, int newHeight)
     _viewportHeight = newHeight;
 }
 
-//FUCKS UP VIEWPORT
 void Scene::Render()
 {
-    //std::cout<<"Scene is rendering!\n";
+    if(_isRenderingPathTraced)
+    {
+        PathTracedRender();
+    }
+    else
+    {
+        RasterizeRender();
+    }
+}
+
+void Scene::RasterizeRender()
+{
     glViewport(0,0,_viewportWidth,_viewportHeight);
 
     _renderFrameBuffer.Bind();
@@ -173,6 +191,17 @@ void Scene::Render()
     testShader.Unbind();
 
     _renderFrameBuffer.Unbind();
+}
+
+void Scene::PathTracedRender()
+{
+    glFinish();
+
+    cl_int clError;
+    clError = clEnqueueAcquireGLObjects(clCommandQueue,1,&clOpenglInteropTex,0, nullptr, nullptr);
+    CHECK_ERROR(clError);
+
+    CameraData cameraData;
 }
 
 void Scene::Update(float deltaTime)
