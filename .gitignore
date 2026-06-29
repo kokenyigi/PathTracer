@@ -1,4 +1,4 @@
 build/
-.exe
-.out
-.ini
+*.exe
+*.out
+*.ini
