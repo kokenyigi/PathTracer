@@ -52,14 +52,16 @@ void ContainerBase::ContainerBaseMouseMove()
     if( IsCursorOnControl(guiContext->currentMousePos) || IsCursorOnControl(guiContext->oldMousePos))
     {
         isHovered = true;
-        for(int i=0;i<_children.size();++i)
-        {
-            _children[i]->MouseMove();
-        }
+        
     }
     else
     {
         isHovered = false;
+    }
+
+    for(int i=0;i<_children.size();++i)
+    {
+        _children[i]->MouseMove();
     }
 }
 

@@ -1,5 +1,8 @@
 #include "Utils.h"
 
+#include <vector>
+#include <algorithm>
+#include <filesystem>
 
 
 bool IntersectAABB(const AABB& a, const AABB& b, AABB& c)
@@ -229,3 +232,23 @@ static int StringToInteger(const std::string& string)
 
 }
 
+namespace fs = std::filesystem;
+
+void GetFileNamesWithSpecificExtension(const std::string &folderPath, const std::vector<std::string> &extensions, std::vector<std::string> &outputFileNames)
+{
+	outputFileNames.clear();
+
+	for(const auto& directoryEntry : fs::directory_iterator(folderPath))
+	{
+		if(directoryEntry.is_regular_file())
+		{
+			std::string extensionOfFile = directoryEntry.path().extension().string();
+
+			if(std::find(extensions.begin(),extensions.end(),extensionOfFile) != extensions.end())
+			{
+				//we found a good file, so we save it
+				outputFileNames.push_back(directoryEntry.path().filename().string());
+			}
+		}
+	}
+}

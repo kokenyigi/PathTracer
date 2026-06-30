@@ -89,6 +89,7 @@ static std::string IntegerToString(int integer);
 //Return -1 if the string is invalid
 static int StringToInteger(const std::string& string);
 
-
-
+void GetFileNamesWithSpecificExtension(const std::string& folderPath,
+	const std::vector<std::string>& extensions,
+	std::vector<std::string>& outputFileNames);
 #endif

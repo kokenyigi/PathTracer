@@ -104,9 +104,11 @@ void GUI::MouseClick(int button, int action)
 
 	if(!m_guiContext.isMouseDisabled)
 	{
+		
 		for (int i = 0;i < controls.size();++i)
 		{
 			controls[i]->Click(button,action);
+			std::cout<<"Calling click " << i<< ".th time\n";
 		}
 	}
 	

@@ -21,6 +21,11 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	std::cout<<"Initialization of Gui\n";
 	m_GUI.Init(windowWidth,windowHeight);
+
+	containerApplication.SetMargin(MARGIN_TOP,0.0);
+	containerApplication.SetMargin(MARGIN_RIGHT,0.0);
+	containerApplication.SetMargin(MARGIN_LEFT,0.0);
+	containerApplication.SetMargin(MARGIN_BOTTOM,0.0);
     
 	containerLeft.SetMargin(MARGIN_TOP,50.0f,ValueType::FIXED);
 	containerLeft.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::FIXED);
@@ -28,7 +33,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerLeft.SetWidth(250.0f,ValueType::FIXED);
 	containerLeft.SetBGColor(0.2,0.2,0.2);
 
-	m_GUI.AddControl(&containerLeft);
+	containerApplication.AddControl(&containerLeft);
 
 	containerRight.SetMargin(MARGIN_TOP,50.0f,ValueType::FIXED);
 	containerRight.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::FIXED);
@@ -340,7 +345,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	containerRight.AddControl(&containerObjectData);
 
-	m_GUI.AddControl(&containerRight);
+	containerApplication.AddControl(&containerRight);
 
 	
 
@@ -362,12 +367,23 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	meshPanel.SetScrollBarBaseColor(0.4,0.4,0.4);
 	meshPanel.SetScrollBarHoveredColor(0.6,0.6,0.6);
 	meshPanel.SetScrollBarClickedColor(0,1,0);
+
+	buttonLoadMesh.SetBGColor(0.6,0.6,0.6);
+	buttonLoadMesh.SetHoverColor(0.7,0.7,0.7);
+	buttonLoadMesh.SetClickColor(1,1,1);
+	buttonLoadMesh.SetText("LOAD");
+	buttonLoadMesh.SetTextColor(0,0,0);
+	buttonLoadMesh.SetCallBackContext(this);
+	buttonLoadMesh.SetCallback(LoadMeshButtonCallback);
 	
+	meshPanel.AddControl(&buttonLoadMesh);
+
 	Button* tempButton = new Button();
 	tempButton->SetText("Test Mesh");
 	meshPanel.AddControl(tempButton);
 	
-	m_GUI.AddControl(&meshPanel);
+	
+	containerApplication.AddControl(&meshPanel);
 
 	
 	texturePanel.SetMargin(MARGIN_BOTTOM,0.0f,ValueType::FIXED);
@@ -393,7 +409,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	tempTexture->SetText("Test Texture");
 	texturePanel.AddControl(tempTexture);
 	
-	m_GUI.AddControl(&texturePanel);
+	containerApplication.AddControl(&texturePanel);
 
 	texturePanel.SetInactive();
 
@@ -421,7 +437,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	tempMaterial->SetText("Test Material");
 	materialPanel.AddControl(tempMaterial);
 	
-	m_GUI.AddControl(&materialPanel);
+	containerApplication.AddControl(&materialPanel);
 
 	materialPanel.SetInactive();
 
@@ -450,7 +466,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	tempModel->SetText("Test Model");
 	modelPanel.AddControl(tempModel);
 	
-	m_GUI.AddControl(&modelPanel);
+	containerApplication.AddControl(&modelPanel);
 
 	modelPanel.SetInactive();
 
@@ -478,7 +494,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	tempObject->SetText("Test object");
 	objectPanel.AddControl(tempObject);
 	
-	m_GUI.AddControl(&objectPanel);
+	containerApplication.AddControl(&objectPanel);
 
 	objectPanel.SetInactive();
 
@@ -505,7 +521,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	containerCanvas.AddControl(&sceneCanvas);
 
-	m_GUI.AddControl(&containerCanvas);
+	containerApplication.AddControl(&containerCanvas);
 
 
 	
@@ -517,7 +533,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerMainButtons.SetHeight(60.0f,ValueType::FIXED);
 	containerMainButtons.SetBGColor(0,0,0);
 
-	m_GUI.AddControl(&containerMainButtons);
+	containerApplication.AddControl(&containerMainButtons);
 
 	meshButton.SetMargin(MARGIN_BOTTOM,0.0f);
 	meshButton.SetMargin(MARGIN_TOP,0.0f);
@@ -613,7 +629,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerFileMenu.SetWidth(250.0f);
 	containerFileMenu.SetBGColor(0.15,0.15,0.15 );
     
-	m_GUI.AddControl(&containerFileMenu);
+	containerApplication.AddControl(&containerFileMenu);
 
 
 
@@ -623,7 +639,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerExecutionStats.SetHeight(50.0f);
 	containerExecutionStats.SetBGColor(0.1f,0.1f,0.1f);
 
-	m_GUI.AddControl(&containerExecutionStats);
+	containerApplication.AddControl(&containerExecutionStats);
 
 
 	containerExtreSettings.SetMargin(MARGIN_RIGHT,0.0f);
@@ -632,7 +648,74 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerExtreSettings.SetWidth(500.0f);
 	containerExtreSettings.SetBGColor(0.15,0.15,0.15);
     
-	m_GUI.AddControl(&containerExtreSettings);
+	containerApplication.AddControl(&containerExtreSettings);
+
+	m_GUI.AddControl(&containerApplication);
+
+
+
+	containerFileSelection.SetMargin(MARGIN_TOP,0.0f);
+	containerFileSelection.SetMargin(MARGIN_BOTTOM,0.0f);
+	containerFileSelection.SetMargin(MARGIN_LEFT,0.0f);
+	containerFileSelection.SetMargin(MARGIN_RIGHT,0.0f);
+	containerFileSelection.SetBGColor(0.1,0.1,0.1);
+
+	panelFileSelection.SetMargin(MARGIN_TOP,100.0f);
+	panelFileSelection.SetWidth(700.0f);
+	panelFileSelection.SetMargin(MARGIN_BOTTOM,300.0f);
+	panelFileSelection.SetChildrenWidth(1.0f,ValueType::RELATIVE);
+	panelFileSelection.SetChildrenHeight(70.0f);
+	panelFileSelection.SetBGColor(0.15,0.15,0.15);
+	panelFileSelection.SetLayoutType(LAYOUT_VERTICAL);
+	panelFileSelection.SetScrollbarSize(30.0f);
+	panelFileSelection.SetScrollBarBaseBGColor(0.2,0.2,0.2);
+	panelFileSelection.SetScrollBarBaseColor(0.3,0.3,0.3);
+	panelFileSelection.SetScrollBarHoveredColor(0.35,0.35,0.35);
+	panelFileSelection.SetScrollBarClickedColor(0.4,0.4,0.4);
+
+	containerFileSelection.AddControl(&panelFileSelection);
+
+	fileSelectionButtonsGroup.SetCallback(FileSelectionMenuItemCallback);
+
+	containerLoadCancelButtons.SetMargin(MARGIN_BOTTOM,125.0f);
+	containerLoadCancelButtons.SetHeight(50.0f);
+	containerLoadCancelButtons.SetWidth(600.0f);
+	containerLoadCancelButtons.SetBGColor(0.1,0.1,0.1);
+
+	containerFileSelection.AddControl(&containerLoadCancelButtons);
+
+	buttonLoadFile.SetMargin(MARGIN_BOTTOM,0.0f);
+	buttonLoadFile.SetMargin(MARGIN_TOP,0.0f);
+	buttonLoadFile.SetMargin(MARGIN_LEFT,0.0f);
+	buttonLoadFile.SetWidth(150.0f);
+	buttonLoadFile.SetBGColor(0.2,0.2,0.2);
+	buttonLoadFile.SetHoverColor(0.0,0.8,0.0);
+	buttonLoadFile.SetClickColor(0.2,0.2,0.22);
+	buttonLoadFile.SetText("Load");
+	buttonLoadFile.SetTextColor(0,0,0);
+	buttonLoadFile.SetCallBackContext(this),
+	buttonLoadFile.SetCallback(FileSelectionMenuLoadButtonCallback);
+
+	containerLoadCancelButtons.AddControl(&buttonLoadFile);
+
+	buttonCancel.SetMargin(MARGIN_BOTTOM,0.0f);
+	buttonCancel.SetMargin(MARGIN_TOP,0.0f);
+	buttonCancel.SetMargin(MARGIN_RIGHT,0.0f);
+	buttonCancel.SetWidth(150.0f);
+	buttonCancel.SetBGColor(0.2,0.2,0.2);
+	buttonCancel.SetHoverColor(0.8,0.0,0.0);
+	buttonCancel.SetClickColor(0.2,0.2,0.2);
+	buttonCancel.SetText("Cancel");
+	buttonCancel.SetTextColor(0,0,0);
+	buttonCancel.SetCallBackContext(this),
+	buttonCancel.SetCallback(FileSelectionMenuCancelButtonCallback);
+
+	containerLoadCancelButtons.AddControl(&buttonCancel);
+
+	m_GUI.AddControl(&containerFileSelection);
+
+	containerFileSelection.SetInactive();
+
 
 	//camera.Init(glm::vec3(0, 2, 3), glm::vec3(0,0,0), glm::vec3(0, 1, 0),windowWidth,windowHeight);
 
@@ -927,6 +1010,31 @@ void App::Render()
 	
 }
 
+void App::RepopulateFileSelectionPanel()
+{
+	std::vector<Control*>& children = panelFileSelection.GetChildren();
+	for(int i=0;i<children.size();++i)
+	{
+		delete children[i];
+	}
+
+	children.clear();
+
+	for(int i=0;i<_loadedDirectorySpecificFilenames.size();++i)
+	{
+		RadioButton* newFilenameButton = new RadioButton();
+		newFilenameButton->SetCallBackContext(this);
+		newFilenameButton->SetBGColor(0.2,0.2,0.2);
+		newFilenameButton->SetHoverColor(0.3,0.3,0.3);
+		newFilenameButton->SetClickColor(0.4,0.4,0.4);
+		newFilenameButton->SetText(_loadedDirectorySpecificFilenames[i]);
+		newFilenameButton->SetTextColor(1,1,1);
+		fileSelectionButtonsGroup.AddToGroup(newFilenameButton);
+
+		panelFileSelection.AddControl(newFilenameButton);
+	}
+}
+
 void App::WindowSizeCallback(GLFWwindow* window, int width, int height)
 {
 	App* app = (App*)glfwGetWindowUserPointer(window);
@@ -1055,14 +1163,18 @@ void App::MouseButtonCallback(GLFWwindow* window, int button, int action, int mo
 		double x; //= //(int)(app->last_mouse_x + app->m_windowWidth);
 		double y;// = (int)(app->last_mouse_y + app->m_windowHeight);
 		glfwGetCursorPos(window, &x, &y);
+
+		std::cout<<"Left mouse button clicked\n";
 		app->m_GUI.MouseClick(0,0);
+		
 		//std::cout << "Picking at: (x :"<< x<< " y: " << y<< ")\n";
 		//app->virtualWorld.Pick((int)x, (int)y);
 	}
 	else if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
 	{
-		app->m_GUI.MouseClick(0,1);
 		std::cout<<"Left mouse button released!\n";
+		app->m_GUI.MouseClick(0,1);
+		
 	}
 }
 
@@ -1171,3 +1283,58 @@ void App::CanvasMouseMoveCallback(void *context, float newX, float newY)
 
 	app->_scene.MouseMove(newX,newY);
 }
+
+
+void App::LoadMeshButtonCallback(void *context)
+{
+	App* app = (App*)context;
+
+	std::string meshFolderRelativePath = "assets/models/"; // For now its this
+	std::vector<std::string> acceptableExtensions = {".obj"};
+
+	GetFileNamesWithSpecificExtension(meshFolderRelativePath,acceptableExtensions,app->_loadedDirectorySpecificFilenames);
+
+	if(app->_loadedDirectorySpecificFilenames.size()==0) return;
+
+	//app->containerFileSelection.MouseMove();
+	
+
+	app->containerFileSelection.SetActive();
+	app->containerApplication.SetInactive();
+
+	app->buttonCancel.Click(0,1);
+	app->buttonCancel.MouseMove();
+	app->buttonLoadFile.Click(0,1);
+	app->buttonLoadFile.MouseMove();
+	
+
+	app->_viewState = AppViewState::VIEWSTATE_MESHLOAD;
+
+	app->RepopulateFileSelectionPanel();
+}
+
+void App::FileSelectionMenuCancelButtonCallback(void *context)
+{
+	App* app = (App*)context;
+	
+	
+
+	app->containerFileSelection.SetInactive();
+	app->containerApplication.SetActive();
+
+	app->buttonLoadMesh.Click(0,1);
+	app->buttonLoadMesh.MouseMove();
+
+	app->_viewState = AppViewState::VIEWSTATE_MAINMENU;
+}
+
+void App::FileSelectionMenuItemCallback(void *context, int index)
+{
+
+}
+
+void App::FileSelectionMenuLoadButtonCallback(void *context)
+{
+}
+
+

@@ -20,6 +20,15 @@
 
 #include "Scene.h"
 
+enum class AppViewState
+{
+	VIEWSTATE_MAINMENU,
+	VIEWSTATE_MESHLOAD,
+	VIEWSTATE_TEXTURELOAD,
+	VIEWSTATE_PERSISTENCELOAD,
+	VIEWSTATE_PERSISTENCESAVE
+};
+
 class App
 {
 private:
@@ -37,13 +46,15 @@ private:
 	float deltaTime = 0.0f;
 	float lastFrameTime = 0.0f;
 	float timeSinceStart = 0.0f;
-
-
 	
 	Scene _scene;
 
+	AppViewState _viewState = AppViewState::VIEWSTATE_MAINMENU;
+
 	//GUI Data
 	GUI m_GUI;
+
+	Container containerApplication;
 
 	Container containerRight;
 
@@ -93,7 +104,7 @@ private:
 	RadioButton modelButton;
 	RadioButton objectButton;
 
-	LayoutPanel meshPanel;
+	LayoutPanel meshPanel;Button buttonLoadMesh;
 	LayoutPanel texturePanel;
 	LayoutPanel materialPanel;
 	LayoutPanel modelPanel;
@@ -106,9 +117,15 @@ private:
 	
 	
 
-	
+	//File selection related variables	
+	Container containerFileSelection;
+	LayoutPanel panelFileSelection;
+	RadioButtonGroup fileSelectionButtonsGroup;
 
-	
+	Container containerLoadCancelButtons;
+	Button buttonLoadFile; Button buttonCancel;
+
+	std::vector<std::string> _loadedDirectorySpecificFilenames;
 
 public:
 	App(int windowWidth = 1000, int windowHeight = 800, const char* windowTitle = "_debugTitle");
@@ -125,20 +142,22 @@ public:
 	static void WindowIconifiedCallback(GLFWwindow* window, int isIconified);
 	*/
 
-	/*
-	template<int index, bool isIncrement>
-	static void GuiIncrementDecrementCallback(void* context);
-
-	static void GuiRollEnquedDiceCallback(void* context);
-	*/
+	
 
 	static void MainButtonsNeonGUICallback(void * context, int index);
+	static void LoadMeshButtonCallback(void* context);
+
+	static void FileSelectionMenuItemCallback(void * context, int index);
+	static void FileSelectionMenuLoadButtonCallback(void* context);
+	static void FileSelectionMenuCancelButtonCallback(void* context);
+
+
 	static void CanvasResizeCallback(void * context, int newW, int newH);
 	static void CanvasRenderCallback(void* context);
 	static void CanvasUpdateCallback(void* context, float deltaTime);
 	static void CanvasKeyCallback(void* context, int key, int action, int mods);
 	static void CanvasMouseMoveCallback(void * context , float newX, float newY);
-	//static void TestFloatInputNeonGuiCallback(void* context, float f) {std::cout<<"The recieved float: "<<f<<"\n";}
+	
 
 private:
 	void GlfwInit(int windowWidth, int windowHeight, const char* windowTitle);
@@ -146,6 +165,8 @@ private:
 	void ImGuiInit();
 	void Update();
 	void Render();
+
+	void RepopulateFileSelectionPanel();
 };
 
 
