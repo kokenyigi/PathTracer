@@ -24,7 +24,7 @@ void Button::ButtonClick(int button, int action)
         
         if(button == 0 && action == 0)
         {
-            std::cout<<"Button click called\n";
+            //std::cout<<"Button click called\n";
             _callBack(_callBackContext);
             
         }

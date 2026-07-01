@@ -50,6 +50,7 @@ private:
 	Scene _scene;
 
 	AppViewState _viewState = AppViewState::VIEWSTATE_MAINMENU;
+	
 
 	//GUI Data
 	GUI m_GUI;
@@ -126,6 +127,7 @@ private:
 	Button buttonLoadFile; Button buttonCancel;
 
 	std::vector<std::string> _loadedDirectorySpecificFilenames;
+	int _selectedFileNameIndex = -1;
 
 public:
 	App(int windowWidth = 1000, int windowHeight = 800, const char* windowTitle = "_debugTitle");
@@ -167,6 +169,13 @@ private:
 	void Render();
 
 	void RepopulateFileSelectionPanel();
+
+	void SwapToFileSelectionMenu();
+	void SwapBackToMainMenu();
+
+	void TryLoadMeshData();
+	void TryLoadTextureData();
+	//void TryLoadGamePersistenceData--orsmth
 };
 
 

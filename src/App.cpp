@@ -1020,6 +1020,8 @@ void App::RepopulateFileSelectionPanel()
 
 	children.clear();
 
+	fileSelectionButtonsGroup._currentToggled = nullptr;
+
 	for(int i=0;i<_loadedDirectorySpecificFilenames.size();++i)
 	{
 		RadioButton* newFilenameButton = new RadioButton();
@@ -1029,10 +1031,48 @@ void App::RepopulateFileSelectionPanel()
 		newFilenameButton->SetClickColor(0.4,0.4,0.4);
 		newFilenameButton->SetText(_loadedDirectorySpecificFilenames[i]);
 		newFilenameButton->SetTextColor(1,1,1);
+		newFilenameButton->SetIndex(i);
 		fileSelectionButtonsGroup.AddToGroup(newFilenameButton);
 
 		panelFileSelection.AddControl(newFilenameButton);
 	}
+
+	_selectedFileNameIndex = -1;
+}
+
+void App::SwapToFileSelectionMenu()
+{
+	containerFileSelection.SetActive();
+	containerApplication.SetInactive();
+
+	buttonCancel.Click(0,1);
+	buttonCancel.MouseMove();
+	buttonLoadFile.Click(0,1);
+	buttonLoadFile.MouseMove();
+}
+
+void App::SwapBackToMainMenu()
+{
+	containerFileSelection.SetInactive();
+	containerApplication.SetActive();
+
+	if(_viewState == AppViewState::VIEWSTATE_MESHLOAD)
+	{
+		buttonLoadMesh.Click(0,1);
+		buttonLoadMesh.MouseMove();
+	}
+	else if(_viewState == AppViewState::VIEWSTATE_TEXTURELOAD)
+	{
+
+	}
+	//... TODO
+}
+
+void App::TryLoadMeshData()
+{
+	std::string meshFilePathRelative = "/assets/models/" + _loadedDirectorySpecificFilenames[_selectedFileNameIndex];
+
+	std::cout<<meshFilePathRelative << "\n";
 }
 
 void App::WindowSizeCallback(GLFWwindow* window, int width, int height)
@@ -1164,7 +1204,7 @@ void App::MouseButtonCallback(GLFWwindow* window, int button, int action, int mo
 		double y;// = (int)(app->last_mouse_y + app->m_windowHeight);
 		glfwGetCursorPos(window, &x, &y);
 
-		std::cout<<"Left mouse button clicked\n";
+		//std::cout<<"Left mouse button clicked\n";
 		app->m_GUI.MouseClick(0,0);
 		
 		//std::cout << "Picking at: (x :"<< x<< " y: " << y<< ")\n";
@@ -1172,7 +1212,7 @@ void App::MouseButtonCallback(GLFWwindow* window, int button, int action, int mo
 	}
 	else if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
 	{
-		std::cout<<"Left mouse button released!\n";
+		//std::cout<<"Left mouse button released!\n";
 		app->m_GUI.MouseClick(0,1);
 		
 	}
@@ -1295,18 +1335,8 @@ void App::LoadMeshButtonCallback(void *context)
 	GetFileNamesWithSpecificExtension(meshFolderRelativePath,acceptableExtensions,app->_loadedDirectorySpecificFilenames);
 
 	if(app->_loadedDirectorySpecificFilenames.size()==0) return;
-
-	//app->containerFileSelection.MouseMove();
 	
-
-	app->containerFileSelection.SetActive();
-	app->containerApplication.SetInactive();
-
-	app->buttonCancel.Click(0,1);
-	app->buttonCancel.MouseMove();
-	app->buttonLoadFile.Click(0,1);
-	app->buttonLoadFile.MouseMove();
-	
+	app->SwapToFileSelectionMenu();
 
 	app->_viewState = AppViewState::VIEWSTATE_MESHLOAD;
 
@@ -1317,24 +1347,35 @@ void App::FileSelectionMenuCancelButtonCallback(void *context)
 {
 	App* app = (App*)context;
 	
-	
-
-	app->containerFileSelection.SetInactive();
-	app->containerApplication.SetActive();
-
-	app->buttonLoadMesh.Click(0,1);
-	app->buttonLoadMesh.MouseMove();
+	app->SwapBackToMainMenu();
 
 	app->_viewState = AppViewState::VIEWSTATE_MAINMENU;
 }
 
 void App::FileSelectionMenuItemCallback(void *context, int index)
 {
-
+	App* app = (App*)context;
+	app->_selectedFileNameIndex = index;
 }
 
 void App::FileSelectionMenuLoadButtonCallback(void *context)
 {
+	App* app = (App*)context;
+	if(app->_selectedFileNameIndex < 0 || app->_selectedFileNameIndex >= app->_loadedDirectorySpecificFilenames.size()) return;
+
+	if(app->_viewState == AppViewState::VIEWSTATE_MESHLOAD)
+	{
+		app->TryLoadMeshData();
+
+		
+	}
+	else if(app->_viewState == AppViewState::VIEWSTATE_TEXTURELOAD)
+	{
+		//...
+	}
+
+	app->SwapBackToMainMenu();
+	app->_viewState = AppViewState::VIEWSTATE_MAINMENU;
 }
 
 
