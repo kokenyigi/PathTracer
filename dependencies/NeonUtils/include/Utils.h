@@ -92,4 +92,13 @@ static int StringToInteger(const std::string& string);
 void GetFileNamesWithSpecificExtension(const std::string& folderPath,
 	const std::vector<std::string>& extensions,
 	std::vector<std::string>& outputFileNames);
+
+
+
+bool TryLoadObjFile(const std::string& filePathRelative,
+        std::vector<glm::vec3>& newMeshVertexPositions,
+		std::vector<glm::vec3>& newMeshVertexNormals,
+		std::vector<glm::vec2>& newMeshTextureCoords,
+        std::vector<glm::vec<3,int>>& newMeshTriangleIndices);
+
 #endif
