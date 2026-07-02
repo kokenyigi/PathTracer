@@ -235,7 +235,7 @@ private:
         std::vector<TriangleIndicesData>& newMeshTriangleIndices,
         std::vector<VertexAttributeData>& newMeshVertexAttributes,
         std::vector<BvhNodeData>& newMeshBvhNodes,
-        MeshInfo* meshInfo);
+        MeshInfo* meshInfo = nullptr);
 
     /**
      * To the function above here lie all the helper, mini functions, mainly related to splitting the Bvh node into smaller ones.
@@ -246,8 +246,17 @@ private:
     bool GetSurfaceAreaHeuristicSplitDatas(const BvhNodeData& node,const std::vector<glm::vec3>& vertexPositions,
         const std::vector<glm::ivec3>& triangleVertexIndices,
         int& splitAxisInd, float& splitValueAlongAxis);
+    
+    /**
+     * This is a recursive procedure which does two main things:
+     *  - first it creates new BVH nodes based on whether or not it is worth it to split a currently existing one
+     *  - secondly, it rearranges the triangles inside the vector passed as argumat, 
+     *    because bvhnodes are structures which act on INTERVALS, and yeah thats it.
+     */
+    void SplitBvhNodeRecursive(int bvhNodeIndex, int recursionDepth,const std::vector<glm::vec3>& vertexPositions, 
+        std::vector<BvhNodeData>& bvhNodeStrorage,std::vector<glm::ivec3>& triangleVertexIndices,MeshInfo* meshInfo = nullptr);
 
-    void SplitBvhNode();// [TODO]
+    
 };
 
 

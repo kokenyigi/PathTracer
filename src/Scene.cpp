@@ -11,8 +11,6 @@
 
 #ifdef _WIN32
 
-    #define WIN32_LEAN_AND_MEAN
-    #define NOMINMAX
     #include <windows.h>
 
 #endif
@@ -377,70 +375,6 @@ void FeedPosToAABB4(AABB4& box, glm::vec3& pos)
 	}
 }
 
-
-
-bool Scene::TryLoadPathTracedMesh(const std::string &filePathRelative, 
-    std::vector<VertexPositionData> &newMeshVertexPositions,
-    std::vector<TriangleIndicesData> &newMeshTriangleIndices, 
-    std::vector<VertexAttributeData> &newMeshVertexAttributes,
-    std::vector<BvhNodeData>& newMeshBvhNodes,
-    MeshInfo *meshInfo)
-{
-    //Clear all containers sent by caller
-    newMeshVertexPositions.clear();
-    newMeshTriangleIndices.clear();
-    newMeshVertexAttributes.clear();
-    newMeshBvhNodes.clear();
-
-    std::vector<glm::vec3> newVertexPositions;
-    std::vector<glm::vec3> newVertexNormals;
-    std::vector<glm::vec2> newVertexTexCoords;
-    std::vector<glm::vec<3,int>> newTriangleVertexIndices;
-
-    bool wasFileLoadingSuccessful = TryLoadObjFile(filePathRelative,newVertexPositions,newVertexNormals,
-        newVertexTexCoords,newTriangleVertexIndices);
-
-    if(!wasFileLoadingSuccessful) return false;
-    
-    //Lets copy the recieved data into our new buffers
-    newMeshVertexPositions.resize(newVertexPositions.size());
-    newMeshVertexAttributes.resize(newVertexPositions.size());
-    for(int i=0;i<newMeshVertexPositions.size();++i)
-    {
-        newMeshVertexPositions[i].x = newVertexPositions[i].x;
-        newMeshVertexPositions[i].y = newVertexPositions[i].y;
-        newMeshVertexPositions[i].z = newVertexPositions[i].z;
-
-        newMeshVertexAttributes[i].normal.x = newVertexNormals[i].x;
-        newMeshVertexAttributes[i].normal.y = newVertexNormals[i].y;
-        newMeshVertexAttributes[i].normal.z = newVertexNormals[i].z;
-        newMeshVertexAttributes[i].textureCoords.x = newVertexTexCoords[i].x;
-        newMeshVertexAttributes[i].textureCoords.y = newVertexTexCoords[i].y;
-    }
-
-    newMeshTriangleIndices.resize(newTriangleVertexIndices.size());
-    for(int i=0;i<newMeshTriangleIndices.size();++i)
-    {
-        newMeshTriangleIndices[i].x = newTriangleVertexIndices[i].x;
-        newMeshTriangleIndices[i].y = newTriangleVertexIndices[i].y;
-        newMeshTriangleIndices[i].z = newTriangleVertexIndices[i].z;
-    }
-
-    //Now lets recursively create a BVH structure for our mesh.
-    int outOfBoundsEndIndex =  newTriangleVertexIndices.size();
-    // Now lets prepare our root bvh node, which we will later on split recursively
-    //This node contains the full range of the mesh's indices
-    BvhNodeData meshRootNode;
-    meshRootNode.startIndex = 0;
-    meshRootNode.endIndex = outOfBoundsEndIndex;
-    meshRootNode.minChild = -1;
-    meshRootNode.maxChild = -1;
-    meshRootNode.box = CalculateAABB4BasedOnTriangles(0,outOfBoundsEndIndex,newVertexPositions,newTriangleVertexIndices);
-
-
-}
-
-
 bool Scene::GetSurfaceAreaHeuristicSplitDatas(const BvhNodeData &bvhNode, 
     const std::vector<glm::vec3> &vertexPositions, 
     const std::vector<glm::ivec3> &triangleVertexIndices, 
@@ -552,6 +486,187 @@ bool Scene::GetSurfaceAreaHeuristicSplitDatas(const BvhNodeData &bvhNode,
 
     return false;
 }
+
+
+void Scene::SplitBvhNodeRecursive(int bvhNodeIndex, int recursionDepth, const std::vector<glm::vec3> &vertexPositions, 
+    std::vector<BvhNodeData> &bvhNodeStrorage, std::vector<glm::ivec3> &triangleVertexIndices, MeshInfo* meshInfo)
+{
+    //Lets quickly add some data to the meshinfo struct
+    if(meshInfo != nullptr && meshInfo->bvhDepth < recursionDepth)
+    {
+        meshInfo->bvhDepth = recursionDepth;
+    }
+
+    // The current node data we want to either split or keep as a leaf Node.
+    BvhNodeData currentNode = bvhNodeStrorage[bvhNodeIndex];
+
+    int currentNodeTriangleCount = currentNode.endIndex - currentNode.startIndex;
+    int minSideTriangleCount = 0;
+    int maxSideTriangleCount = 0;
+
+    int bestAxisToSplitAt = -1;
+    float bestSplitValueAlongAxis = FLT_MAX;
+
+    bool shouldNodeBeSplit = GetSurfaceAreaHeuristicSplitDatas(currentNode,vertexPositions,triangleVertexIndices,
+        bestAxisToSplitAt,bestSplitValueAlongAxis);
+    
+    //If we dont have to split the current node, then we have no more work to do, therefore we return.
+    if(!shouldNodeBeSplit) return;
+    
+    //We now sort the triangles linearly, based on which side of the splitvalue border their mid falls into.
+    //The way we will do this, is with a front and back indices, if we find a wrong one on the 
+    int frontIndex = currentNode.startIndex;
+    int backIndex = currentNode.endIndex -1;
+
+    while(frontIndex <= backIndex)
+    {
+        //we always analyze the frontindex triangle.
+        glm::ivec3 currentTriangleIndices = triangleVertexIndices[frontIndex];
+
+        glm::vec3 posA = vertexPositions[currentTriangleIndices.x];
+        glm::vec3 posB = vertexPositions[currentTriangleIndices.y];
+        glm::vec3 posC = vertexPositions[currentTriangleIndices.z];
+
+        glm::vec3 currentTriangleMiddle = (posA + posB + posC) / 3.0f;
+        float* currentTriangleMiddlePerAxis = &currentTriangleMiddle.x;
+        float compareValueAlongAxis = currentTriangleMiddlePerAxis[bestAxisToSplitAt];
+
+        if(compareValueAlongAxis <= bestSplitValueAlongAxis)
+        {
+            // Here we have found a triangle on the min side, where it should belong at.
+            // Since it is at the right place we just march to the next triangle forward
+            ++frontIndex;
+            ++minSideTriangleCount;
+        }
+        else
+        {
+            //We found a triangle that should belong to the max side.
+            //Therefore we slap it to the backindex, at the back of the interval, because it will 100% be good there.
+            glm::ivec3 triangleIndicesAtBeckIndex = triangleVertexIndices[backIndex];
+            triangleVertexIndices[backIndex] = currentTriangleIndices;
+            triangleVertexIndices[frontIndex] = triangleIndicesAtBeckIndex;
+
+            --backIndex;
+        }
+    }
+
+    maxSideTriangleCount = currentNodeTriangleCount - minSideTriangleCount;
+
+    // One final (kind of unnecessary) check
+    if(maxSideTriangleCount > 0 && minSideTriangleCount > 0)
+    {
+        //Here, we create the two new children recursively
+        BvhNodeData minChildBvhNode;
+        minChildBvhNode.minChild = -1;
+        minChildBvhNode.maxChild = -1;
+        minChildBvhNode.startIndex = currentNode.startIndex;
+        minChildBvhNode.endIndex = currentNode.startIndex + minSideTriangleCount;
+        minChildBvhNode.box = CalculateAABB4BasedOnTriangles(currentNode.startIndex,currentNode.startIndex + minSideTriangleCount,
+            vertexPositions,triangleVertexIndices);
+
+        // Let's push the newly created minSideChild onto the storage, and set its index as the original node's minCHild
+        int minChildIndex = bvhNodeStrorage.size();
+        bvhNodeStrorage.push_back(minChildBvhNode);
+        bvhNodeStrorage[bvhNodeIndex].minChild = minChildIndex;
+
+        // We created a new node, lets check if its worth splitting that as well -> recursion
+        SplitBvhNodeRecursive(minChildIndex,recursionDepth + 1,vertexPositions,bvhNodeStrorage,triangleVertexIndices);
+
+            
+        BvhNodeData maxChildBvhNode;
+        maxChildBvhNode.minChild = -1;
+        maxChildBvhNode.maxChild = -1;
+        maxChildBvhNode.startIndex = currentNode.startIndex + minSideTriangleCount + 1;
+        maxChildBvhNode.endIndex = currentNode.endIndex;
+        maxChildBvhNode.box = CalculateAABB4BasedOnTriangles(currentNode.startIndex + minSideTriangleCount + 1,currentNode.endIndex,
+            vertexPositions,triangleVertexIndices);
+
+        int maxChildIndex = bvhNodeStrorage.size();
+        bvhNodeStrorage.push_back(maxChildBvhNode);
+        bvhNodeStrorage[bvhNodeIndex].maxChild = maxChildIndex;
+
+        SplitBvhNodeRecursive(maxChildIndex,recursionDepth + 1,vertexPositions,bvhNodeStrorage,triangleVertexIndices);
+    }
+}
+
+
+bool Scene::TryLoadPathTracedMesh(const std::string &filePathRelative, 
+    std::vector<VertexPositionData> &newMeshVertexPositions,
+    std::vector<TriangleIndicesData> &newMeshTriangleIndices, 
+    std::vector<VertexAttributeData> &newMeshVertexAttributes,
+    std::vector<BvhNodeData>& newMeshBvhNodes,
+    MeshInfo *meshInfo)
+{
+    //Clear all containers sent by caller
+    newMeshVertexPositions.clear();
+    newMeshTriangleIndices.clear();
+    newMeshVertexAttributes.clear();
+    newMeshBvhNodes.clear();
+
+    std::vector<glm::vec3> newVertexPositions;
+    std::vector<glm::vec3> newVertexNormals;
+    std::vector<glm::vec2> newVertexTexCoords;
+    std::vector<glm::vec<3,int>> newTriangleVertexIndices;
+
+    bool wasFileLoadingSuccessful = TryLoadObjFile(filePathRelative,newVertexPositions,newVertexNormals,
+        newVertexTexCoords,newTriangleVertexIndices);
+
+    if(!wasFileLoadingSuccessful) return false;
+    
+    //Lets copy the recieved data into our new buffers
+    newMeshVertexPositions.resize(newVertexPositions.size());
+    newMeshVertexAttributes.resize(newVertexPositions.size());
+    for(int i=0;i<newMeshVertexPositions.size();++i)
+    {
+        newMeshVertexPositions[i].x = newVertexPositions[i].x;
+        newMeshVertexPositions[i].y = newVertexPositions[i].y;
+        newMeshVertexPositions[i].z = newVertexPositions[i].z;
+
+        newMeshVertexAttributes[i].normal.x = newVertexNormals[i].x;
+        newMeshVertexAttributes[i].normal.y = newVertexNormals[i].y;
+        newMeshVertexAttributes[i].normal.z = newVertexNormals[i].z;
+        newMeshVertexAttributes[i].textureCoords.x = newVertexTexCoords[i].x;
+        newMeshVertexAttributes[i].textureCoords.y = newVertexTexCoords[i].y;
+    }
+
+    //Before we also finalize our triangleIndices vector, we have to create the bvhNode vector structure,
+    // Using the splitNode recursive method, which also rearranges the triangles indices, therefore we have to do this first.
+
+    //Now lets recursively create a BVH structure for our mesh.
+    // Now lets prepare our root bvh node, which we will later on split recursively
+    //This node contains the full range of the mesh's indices
+    int outOfBoundsEndIndex =  newTriangleVertexIndices.size();
+    BvhNodeData meshRootNode;
+    meshRootNode.startIndex = 0;
+    meshRootNode.endIndex = outOfBoundsEndIndex;
+    meshRootNode.minChild = -1;
+    meshRootNode.maxChild = -1;
+    meshRootNode.box = CalculateAABB4BasedOnTriangles(0,outOfBoundsEndIndex,newVertexPositions,newTriangleVertexIndices);
+
+    // We push the root to the bvhNodeStorage, then recursively try to split it.
+    newMeshBvhNodes.push_back(meshRootNode);
+    SplitBvhNodeRecursive(0,0,newVertexPositions,newMeshBvhNodes,newTriangleVertexIndices,meshInfo);
+
+    //Now that our triangle indices are finalized, we can copy them into the proper arrays.
+    newMeshTriangleIndices.resize(newTriangleVertexIndices.size());
+    for(int i=0;i<newMeshTriangleIndices.size();++i)
+    {
+        newMeshTriangleIndices[i].x = newTriangleVertexIndices[i].x;
+        newMeshTriangleIndices[i].y = newTriangleVertexIndices[i].y;
+        newMeshTriangleIndices[i].z = newTriangleVertexIndices[i].z;
+    }
+
+    //lets add some good ol' data to the meshinfo struct
+    if(meshInfo != nullptr)
+    {
+        meshInfo->bvhNodeCount = newMeshBvhNodes.size();
+        meshInfo->triangleCount = newMeshTriangleIndices.size();
+        meshInfo->vertexCount = newMeshVertexPositions.size();
+    }
+
+    return true;
+}
+
 
 bool Scene::TryLoadMesh(const std::string &filePathRelative, MeshInfo * meshInfo)
 {
