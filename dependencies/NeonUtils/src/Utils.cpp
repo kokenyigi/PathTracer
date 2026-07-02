@@ -500,3 +500,50 @@ bool TryLoadObjFile(const std::string &filePathRelative,
 
     return true;
 }
+
+
+AABB4 CalculateAABB4BasedOnTriangles(int startIndex, int endIndex,
+	const std::vector<glm::vec3>& positions, 
+	const std::vector<glm::vec<3,int>>& triangleIndices)
+{
+	glm::vec4 boxMax = { -FLT_MAX,-FLT_MAX,-FLT_MAX,0.0f };
+	glm::vec4 boxMin = { FLT_MAX ,FLT_MAX ,FLT_MAX ,0.0f };
+
+	for (int i = startIndex;i < endIndex;++i)
+	{
+		glm::ivec3 indices = triangleIndices[i];
+		for(int j = 0;j < 3;++j)
+		{
+			glm::vec3 currentTriagVertPos = positions[(&indices.x)[j]]; //Ungabunga pointer
+
+			if (currentTriagVertPos.x < boxMin.x)
+			{
+				boxMin.x = currentTriagVertPos.x;
+			}
+			if (currentTriagVertPos.y < boxMin.y)
+			{
+				boxMin.y = currentTriagVertPos.y;
+			}
+			if (currentTriagVertPos.z < boxMin.z)
+			{
+				boxMin.z = currentTriagVertPos.z;
+			}
+
+			if (currentTriagVertPos.x > boxMax.x)
+			{
+				boxMax.x = currentTriagVertPos.x;
+			}
+			if (currentTriagVertPos.y > boxMax.y)
+			{
+				boxMax.y = currentTriagVertPos.y;
+			}
+			if (currentTriagVertPos.z > boxMax.z)
+			{
+				boxMax.z = currentTriagVertPos.z;
+			}
+		}
+	}
+
+	
+	return {boxMin,boxMax};
+}

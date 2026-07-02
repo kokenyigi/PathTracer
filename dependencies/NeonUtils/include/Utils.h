@@ -29,6 +29,12 @@ struct AABB
 	glm::vec2 max;
 };
 
+struct AABB4
+{
+	glm::vec4 min;
+    glm::vec4 max;
+};
+
 enum class ValueType
 {
 	AUTO = 0,
@@ -100,5 +106,10 @@ bool TryLoadObjFile(const std::string& filePathRelative,
 		std::vector<glm::vec3>& newMeshVertexNormals,
 		std::vector<glm::vec2>& newMeshTextureCoords,
         std::vector<glm::vec<3,int>>& newMeshTriangleIndices);
+
+AABB4 CalculateAABB4BasedOnTriangles(int startIndex, int endIndex,
+	const std::vector<glm::vec3>& positions, 
+	const std::vector<glm::vec<3,int>>& triangleIndices);
+
 
 #endif
