@@ -91,6 +91,30 @@ struct VertexAttributeData
 typedef int MeshBvhRootNodeIndexData;
 
 /**
+ * This is the unit value that are stored inside the huge-huge RgbaDataBuffer, in a continuos array.
+ * These data intervals are then indexed by the later declared textureData.
+ */
+struct RgbaData
+{
+    float r;
+    float g;
+    float b;
+    float a;
+};
+
+/**
+ * This is the unit data structure which's primary goal is to index the array consisting of RGBA values.
+ * startindex: the first rgba value's index that the texture begins with, and then the size  of the texture can be calculated 
+ * with width * height
+ */
+struct TextureData
+{
+    int startIndex;
+    int width;
+    int height;
+};
+
+/**
  * This structure stores the necessary informations for a BVH node.
  * startindex == first triangle of the given box's triangle interval, endIndex == last
  */
@@ -113,6 +137,16 @@ struct MeshInfo
     int bvhNodeCount = -1;
     int bvhDepth = -1;
     int meshIndex = -1;
+};
+
+/**
+ * This structure is just used for communication between the scene and the outside.
+ */
+struct TextureInfo
+{
+    int width = -1;
+    int height = -1;
+    int textureIndex = -1;
 };
 
 
@@ -161,6 +195,12 @@ private:
 
     std::vector<MeshBvhRootNodeIndexData> _meshBvhRootIndexData;
     //no buffer, we only need this cpu side
+
+    std::vector<RgbaData> _rgbaDatas;
+    cl_mem _rgbaDatasBuffer;
+
+    std::vector<TextureData> _textureDatas;
+    cl_mem _textureDatasBuffer;
     
     
 
@@ -208,6 +248,12 @@ public:
      */
     bool TryLoadMesh(const std::string& filePathRelative, MeshInfo* meshInfo = nullptr);
 
+    /**
+     * This function can be called by outside, and it tries to load a .png, .jpg picture, into both
+     * CPU side and GPU side memory. If the given picture doesnt have alpha channel, then we give it some(preprocessing of texture)
+     * Otherwise loads similiarly as a mesh.
+     */
+    bool TryLoadTexture(const std::string& filePathRelative, TextureInfo* textureInfo = nullptr);
 
     void Delete();
 
@@ -217,11 +263,6 @@ private:
 
     void RasterizeRender();
     void PathTracedRender();
-
-
-
-
-
 
     /**
      * This helper function basically tries to load, and preprocess the necessary data for a pathtraced mesh
@@ -257,6 +298,14 @@ private:
     void SplitBvhNodeRecursive(int bvhNodeIndex, int recursionDepth,const std::vector<glm::vec3>& vertexPositions, 
         std::vector<BvhNodeData>& bvhNodeStrorage,std::vector<glm::ivec3>& triangleVertexIndices,MeshInfo* meshInfo = nullptr);
 
+
+
+    /**
+     * This function loads the necessary float bytestream from the .png, .jpg, .bmp formatted binary file.
+     * It returns whether or not the reading was succesful. it also constructs the rgbaDatas vector, and stuff
+     */
+    bool TryLoadPathTracedTexture(const std::string& filePathRelative,std::vector<RgbaData>& newRgbaDatas,
+        int& width, int& height,TextureInfo* textureInfo = nullptr);
     
 };
 

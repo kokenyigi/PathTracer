@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <stb_image.h>
+
 #include "Utils.h"
 
 #ifdef _WIN32
@@ -20,7 +22,6 @@ Scene::Scene()
 {    
     _camera.Init(glm::vec3(0,0,4.0f),glm::vec3(0,0,0),glm::vec3(0,1,0),_viewportWidth,_viewportHeight);
 }
-
 
 
 void Scene::InitCL()
@@ -793,5 +794,49 @@ bool Scene::TryLoadMesh(const std::string &filePathRelative, MeshInfo * meshInfo
     
 
     return true;
+}
+
+
+bool Scene::TryLoadPathTracedTexture(const std::string &filePathRelative, std::vector<RgbaData> &newRgbaDatas, 
+    int &width, int &height, TextureInfo *textureInfo)
+{
+    newRgbaDatas.clear();
+
+    //Lets use stb_image header/library to load the .png, .jpg, .bmp picture into a floatstream, having RGBA units
+    int loadedTextureWidth = -1;
+    int loadedTextureHeight = -1;
+    int channelsInPicture = -1;
+    float * pngByteStream = stbi_loadf(filePathRelative.c_str(),&loadedTextureWidth,&loadedTextureHeight,&channelsInPicture,4);
+
+    if(pngByteStream == nullptr) return false;
+
+    width = loadedTextureWidth;
+    height = loadedTextureHeight;
+
+    newRgbaDatas.resize(loadedTextureWidth * loadedTextureHeight);
+    for(int i=0; i<loadedTextureWidth * loadedTextureHeight; ++i)
+    {
+        newRgbaDatas[i].r = pngByteStream[4*i];
+        newRgbaDatas[i].g = pngByteStream[4*i + 1];
+        newRgbaDatas[i].b = pngByteStream[4*i + 2];
+        newRgbaDatas[i].a = pngByteStream[4*i + 3];
+    }
+
+    textureInfo->width = width;
+    textureInfo->height = height;
+
+    stbi_image_free(pngByteStream);
+
+    return true;
+}
+
+
+bool Scene::TryLoadTexture(const std::string &filePathRelative, TextureInfo *textureInfo)
+{
+    std::vector<RgbaData> newRgbaDatas;
+
+
+
+
 }
 
