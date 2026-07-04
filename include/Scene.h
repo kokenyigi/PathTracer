@@ -108,10 +108,11 @@ struct BvhNodeData
  */
 struct MeshInfo
 {
-    int vertexCount = 0;
-    int triangleCount = 0;
-    int bvhNodeCount = 0;
-    int bvhDepth = 0;
+    int vertexCount = -1;
+    int triangleCount = -1;
+    int bvhNodeCount = -1;
+    int bvhDepth = -1;
+    int meshIndex = -1;
 };
 
 

@@ -667,11 +667,115 @@ bool Scene::TryLoadPathTracedMesh(const std::string &filePathRelative,
     return true;
 }
 
+//Quick Helper function with appending to GPU-side Buffers
+static void AppendToClBuffer(cl_context context, cl_command_queue commandQueue,cl_mem* buffer,
+    size_t sizeOfOneItem, int alreadyExistingCount, int appendAmount, void* data)
+{
+    cl_int clError;
+    int newFullAmount = alreadyExistingCount + appendAmount;
+    cl_mem newBuffer = clCreateBuffer(context,CL_MEM_READ_ONLY,sizeOfOneItem*newFullAmount,
+        nullptr,&clError);
+    CHECK_ERROR(clError);
+    
+    if(alreadyExistingCount > 0)
+    {
+        //Here, we had originally data inside the GPU-SIde buffer, so for efficiency, we perform a GPU-side copying of data.
+        clError = clEnqueueCopyBuffer(commandQueue,*buffer,newBuffer,0,0,
+            sizeOfOneItem*alreadyExistingCount,0,nullptr,nullptr);
+        CHECK_ERROR(clError);
+    }
+    
+    //And now, that the new buffers are ready to be filled up with our data, lets upload that.
+    clError = clEnqueueWriteBuffer(commandQueue,newBuffer,CL_TRUE,
+        sizeOfOneItem*alreadyExistingCount,sizeOfOneItem*newFullAmount,data,0,nullptr,nullptr);
+    CHECK_ERROR(clError);
+
+    // And lets delete the old buffers
+    clError = clReleaseMemObject(*buffer);
+    CHECK_ERROR(clError);
+
+    *buffer = newBuffer;
+}
+
 
 bool Scene::TryLoadMesh(const std::string &filePathRelative, MeshInfo * meshInfo)
 {
+    std::vector<VertexPositionData> newMeshVertexPositions;
+    std::vector<VertexAttributeData> newMeshVertexAttributes;
+    std::vector<TriangleIndicesData> newMeshTriangleIndices;
+    std::vector<BvhNodeData> newMeshBvhNodes;
 
+    bool wasLoadingSuccesful = TryLoadPathTracedMesh(filePathRelative,newMeshVertexPositions,newMeshTriangleIndices,
+        newMeshVertexAttributes,newMeshBvhNodes,meshInfo);
 
+    if(!wasLoadingSuccesful) return false;
+
+    // Lets merge this new mesh data with the already existing ones.
+    // But out data is now in its own, normalized indexing system, and we have to translate it to the global one.
+    int alreadyExistingVertexCount = _vertexPositionData.size(); //Is equal to attribute size
+    int alreadyExistingTriangleIndicesCount = _triangleIndicesData.size();
+    int alreadyExistingBottomLevelBvhNodeCount = _bottomLevelBvhNodeDatas.size();
+
+    int newMeshRootBvhNodeIndex = alreadyExistingBottomLevelBvhNodeCount;
+
+    // when we merge the positions and attributes(vertices into the global array, their index shifts)
+    // It gets shifted by the amount of already existing vertex count.
+    for(int i=0;i<newMeshTriangleIndices.size();++i)
+    {
+        newMeshTriangleIndices[i].x += alreadyExistingVertexCount;
+        newMeshTriangleIndices[i].y += alreadyExistingVertexCount;
+        newMeshTriangleIndices[i].z += alreadyExistingVertexCount;
+    }
+
+    // Similiar thing happens with the bvh leaf node's triangle index interval pointers.
+    // But these get shifted by the amount of triangle indices already present
+    for(int i = 0;i<newMeshBvhNodes.size();++i)
+    {
+        newMeshBvhNodes[i].startIndex += alreadyExistingTriangleIndicesCount;
+        newMeshBvhNodes[i].endIndex += alreadyExistingTriangleIndicesCount;
+    }
+
+    // And we also have to shift away the bvhNodes children indices, by the amount of already existing bvhNodeCOunt
+    for(int i=0;i<newMeshBvhNodes.size();++i)
+    {
+        if(newMeshBvhNodes[i].minChild >= 0 && newMeshBvhNodes[i].maxChild >= 0)
+        {
+            //Otherwise it is a leaf and we dont want to alter its -1 , -1 (minchild, maxchild) special state
+            newMeshBvhNodes[i].minChild += alreadyExistingBottomLevelBvhNodeCount;
+            newMeshBvhNodes[i].maxChild += alreadyExistingBottomLevelBvhNodeCount;
+        }
+    }
+
+    //Our data is now well-prepared to be merged with CPU-side  buffers
+    _vertexPositionData.insert(_vertexPositionData.end(),newMeshVertexPositions.begin(),newMeshVertexPositions.end());
+    _vertexAttributeData.insert(_vertexAttributeData.end(),newMeshVertexAttributes.begin(),newMeshVertexAttributes.end());
+    _triangleIndicesData.insert(_triangleIndicesData.end(),newMeshTriangleIndices.begin(),newMeshTriangleIndices.end());
+    _bottomLevelBvhNodeDatas.insert(_bottomLevelBvhNodeDatas.end(),newMeshBvhNodes.begin(),newMeshBvhNodes.end());
+
+    // We will need to be able to querry the bvhRootIndex of a mesh, based on its index.
+    // Therefore we have a vector that does exactly this, but it is only needed CPU-side, and not GPU side, since it would be an 
+    // INDIRECTION.
+    int newMeshIndex = _meshBvhRootIndexData.size(); 
+    if(meshInfo != nullptr)
+    {
+        meshInfo->meshIndex = newMeshIndex;
+    }
+    _meshBvhRootIndexData.push_back(newMeshRootBvhNodeIndex);
+
+    // Let's upload our data to the GPU!
+    AppendToClBuffer(clContext,clCommandQueue,&_vertexPositionDataBuffer,sizeof(VertexPositionData),alreadyExistingVertexCount,
+        newMeshVertexPositions.size(),newMeshVertexPositions.data());
+
+    AppendToClBuffer(clContext,clCommandQueue,&_vertexAttributeDataBuffer,sizeof(VertexAttributeData),alreadyExistingVertexCount,
+        newMeshVertexAttributes.size(),newMeshVertexAttributes.data());
+
+    AppendToClBuffer(clContext,clCommandQueue,&_triangleIndicesDataBuffer,sizeof(TriangleIndicesData),alreadyExistingTriangleIndicesCount,
+        newMeshTriangleIndices.size(),newMeshTriangleIndices.data());
+
+    AppendToClBuffer(clContext,clCommandQueue,&_bottomLevelBvhNodeDatasBuffer,sizeof(BvhNodeData),alreadyExistingBottomLevelBvhNodeCount,
+        newMeshBvhNodes.size(),newMeshBvhNodes.data());
+
+    
 
     return true;
 }
