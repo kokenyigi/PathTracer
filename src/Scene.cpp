@@ -330,12 +330,12 @@ void Scene::KeyInput(int key, int action, int mods)
     }
 }
 
-static float SahBinSplitCost(const glm::vec3 parentBoxSize,const glm::vec3& box1Size, const glm::vec3& box2Size, 
+static float SahBinSplitCost(const glm::vec3& parentBoxSize,const glm::vec3& box1Size, const glm::vec3& box2Size, 
     int box1TriagCount, int box2TriagCount)
 {
-	float parentBoxArea = 2 * (parentBoxSize.x * parentBoxSize.y + parentBoxSize.x * parentBoxSize.z + parentBoxSize.y * parentBoxSize.z);
-	float box1Area = 2 * (box1Size.x * box1Size.y + box1Size.x * box1Size.z + box1Size.y * box1Size.z);
-	float box2Area = 2 * (box2Size.x * box2Size.y + box2Size.x * box2Size.z + box2Size.y * box2Size.z);
+	float parentBoxArea = 2.0f * (parentBoxSize.x * parentBoxSize.y + parentBoxSize.x * parentBoxSize.z + parentBoxSize.y * parentBoxSize.z);
+	float box1Area = 2.0f* (box1Size.x * box1Size.y + box1Size.x * box1Size.z + box1Size.y * box1Size.z);
+	float box2Area = 2.0f* (box2Size.x * box2Size.y + box2Size.x * box2Size.z + box2Size.y * box2Size.z);
 
 	return 1.0f + box1Area/parentBoxArea  * box1TriagCount + box2Area/parentBoxArea * box2TriagCount;
 }
@@ -345,7 +345,7 @@ static float SahLeafCost(const glm::vec3& boxSize, int triagCount)
 	return triagCount;
 }
 
-void FeedPosToAABB4(AABB4& box, glm::vec3& pos)
+static void FeedPosToAABB4(AABB4& box, glm::vec3& pos)
 {
 	if (box.max.x < pos.x)
 	{
@@ -381,6 +381,8 @@ bool Scene::GetSurfaceAreaHeuristicSplitDatas(const BvhNodeData &bvhNode,
     int &splitAxisInd, float &splitValueAlongAxis)
 {
     glm::vec3 currentNodeBoxSize = glm::vec3(bvhNode.box.max-bvhNode.box.min);
+
+    //std::cout << "Current box size: x: " << currentNodeBoxSize.x <<" y: " << currentNodeBoxSize.y << " z: " << currentNodeBoxSize.z<<"\n";
     float* currentNodeBoxSizePerAxis = &currentNodeBoxSize.x;
     int currentNodeTriangleCount = bvhNode.endIndex-bvhNode.startIndex;
 
@@ -405,7 +407,7 @@ bool Scene::GetSurfaceAreaHeuristicSplitDatas(const BvhNodeData &bvhNode,
                 currentNodeBoxMinPerAxis[axisIndex];
 
             glm::vec3 absoluteMinimumVector = glm::vec3(-FLT_MAX,-FLT_MAX,-FLT_MAX);
-            glm::vec3 absoluteMaximumVector = glm::vec3(-FLT_MAX,-FLT_MAX,-FLT_MAX);
+            glm::vec3 absoluteMaximumVector = glm::vec3(FLT_MAX,FLT_MAX,FLT_MAX);
 
             // Here we create two splitboxes, which we will virtually split our triangles into.
             // First, we initialize the boxes to incorrect values, and as we process the triangles
@@ -456,9 +458,12 @@ bool Scene::GetSurfaceAreaHeuristicSplitDatas(const BvhNodeData &bvhNode,
             glm::vec3 minSideSplitBoxSize = glm::vec3(minSideSplitBox.max - minSideSplitBox.min);
             glm::vec3 maxSideSplitBoxSize = glm::vec3(maxSideSplitBox.max - maxSideSplitBox.min);
 
+            //std::cout << "Current box size: x: " << minSideSplitBoxSize.x <<" y: " << minSideSplitBoxSize.y << " z: " << minSideSplitBoxSize.z<<"\n";
             // We querry if our current split's cost is better than any previously found ones, even the leafCost
             float currentSahSplitCost = SahBinSplitCost(currentNodeBoxSize,minSideSplitBoxSize,maxSideSplitBoxSize,
                 minSideTriangleCount, maxSideTriangleCount);
+            //std::cout<< "CurrentSahSplitCost: " << currentSahSplitCost<<"\n";
+            //std::cout<< "minCost: " << minCost<<"\n";
             if(currentSahSplitCost < minCost)
             {
                 minCost = currentSahSplitCost;
@@ -484,6 +489,7 @@ bool Scene::GetSurfaceAreaHeuristicSplitDatas(const BvhNodeData &bvhNode,
         splitValueAlongAxis = FLT_MAX;
     }
 
+    
     return false;
 }
 
@@ -492,6 +498,7 @@ void Scene::SplitBvhNodeRecursive(int bvhNodeIndex, int recursionDepth, const st
     std::vector<BvhNodeData> &bvhNodeStrorage, std::vector<glm::ivec3> &triangleVertexIndices, MeshInfo* meshInfo)
 {
     //Lets quickly add some data to the meshinfo struct
+    //std::cout<<"Recursion depth: "<<recursionDepth<<"\n";
     if(meshInfo != nullptr && meshInfo->bvhDepth < recursionDepth)
     {
         meshInfo->bvhDepth = recursionDepth;
@@ -570,7 +577,7 @@ void Scene::SplitBvhNodeRecursive(int bvhNodeIndex, int recursionDepth, const st
         bvhNodeStrorage[bvhNodeIndex].minChild = minChildIndex;
 
         // We created a new node, lets check if its worth splitting that as well -> recursion
-        SplitBvhNodeRecursive(minChildIndex,recursionDepth + 1,vertexPositions,bvhNodeStrorage,triangleVertexIndices);
+        SplitBvhNodeRecursive(minChildIndex,recursionDepth + 1,vertexPositions,bvhNodeStrorage,triangleVertexIndices,meshInfo);
 
             
         BvhNodeData maxChildBvhNode;
@@ -585,7 +592,7 @@ void Scene::SplitBvhNodeRecursive(int bvhNodeIndex, int recursionDepth, const st
         bvhNodeStrorage.push_back(maxChildBvhNode);
         bvhNodeStrorage[bvhNodeIndex].maxChild = maxChildIndex;
 
-        SplitBvhNodeRecursive(maxChildIndex,recursionDepth + 1,vertexPositions,bvhNodeStrorage,triangleVertexIndices);
+        SplitBvhNodeRecursive(maxChildIndex,recursionDepth + 1,vertexPositions,bvhNodeStrorage,triangleVertexIndices,meshInfo);
     }
 }
 
@@ -644,7 +651,7 @@ bool Scene::TryLoadPathTracedMesh(const std::string &filePathRelative,
     meshRootNode.box = CalculateAABB4BasedOnTriangles(0,outOfBoundsEndIndex,newVertexPositions,newTriangleVertexIndices);
 
     // We push the root to the bvhNodeStorage, then recursively try to split it.
-    newMeshBvhNodes.push_back(meshRootNode);
+    newMeshBvhNodes.push_back(meshRootNode); meshInfo->bvhDepth = 0;
     SplitBvhNodeRecursive(0,0,newVertexPositions,newMeshBvhNodes,newTriangleVertexIndices,meshInfo);
 
     //Now that our triangle indices are finalized, we can copy them into the proper arrays.
@@ -671,12 +678,16 @@ bool Scene::TryLoadPathTracedMesh(const std::string &filePathRelative,
 static void AppendToClBuffer(cl_context context, cl_command_queue commandQueue,cl_mem* buffer,
     size_t sizeOfOneItem, int alreadyExistingCount, int appendAmount, void* data)
 {
+    
     cl_int clError;
     int newFullAmount = alreadyExistingCount + appendAmount;
+    //std::cout<< "New buffer size: "<<newFullAmount<<"\n";
     cl_mem newBuffer = clCreateBuffer(context,CL_MEM_READ_ONLY,sizeOfOneItem*newFullAmount,
         nullptr,&clError);
     CHECK_ERROR(clError);
     
+    
+
     if(alreadyExistingCount > 0)
     {
         //Here, we had originally data inside the GPU-SIde buffer, so for efficiency, we perform a GPU-side copying of data.
@@ -687,12 +698,16 @@ static void AppendToClBuffer(cl_context context, cl_command_queue commandQueue,c
     
     //And now, that the new buffers are ready to be filled up with our data, lets upload that.
     clError = clEnqueueWriteBuffer(commandQueue,newBuffer,CL_TRUE,
-        sizeOfOneItem*alreadyExistingCount,sizeOfOneItem*newFullAmount,data,0,nullptr,nullptr);
+        sizeOfOneItem*alreadyExistingCount,sizeOfOneItem*appendAmount,data,0,nullptr,nullptr);
     CHECK_ERROR(clError);
 
     // And lets delete the old buffers
-    clError = clReleaseMemObject(*buffer);
-    CHECK_ERROR(clError);
+    if(alreadyExistingCount > 0)
+    {
+        clError = clReleaseMemObject(*buffer);
+        CHECK_ERROR(clError);
+    }
+    
 
     *buffer = newBuffer;
 }
@@ -755,7 +770,7 @@ bool Scene::TryLoadMesh(const std::string &filePathRelative, MeshInfo * meshInfo
     // We will need to be able to querry the bvhRootIndex of a mesh, based on its index.
     // Therefore we have a vector that does exactly this, but it is only needed CPU-side, and not GPU side, since it would be an 
     // INDIRECTION.
-    int newMeshIndex = _meshBvhRootIndexData.size(); 
+    int newMeshIndex = _meshBvhRootIndexData.size();
     if(meshInfo != nullptr)
     {
         meshInfo->meshIndex = newMeshIndex;

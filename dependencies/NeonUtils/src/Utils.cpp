@@ -1,5 +1,7 @@
 #include "Utils.h"
 
+#include <iostream>
+
 #include <vector>
 #include <algorithm>
 #include <filesystem>
@@ -262,7 +264,7 @@ bool TryLoadObjFile(const std::string &filePathRelative,
 	std::vector<glm::vec3> &newMeshVertexPositions, 
 	std::vector<glm::vec3> &newMeshVertexNormals, 
 	std::vector<glm::vec2> &newMeshTextureCoords, 
-	std::vector<glm::vec<3, int>> &newMeshTriangleIndices)
+	std::vector<glm::vec<3, int>> &newMeshTriangleIndices)	
 {
     //De-initialize parameter vectors
     newMeshVertexPositions.clear();
@@ -497,6 +499,7 @@ bool TryLoadObjFile(const std::string &filePathRelative,
 			}
         }
     }
+	
 
     return true;
 }

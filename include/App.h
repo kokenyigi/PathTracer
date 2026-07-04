@@ -60,10 +60,10 @@ private:
 	Container containerRight;
 
 	Container containerMeshData;
-	Label labelVertexCount;
-	Label labelTriangleCount;
-	Label labelBVHNodeCount;
-	Label labelBVHDepth;
+	Label labelVertexCount; Label labelVertexCountNumber;
+	Label labelTriangleCount; Label labelTriangleCountNumber;
+	Label labelBVHNodeCount; Label labelBVHNodeCountNumber;
+	Label labelBVHDepth; Label labelBVHDepthNumber;
 
 	Container containerTextureData;
 	Label labelWidth;
@@ -105,7 +105,9 @@ private:
 	RadioButton modelButton;
 	RadioButton objectButton;
 
-	LayoutPanel meshPanel;Button buttonLoadMesh;
+	std::vector<MeshInfo> storedMeshInfos;
+	LayoutPanel meshPanel;Button buttonLoadMesh;RadioButtonGroup chosenMeshGroup;
+	
 	LayoutPanel texturePanel;
 	LayoutPanel materialPanel;
 	LayoutPanel modelPanel;
@@ -148,6 +150,7 @@ public:
 
 	static void MainButtonsNeonGUICallback(void * context, int index);
 	static void LoadMeshButtonCallback(void* context);
+	static void ChosenMeshButtonCallback(void* context, int meshIndex);
 
 	static void FileSelectionMenuItemCallback(void * context, int index);
 	static void FileSelectionMenuLoadButtonCallback(void* context);

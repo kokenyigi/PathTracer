@@ -56,6 +56,15 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	containerMeshData.AddControl(&labelVertexCount);
 
+	labelVertexCountNumber.SetMargin(MARGIN_TOP,0.0);
+	labelVertexCountNumber.SetMargin(MARGIN_LEFT,300.0);
+	labelVertexCountNumber.SetHeight(30.0f);
+	labelVertexCountNumber.SetWidth(200.0f);
+	labelVertexCountNumber.SetText("");
+	labelVertexCountNumber.SetTextColor(1,1,1);
+
+	containerMeshData.AddControl(&labelVertexCountNumber);
+
 	labelTriangleCount.SetMargin(MARGIN_TOP,60.0f);
 	labelTriangleCount.SetMargin(MARGIN_LEFT,0.0f);
 	labelTriangleCount.SetHeight(30.0f);
@@ -64,6 +73,15 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	labelTriangleCount.SetTextColor(1,1,1);
 
 	containerMeshData.AddControl(&labelTriangleCount);
+
+	labelTriangleCountNumber.SetMargin(MARGIN_TOP,60.0);
+	labelTriangleCountNumber.SetMargin(MARGIN_LEFT,300.0);
+	labelTriangleCountNumber.SetHeight(30.0f);
+	labelTriangleCountNumber.SetWidth(200.0f);
+	labelTriangleCountNumber.SetText("");
+	labelTriangleCountNumber.SetTextColor(1,1,1);
+
+	containerMeshData.AddControl(&labelTriangleCountNumber);
 
 	labelBVHNodeCount.SetMargin(MARGIN_TOP,120.0f);
 	labelBVHNodeCount.SetMargin(MARGIN_LEFT,0.0f);
@@ -74,6 +92,15 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	containerMeshData.AddControl(&labelBVHNodeCount);
 
+	labelBVHNodeCountNumber.SetMargin(MARGIN_TOP,120.0);
+	labelBVHNodeCountNumber.SetMargin(MARGIN_LEFT,300.0);
+	labelBVHNodeCountNumber.SetHeight(30.0f);
+	labelBVHNodeCountNumber.SetWidth(200.0f);
+	labelBVHNodeCountNumber.SetText("");
+	labelBVHNodeCountNumber.SetTextColor(1,1,1);
+
+	containerMeshData.AddControl(&labelBVHNodeCountNumber);
+
 	
 	labelBVHDepth.SetMargin(MARGIN_TOP,180.0f);
 	labelBVHDepth.SetMargin(MARGIN_LEFT,0.0f);
@@ -81,6 +108,15 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	labelBVHDepth.SetWidth(300.0f);
 	labelBVHDepth.SetText("BVH depth: ");
 	labelBVHDepth.SetTextColor(1,1,1);
+
+	labelBVHDepthNumber.SetMargin(MARGIN_TOP,180.0);
+	labelBVHDepthNumber.SetMargin(MARGIN_LEFT,300.0);
+	labelBVHDepthNumber.SetHeight(30.0f);
+	labelBVHDepthNumber.SetWidth(200.0f);
+	labelBVHDepthNumber.SetText("");
+	labelBVHDepthNumber.SetTextColor(1,1,1);
+
+	containerMeshData.AddControl(&labelBVHDepthNumber);
 
 	containerMeshData.AddControl(&labelBVHDepth);
 	
@@ -377,11 +413,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	buttonLoadMesh.SetCallback(LoadMeshButtonCallback);
 	
 	meshPanel.AddControl(&buttonLoadMesh);
-
-	Button* tempButton = new Button();
-	tempButton->SetText("Test Mesh");
-	meshPanel.AddControl(tempButton);
-	
+	chosenMeshGroup.SetCallback(ChosenMeshButtonCallback);
 	
 	containerApplication.AddControl(&meshPanel);
 
@@ -1070,9 +1102,49 @@ void App::SwapBackToMainMenu()
 
 void App::TryLoadMeshData()
 {
-	std::string meshFilePathRelative = "/assets/models/" + _loadedDirectorySpecificFilenames[_selectedFileNameIndex];
+	std::string meshFilePathRelative = "assets/models/" + _loadedDirectorySpecificFilenames[_selectedFileNameIndex];
 
-	std::cout<<meshFilePathRelative << "\n";
+	//std::cout<<"Began Loading meshData...\n";
+
+
+	MeshInfo sceneLoadedMeshInfo;
+	bool wasMeshLoadingSuccessful = _scene.TryLoadMesh(meshFilePathRelative,&sceneLoadedMeshInfo);
+	if(wasMeshLoadingSuccessful)
+	{
+		//We add some dynamically allocated controls to handle meshes, like an extra option to the mesh drowpdwon
+		// And we also add another radiobutton
+
+		//First, we save the loaded mesh's info into a vector, but we might wanna do this differently later
+		storedMeshInfos.push_back(sceneLoadedMeshInfo);
+
+		int meshIndex = sceneLoadedMeshInfo.meshIndex;
+		RadioButton* newChosenMeshButton = new RadioButton();
+		newChosenMeshButton->SetText(std::to_string(meshIndex));
+		newChosenMeshButton->SetCallBackContext(this);
+		newChosenMeshButton->SetIndex(meshIndex);
+
+		chosenMeshGroup.AddToGroup(newChosenMeshButton);
+		meshPanel.AddControl(newChosenMeshButton);
+		dropdownMesh.AddOption(std::to_string(meshIndex),meshIndex);
+	}
+
+
+	//std::cout<<"Ended Loading meshData...\n";
+}
+
+void App::ChosenMeshButtonCallback(void *context, int meshIndex)
+{
+	//Kinda bad practice, will fix later, right now, the readiobutton mesh has the same index as the loaded mesh,
+	// But this wont always be the case, since if we delete a mesh, almost always this kind of indexing will fuck up.
+	// [TODO] FIXXXXX
+	App* app = (App*)context;
+
+	MeshInfo chosenMeshButtonsMeshInfo = app->storedMeshInfos[meshIndex];
+
+	app->labelVertexCountNumber.SetText(std::to_string(chosenMeshButtonsMeshInfo.vertexCount));
+	app->labelTriangleCountNumber.SetText(std::to_string(chosenMeshButtonsMeshInfo.triangleCount));
+	app->labelBVHNodeCountNumber.SetText(std::to_string(chosenMeshButtonsMeshInfo.bvhNodeCount));
+	app->labelBVHDepthNumber.SetText(std::to_string(chosenMeshButtonsMeshInfo.bvhDepth));
 }
 
 void App::WindowSizeCallback(GLFWwindow* window, int width, int height)
@@ -1342,6 +1414,8 @@ void App::LoadMeshButtonCallback(void *context)
 
 	app->RepopulateFileSelectionPanel();
 }
+
+
 
 void App::FileSelectionMenuCancelButtonCallback(void *context)
 {
