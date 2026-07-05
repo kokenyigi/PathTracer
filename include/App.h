@@ -118,7 +118,7 @@ private:
 	std::vector<TextureInfo> storedTextureInfos;
 	LayoutPanel texturePanel;Button buttonTextureLoad; RadioButtonGroup chosenTextureGroup;
 
-	LayoutPanel materialPanel;
+	LayoutPanel materialPanel;Button buttonMaterialAdd; RadioButtonGroup chosenMaterialGroup;
 	LayoutPanel modelPanel;
 	LayoutPanel objectPanel;
 

@@ -770,9 +770,14 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	materialPanel.SetScrollBarHoveredColor(0.6,0.6,0.6);
 	materialPanel.SetScrollBarClickedColor(0,1,0);
 	
-	Button* tempMaterial = new Button();
-	tempMaterial->SetText("Test Material");
-	materialPanel.AddControl(tempMaterial);
+	buttonMaterialAdd.SetBGColor(0.6,0.6,0.6);
+	buttonMaterialAdd.SetHoverColor(0.7,0.7,0.7);
+	buttonMaterialAdd.SetClickColor(1,1,1);
+	buttonMaterialAdd.SetText("ADD");
+	buttonMaterialAdd.SetTextColor(0,0,0);
+	buttonMaterialAdd.SetCallBackContext(this);
+	//buttonMaterialAdd.SetCallback();
+	materialPanel.AddControl(&buttonMaterialAdd);
 	
 	containerApplication.AddControl(&materialPanel);
 
@@ -1054,34 +1059,6 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerFileSelection.SetInactive();
 
 
-	//camera.Init(glm::vec3(0, 2, 3), glm::vec3(0,0,0), glm::vec3(0, 1, 0),windowWidth,windowHeight);
-
-
-	//Get some models going
-    /*
-	int robotTextureIndex = virtualWorld.LoadTexture("res/textures/Robot_Texture.png");
-	int robotMaterialIndex = virtualWorld.AddMaterial(robotTextureIndex, 1.0f, 0.1f, false,1.45f,0.7f);
-	int robotMeshIndex = virtualWorld.LoadMesh("res/assets/head.obj", robotMaterialIndex);
-	virtualWorld.AddObject(robotMeshIndex, glm::vec3(15,0,0),glm::vec3(0,0,0),glm::vec3(1,1,1));
-
-	int suzanneTextureIndex = virtualWorld.LoadTexture("res/textures/wood.jpg");
-	int suzanneMaterialIndex = virtualWorld.AddMaterial(suzanneTextureIndex, 1.0f, 0.1f,false, 1.45f, 0.7f);
-	int suzanneMeshIndex = virtualWorld.LoadMesh("res/assets/Suzanne.obj", suzanneMaterialIndex);
-	virtualWorld.AddObject(suzanneMeshIndex, glm::vec3(0, 0, 12), glm::vec3(0, 0, 0), glm::vec3(1, 1, 1));
-
-	int ballTextureIndex = virtualWorld.LoadTexture("res/textures/MarbleBall.png");
-	int ballMaterialIndex = virtualWorld.AddMaterial(ballTextureIndex, 0.0f, 0.1f, true, 1.45f, 0.7f);
-	int balltMeshIndex = virtualWorld.LoadMesh("res/assets/MarbleBall.obj", ballMaterialIndex);
-	virtualWorld.AddObject(balltMeshIndex, glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(1, 1, 1));
-
-	int houseTextureIndex = virtualWorld.LoadTexture("res/textures/old_house.png");
-	int houseMaterialIndex = virtualWorld.AddMaterial(houseTextureIndex, 1.0f, 0.1f, false, 1.45f, 0.7f);
-	int houseMeshIndex = virtualWorld.LoadMesh("res/assets/old_house.obj", houseMaterialIndex);
-	virtualWorld.AddObject(houseMeshIndex, glm::vec3(-13, 0, 0), glm::vec3(-90.f, 0, 0), glm::vec3(2, 2,2));
-
-	virtualWorld.Init(windowWidth, windowHeight,&camera);
-	*/
-	
 }
 
 
