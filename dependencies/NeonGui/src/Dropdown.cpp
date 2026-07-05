@@ -36,6 +36,16 @@ Dropdown::Dropdown()
 	_optionsGroup.SetCallback(OptionButtonCallback);
 }
 
+void Dropdown::SetChosenOption(int index)
+{
+	if(index >= 0 && index < _currentOptionCount)
+	{
+		RadioButton* indexedOption = (RadioButton*)_optionsPanel.GetChildren()[index];
+		indexedOption->SetToggledOn();
+		_chosenOptionLabel.SetText(indexedOption->GetText());
+	}
+}
+
 void Dropdown::AddOption(const std::string &optionName, int optionIndex)
 {
 	RadioButton* optionRadioButton = new RadioButton();

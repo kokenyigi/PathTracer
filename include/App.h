@@ -118,7 +118,10 @@ private:
 	std::vector<TextureInfo> storedTextureInfos;
 	LayoutPanel texturePanel;Button buttonTextureLoad; RadioButtonGroup chosenTextureGroup;
 
+	std::vector<MaterialInfo> storedMaterialInfos;
+	int chosenMaterialIndex = -1;
 	LayoutPanel materialPanel;Button buttonMaterialAdd; RadioButtonGroup chosenMaterialGroup;
+	
 	LayoutPanel modelPanel;
 	LayoutPanel objectPanel;
 
@@ -164,6 +167,23 @@ public:
 
 	static void LoadTextureButtonCallback(void* context);
 	static void ChosenTextureButtonCallback(void * context, int textureIndex);
+
+	static void AddMaterialButtonCallback(void * context);
+	static void ChosenMaterialButtonCallback(void * context, int materialIndex);
+	static void AlbedoTextureChosenCallback(void*context, int optionTextureIndex);
+	static void AlbedoRedAlteredCallback(void*context,float redValue);
+	static void AlbedoGreenAlteredCallback(void*context,float greenValue);
+	static void AlbedoBlueAlteredCallback(void*context,float blueValue);
+	static void MetallicAlteredCallback(void*context,float metallicValue);
+	static void RoughnessAlteredCallback(void*context,float roughnessValue);
+	static void TransmissionAlteredCallback(void*context,float transmissionValue);
+	static void IoRInputCallback(void*context,float IoRValue);
+	static void IoRSliderCallback(void*context,float IoRValueNormalized);
+	static void EmissionStrengthInputCallback(void*context,float emissionStrengthValue);
+	static void EmissionStrengthSliderCallback(void*context,float emissionStrengthNormalizedValue);
+	static void EmissionRedAlteredCallback(void* context,float redValue);
+	static void EmissionGreenAlteredCallback(void* context,float greenValue);
+	static void EmissionBlueAlteredCallback(void* context,float blueValue);
 
 	static void FileSelectionMenuItemCallback(void * context, int index);
 	static void FileSelectionMenuLoadButtonCallback(void* context);

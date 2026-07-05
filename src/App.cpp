@@ -204,6 +204,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	dropdownTexture.SetMaxVisibleOptionCount(5);
 	dropdownTexture.AddOption("none",-1);
 	dropdownTexture.SetScrollBarSize(15.0f);
+	dropdownTexture.SetCallbackContext(this);
+	dropdownTexture.SetCallback(AlbedoTextureChosenCallback);
 	containerMaterialData.AddControl(&dropdownTexture);
 
 	labelColor.SetMargin(MARGIN_TOP,60.0f);
@@ -231,6 +233,9 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputRed.SetEditHeadColor(1,0,0);
 	inputRed.SetFloat(0.0f);
 	inputRed.SetBGColor(1,1,1);
+	inputRed.SetFloatInterval(0.0f,1.0f);
+	inputRed.SetCallbackContext(this);
+	inputRed.SetFloatCallback(AlbedoRedAlteredCallback);
 	containerMaterialData.AddControl(&inputRed);
 
 	sliderRed.SetMargin(MARGIN_TOP,110.0f);
@@ -243,6 +248,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderRed.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderRed.SetSliderClickedColor(1,0,0);
 	sliderRed.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderRed.SetSliderValueChangedCallbackContext(this);
+	sliderRed.SetSliderValueChangedCallback(AlbedoRedAlteredCallback);
 	containerMaterialData.AddControl(&sliderRed);
 
 
@@ -262,6 +269,9 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputGreen.SetEditHeadColor(0,1,0);
 	inputGreen.SetFloat(0.0f);
 	inputGreen.SetBGColor(1,1,1);
+	inputGreen.SetFloatInterval(0.0f,1.0f);
+	inputGreen.SetCallbackContext(this);
+	inputGreen.SetFloatCallback(AlbedoGreenAlteredCallback);
 	containerMaterialData.AddControl(&inputGreen);
 
 	sliderGreen.SetMargin(MARGIN_TOP,160.0f);
@@ -274,6 +284,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderGreen.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderGreen.SetSliderClickedColor(0,1,0);
 	sliderGreen.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderGreen.SetSliderValueChangedCallbackContext(this);
+	sliderGreen.SetSliderValueChangedCallback(AlbedoGreenAlteredCallback);
 	containerMaterialData.AddControl(&sliderGreen);
 
 
@@ -293,6 +305,9 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputBlue.SetEditHeadColor(0,0,1);
 	inputBlue.SetFloat(0.0f);
 	inputBlue.SetBGColor(1,1,1);
+	inputBlue.SetFloatInterval(0.0f,1.0f);
+	inputBlue.SetCallbackContext(this);
+	inputBlue.SetFloatCallback(AlbedoBlueAlteredCallback);
 	containerMaterialData.AddControl(&inputBlue);
 
 	sliderBlue.SetMargin(MARGIN_TOP,210.0f);
@@ -305,6 +320,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderBlue.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderBlue.SetSliderClickedColor(0,0,1);
 	sliderBlue.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderBlue.SetSliderValueChangedCallbackContext(this);
+	sliderBlue.SetSliderValueChangedCallback(AlbedoBlueAlteredCallback);
 	containerMaterialData.AddControl(&sliderBlue);
 
 
@@ -324,6 +341,9 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputMetallic.SetEditHeadColor(0.5,0.5,0.5);
 	inputMetallic.SetFloat(0.0f);
 	inputMetallic.SetBGColor(1,1,1);
+	inputMetallic.SetFloatInterval(0.0f,1.0f);
+	inputMetallic.SetCallbackContext(this);
+	inputMetallic.SetFloatCallback(MetallicAlteredCallback);
 	containerMaterialData.AddControl(&inputMetallic);
 
 	sliderMetallic.SetMargin(MARGIN_TOP,260.0f);
@@ -336,6 +356,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderMetallic.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderMetallic.SetSliderClickedColor(0.5,0.5,0.5);
 	sliderMetallic.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderMetallic.SetSliderValueChangedCallbackContext(this);
+	sliderMetallic.SetSliderValueChangedCallback(MetallicAlteredCallback);
 	containerMaterialData.AddControl(&sliderMetallic);
 
 
@@ -355,6 +377,9 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputRoughness.SetEditHeadColor(1,0.5,0.0);
 	inputRoughness.SetFloat(0.0f);
 	inputRoughness.SetBGColor(1,1,1);
+	inputRoughness.SetFloatInterval(0.0f,1.0f);
+	inputRoughness.SetCallbackContext(this);
+	inputRoughness.SetFloatCallback(RoughnessAlteredCallback);
 	containerMaterialData.AddControl(&inputRoughness);
 
 	sliderRoughness.SetMargin(MARGIN_TOP,310.0f);
@@ -367,6 +392,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderRoughness.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderRoughness.SetSliderClickedColor(1,0.5,0.0);
 	sliderRoughness.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderRoughness.SetSliderValueChangedCallbackContext(this);
+	sliderRoughness.SetSliderValueChangedCallback(RoughnessAlteredCallback);
 	containerMaterialData.AddControl(&sliderRoughness);
 
 
@@ -386,6 +413,9 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputTransmission.SetEditHeadColor(1,0.0,0.6);
 	inputTransmission.SetFloat(0.0f);
 	inputTransmission.SetBGColor(1,1,1);
+	inputTransmission.SetFloatInterval(0.0f,1.0f);
+	inputTransmission.SetCallbackContext(this);
+	inputTransmission.SetFloatCallback(TransmissionAlteredCallback);
 	containerMaterialData.AddControl(&inputTransmission);
 
 	sliderTransmission.SetMargin(MARGIN_TOP,360.0f);
@@ -398,6 +428,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderTransmission.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderTransmission.SetSliderClickedColor(1,0.0,0.6);
 	sliderTransmission.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderTransmission.SetSliderValueChangedCallbackContext(this);
+	sliderTransmission.SetSliderValueChangedCallback(TransmissionAlteredCallback);
 	containerMaterialData.AddControl(&sliderTransmission);
 
 
@@ -417,6 +449,10 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputIoR.SetEditHeadColor(1,0.8,0.0);
 	inputIoR.SetFloat(0.0f);
 	inputIoR.SetBGColor(1,1,1);
+	inputIoR.SetFloatInterval(1.0f,2.5f);
+	inputIoR.SetFloat(1.0f);
+	inputIoR.SetCallbackContext(this);
+	inputIoR.SetFloatCallback(IoRInputCallback);
 	containerMaterialData.AddControl(&inputIoR);
 
 	sliderIoR.SetMargin(MARGIN_TOP,410.0f);
@@ -429,6 +465,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderIoR.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderIoR.SetSliderClickedColor(1,0.8,0.0);
 	sliderIoR.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderIoR.SetSliderValueChangedCallbackContext(this);
+	sliderIoR.SetSliderValueChangedCallback(IoRSliderCallback);
 	containerMaterialData.AddControl(&sliderIoR);
 
 
@@ -448,6 +486,9 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputEmissionStrength.SetEditHeadColor(0,0.3,0.8);
 	inputEmissionStrength.SetFloat(0.0f);
 	inputEmissionStrength.SetBGColor(1,1,1);
+	inputEmissionStrength.SetFloatInterval(0.0,300.0f);
+	inputEmissionStrength.SetCallbackContext(this);
+	inputEmissionStrength.SetFloatCallback(EmissionStrengthInputCallback);
 	containerMaterialData.AddControl(&inputEmissionStrength);
 
 	sliderEmissionStrength.SetMargin(MARGIN_TOP,460.0f);
@@ -460,6 +501,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderEmissionStrength.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderEmissionStrength.SetSliderClickedColor(0,0.3,0.8);
 	sliderEmissionStrength.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderEmissionStrength.SetSliderValueChangedCallbackContext(this);
+	sliderEmissionStrength.SetSliderValueChangedCallback(EmissionStrengthSliderCallback);
 	containerMaterialData.AddControl(&sliderEmissionStrength);
 
 
@@ -488,6 +531,9 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputEmissionRed.SetEditHeadColor(1,0,0);
 	inputEmissionRed.SetFloat(0.0f);
 	inputEmissionRed.SetBGColor(1,1,1);
+	inputEmissionRed.SetFloatInterval(0.0f,1.0f);
+	inputEmissionRed.SetCallbackContext(this);
+	inputEmissionRed.SetFloatCallback(EmissionRedAlteredCallback);
 	containerMaterialData.AddControl(&inputEmissionRed);
 
 	sliderEmissionRed.SetMargin(MARGIN_TOP,560.0f);
@@ -500,6 +546,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderEmissionRed.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderEmissionRed.SetSliderClickedColor(1,0,0);
 	sliderEmissionRed.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderEmissionRed.SetSliderValueChangedCallbackContext(this);
+	sliderEmissionRed.SetSliderValueChangedCallback(EmissionRedAlteredCallback);
 	containerMaterialData.AddControl(&sliderEmissionRed);
 
 
@@ -519,6 +567,9 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputEmissionGreen.SetEditHeadColor(0,1,0);
 	inputEmissionGreen.SetFloat(0.0f);
 	inputEmissionGreen.SetBGColor(1,1,1);
+	inputEmissionGreen.SetFloatInterval(0.0f,1.0f);
+	inputEmissionGreen.SetCallbackContext(this);
+	inputEmissionGreen.SetFloatCallback(EmissionGreenAlteredCallback);
 	containerMaterialData.AddControl(&inputEmissionGreen);
 
 	sliderEmissionGreen.SetMargin(MARGIN_TOP,610.0f);
@@ -531,6 +582,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderEmissionGreen.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderEmissionGreen.SetSliderClickedColor(0,1,0);
 	sliderEmissionGreen.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderEmissionGreen.SetSliderValueChangedCallbackContext(this);
+	sliderEmissionGreen.SetSliderValueChangedCallback(EmissionGreenAlteredCallback);
 	containerMaterialData.AddControl(&sliderEmissionGreen);
 
 
@@ -550,6 +603,9 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	inputEmissionBlue.SetEditHeadColor(0,0,1);
 	inputEmissionBlue.SetFloat(0.0f);
 	inputEmissionBlue.SetBGColor(1,1,1);
+	inputEmissionBlue.SetFloatInterval(0.0f,1.0f);
+	inputEmissionBlue.SetCallbackContext(this);
+	inputEmissionBlue.SetFloatCallback(EmissionBlueAlteredCallback);
 	containerMaterialData.AddControl(&inputEmissionBlue);
 
 	sliderEmissionBlue.SetMargin(MARGIN_TOP,660.0f);
@@ -562,6 +618,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderEmissionBlue.SetSliderHoveredColor(0.1,0.1,0.1);
 	sliderEmissionBlue.SetSliderClickedColor(0,0,1);
 	sliderEmissionBlue.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderEmissionBlue.SetSliderValueChangedCallbackContext(this);
+	sliderEmissionBlue.SetSliderValueChangedCallback(EmissionBlueAlteredCallback);
 	containerMaterialData.AddControl(&sliderEmissionBlue);
 	
 	containerRight.AddControl(&containerMaterialData);
@@ -776,8 +834,10 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	buttonMaterialAdd.SetText("ADD");
 	buttonMaterialAdd.SetTextColor(0,0,0);
 	buttonMaterialAdd.SetCallBackContext(this);
-	//buttonMaterialAdd.SetCallback();
+	buttonMaterialAdd.SetCallback(AddMaterialButtonCallback);
 	materialPanel.AddControl(&buttonMaterialAdd);
+
+	chosenMaterialGroup.SetCallback(ChosenMaterialButtonCallback);
 	
 	containerApplication.AddControl(&materialPanel);
 
@@ -1468,6 +1528,7 @@ void App::ChosenTextureButtonCallback(void *context, int textureIndex)
 }
 
 
+
 void App::WindowSizeCallback(GLFWwindow* window, int width, int height)
 {
 	App* app = (App*)glfwGetWindowUserPointer(window);
@@ -1755,6 +1816,7 @@ void App::LoadTextureButtonCallback(void *context)
 }
 
 
+
 void App::FileSelectionMenuCancelButtonCallback(void *context)
 {
 	App* app = (App*)context;
@@ -1790,4 +1852,284 @@ void App::FileSelectionMenuLoadButtonCallback(void *context)
 	app->_viewState = AppViewState::VIEWSTATE_MAINMENU;
 }
 
+void App::AddMaterialButtonCallback(void *context)
+{
+	App* app = (App*)context;
 
+	MaterialInfo newMaterialInfo;
+	bool wasAddingMaterialSuccessful = app->_scene.TryAddMaterial(&newMaterialInfo);
+	if(wasAddingMaterialSuccessful)
+	{
+		app->storedMaterialInfos.push_back(newMaterialInfo);
+		
+		RadioButton* newMaterialButton = new RadioButton();
+		newMaterialButton->SetText(std::to_string(newMaterialInfo.materialIndex));
+		newMaterialButton->SetCallBackContext(context);
+		newMaterialButton->SetIndex(newMaterialInfo.materialIndex);
+
+		app->chosenMaterialGroup.AddToGroup(newMaterialButton);
+		app->materialPanel.AddControl(newMaterialButton);
+		app->dropdownMaterial.AddOption(std::to_string(newMaterialInfo.materialIndex),newMaterialInfo.materialIndex);
+	}
+}
+
+void App::ChosenMaterialButtonCallback(void *context, int materialIndex)
+{
+	App* app = (App*)context;
+
+	app->chosenMaterialIndex = materialIndex;
+
+	MaterialInfo materialInfo = app->storedMaterialInfos[materialIndex];
+	MaterialData storedMaterialData;
+	std::cout << app->_scene.GetMaterialData(materialInfo.materialIndex,&storedMaterialData) << "\n";
+
+	app->dropdownTexture.SetChosenOption(storedMaterialData.albedoTextureIndex == -1 ? 0 : storedMaterialData.albedoTextureIndex + 1);
+
+	app->inputRed.SetFloat(storedMaterialData.albedoColor.x);
+	app->sliderRed.SetSliderValue(storedMaterialData.albedoColor.x);
+	app->inputGreen.SetFloat(storedMaterialData.albedoColor.y);
+	app->sliderGreen.SetSliderValue(storedMaterialData.albedoColor.y);
+	app->inputBlue.SetFloat(storedMaterialData.albedoColor.z);
+	app->sliderBlue.SetSliderValue(storedMaterialData.albedoColor.z);
+
+	app->inputRoughness.SetFloat(storedMaterialData.roughness);
+	app->sliderRoughness.SetSliderValue(storedMaterialData.roughness);
+	app->inputTransmission.SetFloat(storedMaterialData.transmission);
+	app->sliderTransmission.SetSliderValue(storedMaterialData.transmission);
+	app->inputMetallic.SetFloat(storedMaterialData.metallic);
+	app->sliderMetallic.SetSliderValue(storedMaterialData.metallic);
+
+
+	app->inputEmissionRed.SetFloat(storedMaterialData.emissionColor.x);
+	app->sliderEmissionRed.SetSliderValue(storedMaterialData.emissionColor.x);
+	app->inputEmissionGreen.SetFloat(storedMaterialData.emissionColor.y);
+	app->sliderEmissionGreen.SetSliderValue(storedMaterialData.emissionColor.y);
+	app->inputEmissionBlue.SetFloat(storedMaterialData.emissionColor.z);
+	app->sliderEmissionBlue.SetSliderValue(storedMaterialData.emissionColor.z);
+
+	app->inputIoR.SetFloat(storedMaterialData.ior);
+	app->sliderIoR.SetSliderValue((storedMaterialData.ior-1.0f) / 1.5f);
+
+	app->inputEmissionStrength.SetFloat(storedMaterialData.emissionStrength);
+	app->sliderEmissionStrength.SetSliderValue(storedMaterialData.emissionStrength / 300.0f);
+
+}
+
+void App::AlbedoTextureChosenCallback(void *context, int optionTextureIndex)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.albedoTextureIndex = optionTextureIndex == 0 ? -1 : optionTextureIndex - 1;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+	}
+}
+
+void App::AlbedoRedAlteredCallback(void *context, float redValue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.albedoColor.x = redValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputRed.SetFloat(redValue);
+		app->sliderRed.SetSliderValue(redValue);
+	}
+}
+
+void App::AlbedoGreenAlteredCallback(void *context, float greenVlaue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.albedoColor.y = greenVlaue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputGreen.SetFloat(greenVlaue);
+		app->sliderGreen.SetSliderValue(greenVlaue);
+	}
+}
+
+void App::AlbedoBlueAlteredCallback(void *context, float blueValue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.albedoColor.z = blueValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputBlue.SetFloat(blueValue);
+		app->sliderBlue.SetSliderValue(blueValue);
+	}
+}
+
+void App::MetallicAlteredCallback(void *context, float metallicValue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.metallic = metallicValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputMetallic.SetFloat(metallicValue);
+		app->sliderMetallic.SetSliderValue(metallicValue);
+	}
+}
+
+void App::RoughnessAlteredCallback(void *context, float roughnessValue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.roughness = roughnessValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputRoughness.SetFloat(roughnessValue);
+		app->sliderRoughness.SetSliderValue(roughnessValue);
+	}
+}
+
+void App::TransmissionAlteredCallback(void *context, float transmissionValue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.transmission = transmissionValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputTransmission.SetFloat(transmissionValue);
+		app->sliderTransmission.SetSliderValue(transmissionValue);
+	}
+}
+
+void App::IoRInputCallback(void *context, float IoRValue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.ior = IoRValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->sliderIoR.SetSliderValue((IoRValue - 1.0f) / 1.5f);
+	}
+}
+
+void App::IoRSliderCallback(void *context, float IoRValueNormalized)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		float newIoRValue = IoRValueNormalized * 1.5f + 1.0f;
+		oldData.ior = newIoRValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputIoR.SetFloat(newIoRValue);
+	}
+}
+
+void App::EmissionStrengthInputCallback(void *context, float emissionStrengthValue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.emissionStrength = emissionStrengthValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->sliderEmissionStrength.SetSliderValue(emissionStrengthValue / 300.0f);
+	}
+}
+
+void App::EmissionStrengthSliderCallback(void *context, float emissionStrengthValueNormalized)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		float newEmissionStrengthValue = emissionStrengthValueNormalized * 300.0f;
+		oldData.emissionStrength = newEmissionStrengthValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputEmissionStrength.SetFloat(newEmissionStrengthValue);
+	}
+}
+
+void App::EmissionRedAlteredCallback(void *context, float redEmissionValue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.emissionColor.x = redEmissionValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputEmissionRed.SetFloat(redEmissionValue);
+		app->sliderEmissionRed.SetSliderValue(redEmissionValue);
+	}
+}
+
+void App::EmissionGreenAlteredCallback(void *context, float greenEmissionValue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.emissionColor.y = greenEmissionValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputEmissionGreen.SetFloat(greenEmissionValue);
+		app->sliderEmissionGreen.SetSliderValue(greenEmissionValue);
+	}
+}
+
+void App::EmissionBlueAlteredCallback(void *context, float blueEmissionValue)
+{
+	App* app = (App*)context;
+	if(app->chosenMaterialIndex != -1)
+	{
+		int materialIndex = app->chosenMaterialIndex;
+		MaterialData oldData;
+		app->_scene.GetMaterialData(materialIndex,&oldData);
+		oldData.emissionColor.z = blueEmissionValue;
+		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		app->inputEmissionBlue.SetFloat(blueEmissionValue);
+		app->sliderEmissionBlue.SetSliderValue(blueEmissionValue);
+	}
+}

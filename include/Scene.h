@@ -82,6 +82,19 @@ struct VertexAttributeData
 };
 
 /**
+ * This structure stores the necessary informations for a BVH node.
+ * startindex == first triangle of the given box's triangle interval, endIndex == last
+ */
+struct BvhNodeData
+{
+    int startIndex = -1;
+    int endIndex = -1;
+    int maxChild = -1;
+    int minChild = -1;
+    AABB4 box;
+};
+
+/**
  * The reason we have a seperate field for these, is because each mesh has a bvhRootNode, inside the bvhnodes buffer
  * and we want to keep track which of these nodes is the actual start of the mesh, this is mainly only needed CPU-side
  * because, on CPU side is where the logic happens, aka, if we want to change the mesh of a model, then we have to specify
@@ -114,18 +127,32 @@ struct TextureData
     int height;
 };
 
+
+
 /**
- * This structure stores the necessary informations for a BVH node.
- * startindex == first triangle of the given box's triangle interval, endIndex == last
+ * This structure contains necessary information related to materials of different models.
+ * Each of these fields can be edited by the outside, so its important good care is taken.
+ * It is also important to watch out for the floating-point intervals these values can be in.
+ * And as always, once any fields have been changed, the same changes have to be delegated to the GPU as well.
  */
-struct BvhNodeData
+struct MaterialData
 {
-    int startIndex = -1;
-    int endIndex = -1;
-    int maxChild = -1;
-    int minChild = -1;
-    AABB4 box;
+    cl_float4 albedoColor = {0,0,0,0}; // 0.0f - 1.0f for all, w comp not used
+    cl_float4 emissionColor = {0,0,0,0};;
+
+    float emissionStrength = 0.0f; // 0.0f....
+    float metallic = 0.0f; // 0.0f - 1.0f
+    float roughness = 0.0f; // 0.0f - 1.0f
+    float ior = 1.0f; //1.0f - 2.5f
+
+    float transmission = 0.0f; // 0.0f - 1.0f
+    int albedoTextureIndex = -1; // -1,0,1.....
+    
+    int padding0;
+    int padding1;
 };
+
+
 
 /**
  * This structure is just a way to enable communication of Mesh information to the outside eg.: View (App) layer
@@ -149,6 +176,16 @@ struct TextureInfo
     int textureIndex = -1;
 };
 
+/**
+ * This struct is simply used to convey the index value the given loaded material is at inside the scene vector
+ * The outside can then later on use this index as a pointer/reference, to alter the material from the outside.
+ * I have thought about putting other information here, since a material consist of more info than just a regular index, but
+ * that is not right.
+ */
+struct MaterialInfo
+{
+    int materialIndex = -1;
+};
 
 /**
  * This class is basically a renderer, it handles IO, and renders the given scene into a texture.
@@ -202,6 +239,9 @@ private:
     std::vector<TextureData> _textureDatas;
     cl_mem _textureDatasBuffer;
     
+    //float
+    std::vector<MaterialData> _materialDatas;
+    cl_mem _materialDataBuffer;
     
 
 
@@ -254,6 +294,20 @@ public:
      * Otherwise loads similiarly as a mesh.
      */
     bool TryLoadTexture(const std::string& filePathRelative, TextureInfo* textureInfo = nullptr);
+
+
+    /**
+     * This function just simply append a new materialData struct to the end of the already existing ones, 
+     *  both CPU and GPU side. the newly created materialData's index is then written into the parameter MaterialInfo.
+     * The return value of the function implies whether or not the addition of the material was successful.
+     */
+    bool TryAddMaterial(MaterialInfo* materialInfo = nullptr);
+    bool GetMaterialData(int materialIndex, MaterialData* materialData); //returns false when index out of bounds
+
+    /**
+     * This following function will alter the given material, returns whether or not this operation was succesful
+     */
+    bool TryAlterMaterial(int materialIndex, const MaterialData& alterredMaterialData);
 
     void Delete();
 

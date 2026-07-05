@@ -24,6 +24,7 @@ Scene::Scene()
 }
 
 
+
 void Scene::InitCL()
 {
     //Initialization of OpenCL
@@ -877,3 +878,43 @@ bool Scene::TryLoadTexture(const std::string &filePathRelative, TextureInfo *tex
     return true;
 }
 
+bool Scene::TryAddMaterial(MaterialInfo * materialInfo)
+{
+    MaterialData newMaterialData;
+    
+    int alreadyExistingMaterialDataCount = _materialDatas.size();
+    if(materialInfo != nullptr)
+    {
+        materialInfo->materialIndex = alreadyExistingMaterialDataCount;
+    }
+
+    _materialDatas.push_back(newMaterialData);
+
+    AppendToClBuffer(clContext,clCommandQueue,&_materialDataBuffer,sizeof(MaterialData),alreadyExistingMaterialDataCount,1,&newMaterialData);
+
+    return true;
+}
+
+bool Scene::GetMaterialData(int materialIndex, MaterialData *materialData)
+{
+    if(materialIndex >= 0 && materialIndex < _materialDatas.size())
+    {
+        *materialData = _materialDatas[materialIndex];
+        return true;
+    }
+    return false;
+}
+
+bool Scene::TryAlterMaterial(int materialIndex, const MaterialData &alterredMaterialData)
+{
+    if(materialIndex>=0 && materialIndex < _materialDatas.size())
+    {
+        _materialDatas[materialIndex] = alterredMaterialData;
+
+        cl_int clError;
+        clError = clEnqueueWriteBuffer(clCommandQueue,_materialDataBuffer,CL_TRUE,sizeof(MaterialData)*materialIndex,
+            sizeof(MaterialData),&alterredMaterialData,0,nullptr,nullptr);
+        CHECK_ERROR(clError);
+    }
+    return false;
+}
