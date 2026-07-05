@@ -66,8 +66,8 @@ private:
 	Label labelBVHDepth; Label labelBVHDepthNumber;
 
 	Container containerTextureData;
-	Label labelWidth;
-	Label labelHeight;
+	Label labelWidth; Label labelTextureWidthNumber;
+	Label labelHeight; Label labelTextureHeightNumber;
 
 	Container containerMaterialData;
 	Label labelTexture;Dropdown dropdownTexture;
@@ -108,7 +108,9 @@ private:
 	std::vector<MeshInfo> storedMeshInfos;
 	LayoutPanel meshPanel;Button buttonLoadMesh;RadioButtonGroup chosenMeshGroup;
 	
-	LayoutPanel texturePanel;
+	std::vector<TextureInfo> storedTextureInfos;
+	LayoutPanel texturePanel;Button buttonTextureLoad; RadioButtonGroup chosenTextureGroup;
+
 	LayoutPanel materialPanel;
 	LayoutPanel modelPanel;
 	LayoutPanel objectPanel;
@@ -149,8 +151,12 @@ public:
 	
 
 	static void MainButtonsNeonGUICallback(void * context, int index);
+
 	static void LoadMeshButtonCallback(void* context);
 	static void ChosenMeshButtonCallback(void* context, int meshIndex);
+
+	static void LoadTextureButtonCallback(void* context);
+	static void ChosenTextureButtonCallback(void * context, int textureIndex);
 
 	static void FileSelectionMenuItemCallback(void * context, int index);
 	static void FileSelectionMenuLoadButtonCallback(void* context);

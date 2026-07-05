@@ -128,7 +128,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerTextureData.SetMargin(MARGIN_TOP,10.0);
 	containerTextureData.SetBGColor(0.2,0.2,0.2);
 
-	labelHeight.SetMargin(MARGIN_TOP,0.0f);
+	labelHeight.SetMargin(MARGIN_TOP,60.0f);
 	labelHeight.SetMargin(MARGIN_LEFT,0.0f);
 	labelHeight.SetHeight(30.0f);
 	labelHeight.SetWidth(200.0f);
@@ -137,7 +137,16 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	
 	containerTextureData.AddControl(&labelHeight);
 
-	labelWidth.SetMargin(MARGIN_TOP,60.0f);
+	labelTextureHeightNumber.SetMargin(MARGIN_TOP,60.0f);
+	labelTextureHeightNumber.SetMargin(MARGIN_LEFT,200.0f);
+	labelTextureHeightNumber.SetHeight(30.0f);
+	labelTextureHeightNumber.SetWidth(200.0f);
+	labelTextureHeightNumber.SetText("");
+	labelTextureHeightNumber.SetTextColor(1,1,1);
+	
+	containerTextureData.AddControl(&labelTextureHeightNumber);
+
+	labelWidth.SetMargin(MARGIN_TOP,0.0f);
 	labelWidth.SetMargin(MARGIN_LEFT,0.0f);
 	labelWidth.SetHeight(30.0f);
 	labelWidth.SetWidth(200.0f);
@@ -145,6 +154,15 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	labelWidth.SetTextColor(1,1,1);
 	
 	containerTextureData.AddControl(&labelWidth);
+
+	labelTextureWidthNumber.SetMargin(MARGIN_TOP,0.0f);
+	labelTextureWidthNumber.SetMargin(MARGIN_LEFT,200.0f);
+	labelTextureWidthNumber.SetHeight(30.0f);
+	labelTextureWidthNumber.SetWidth(200.0f);
+	labelTextureWidthNumber.SetText("");
+	labelTextureWidthNumber.SetTextColor(1,1,1);
+	
+	containerTextureData.AddControl(&labelTextureWidthNumber);
 
 	containerRight.AddControl(&containerTextureData);
 
@@ -184,7 +202,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	dropdownTexture.SetScrollBarClickedColor(0,1,0);
 	dropdownTexture.SetMaxVisibleOptionCount(5);
 	dropdownTexture.AddOption("null",0);
-	dropdownTexture.SetScrollBarSize(15.0f);
+	//dropdownTexture.SetScrollBarSize(15.0f);
 
 	containerMaterialData.AddControl(&dropdownTexture);
 
@@ -381,6 +399,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	containerRight.AddControl(&containerObjectData);
 
+	containerObjectData.SetInactive();
+
 	containerApplication.AddControl(&containerRight);
 
 	
@@ -437,9 +457,16 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	texturePanel.SetScrollBarHoveredColor(0.6,0.6,0.6);
 	texturePanel.SetScrollBarClickedColor(0,1,0);
 	
-	Button* tempTexture = new Button();
-	tempTexture->SetText("Test Texture");
-	texturePanel.AddControl(tempTexture);
+	buttonTextureLoad.SetBGColor(0.6,0.6,0.6);
+	buttonTextureLoad.SetHoverColor(0.7,0.7,0.7);
+	buttonTextureLoad.SetClickColor(1,1,1);
+	buttonTextureLoad.SetText("LOAD");
+	buttonTextureLoad.SetTextColor(0,0,0);
+	buttonTextureLoad.SetCallBackContext(this);
+	buttonTextureLoad.SetCallback(LoadTextureButtonCallback);
+	
+	texturePanel.AddControl(&buttonTextureLoad);
+	chosenTextureGroup.SetCallback(ChosenTextureButtonCallback);
 	
 	containerApplication.AddControl(&texturePanel);
 
@@ -1132,6 +1159,7 @@ void App::TryLoadMeshData()
 	//std::cout<<"Ended Loading meshData...\n";
 }
 
+
 void App::ChosenMeshButtonCallback(void *context, int meshIndex)
 {
 	//Kinda bad practice, will fix later, right now, the readiobutton mesh has the same index as the loaded mesh,
@@ -1146,6 +1174,44 @@ void App::ChosenMeshButtonCallback(void *context, int meshIndex)
 	app->labelBVHNodeCountNumber.SetText(std::to_string(chosenMeshButtonsMeshInfo.bvhNodeCount));
 	app->labelBVHDepthNumber.SetText(std::to_string(chosenMeshButtonsMeshInfo.bvhDepth));
 }
+
+
+void App::TryLoadTextureData()
+{
+	std::string textureFilePathRelative = "assets/textures/" + _loadedDirectorySpecificFilenames[_selectedFileNameIndex];
+
+	TextureInfo sceneLoadedTextureInfo;
+	bool wasTextureLoadingSuccessful = _scene.TryLoadTexture(textureFilePathRelative,&sceneLoadedTextureInfo);
+	if(wasTextureLoadingSuccessful)
+	{
+		//We add some dynamically allocated controls to handle meshes, like an extra option to the mesh drowpdwon
+		// And we also add another radiobutton
+		//First, we save the loaded mesh's info into a vector, but we might wanna do this differently later
+		storedTextureInfos.push_back(sceneLoadedTextureInfo);
+
+		int textureIndex = sceneLoadedTextureInfo.textureIndex;
+		RadioButton* newChosenTextureButton = new RadioButton();
+		newChosenTextureButton->SetText(std::to_string(textureIndex));
+		newChosenTextureButton->SetCallBackContext(this);
+		newChosenTextureButton->SetIndex(textureIndex);
+
+		chosenTextureGroup.AddToGroup(newChosenTextureButton);
+		texturePanel.AddControl(newChosenTextureButton);
+		dropdownTexture.AddOption(std::to_string(textureIndex),textureIndex);
+	}
+}
+
+
+void App::ChosenTextureButtonCallback(void *context, int textureIndex)
+{
+	App* app = (App*)context;
+
+	TextureInfo chosenTextureButtonTextureInfo = app->storedTextureInfos[textureIndex];
+
+	app->labelTextureWidthNumber.SetText(std::to_string(chosenTextureButtonTextureInfo.width));
+	app->labelTextureHeightNumber.SetText(std::to_string(chosenTextureButtonTextureInfo.height));
+}
+
 
 void App::WindowSizeCallback(GLFWwindow* window, int width, int height)
 {
@@ -1415,6 +1481,23 @@ void App::LoadMeshButtonCallback(void *context)
 	app->RepopulateFileSelectionPanel();
 }
 
+void App::LoadTextureButtonCallback(void *context)
+{
+	App* app = (App*)context;
+
+	std::string textureFolderRelative = "assets/textures/"; // For now its this
+	std::vector<std::string> acceptableExtensions = {".png",".jpg",".bmp"};
+
+	GetFileNamesWithSpecificExtension(textureFolderRelative,acceptableExtensions,app->_loadedDirectorySpecificFilenames);
+
+	if(app->_loadedDirectorySpecificFilenames.size()==0) return;
+	
+	app->SwapToFileSelectionMenu();
+
+	app->_viewState = AppViewState::VIEWSTATE_TEXTURELOAD;
+
+	app->RepopulateFileSelectionPanel();
+}
 
 
 void App::FileSelectionMenuCancelButtonCallback(void *context)
@@ -1445,7 +1528,7 @@ void App::FileSelectionMenuLoadButtonCallback(void *context)
 	}
 	else if(app->_viewState == AppViewState::VIEWSTATE_TEXTURELOAD)
 	{
-		//...
+		app->TryLoadTextureData();
 	}
 
 	app->SwapBackToMainMenu();

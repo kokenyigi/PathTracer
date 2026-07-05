@@ -65,6 +65,8 @@ void Dropdown::AddOption(const std::string &optionName, int optionIndex)
 	{
 		_optionsPanel.SetChildrenHeight((1.0f / (float)_currentOptionCount),ValueType::RELATIVE);
 	}
+
+	Resize();
 }
 
 void Dropdown::OptionButtonCallback(void *context, int index)
@@ -150,15 +152,16 @@ void Dropdown::DropdownResize()
 
     
 
-    float ownBoxWidthRelative = _box.max.y - _box.min.y;
-    _box.max.y = _box.min.y + (_maxVisibleOptionCount < _currentOptionCount? _maxVisibleOptionCount : _currentOptionCount + 1) *
-	 ownBoxWidthRelative;
+    float ownBoxHeightRelative = _box.max.y - _box.min.y;
+    _box.max.y = _box.min.y + ((_maxVisibleOptionCount < _currentOptionCount? _maxVisibleOptionCount : _currentOptionCount) + 1) *
+	 ownBoxHeightRelative;
 
     CalculateRenderBox();
 
 	if(_currentOptionCount > 0)
 	{
-		_optionsPanel.SetRelativePlacement(_ownBox.min + glm::vec2(0,ownBoxWidthRelative),_box.max);
+		_optionsPanel.SetRelativePlacement(_ownBox.min + glm::vec2(0,ownBoxHeightRelative),_box.max);
+		
 		//_optionsPanel.SetMargin(MARGIN_TOP,1.0f / (1.0f + _maxVisibleOptionCount),RELATIVE);
 
     	_optionsPanel.Resize();
