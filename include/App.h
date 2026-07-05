@@ -71,12 +71,19 @@ private:
 
 	Container containerMaterialData;
 	Label labelTexture;Dropdown dropdownTexture;
-	Label labelColor;FloatInput inputRed;
-	Label labelGreen;FloatInput inputGreen;
-	Label labelBlue; FloatInput inputBlue;
-	Label labelRoughness; FloatInput inputRoughness;
-	Label labelReflectivity; FloatInput inputReflectivity;
-	Label labelFresnel; FloatInput inputFresnel;
+	Label labelColor;
+	Label labelRed; FloatInput inputRed; Slider sliderRed;
+	Label labelGreen;FloatInput inputGreen; Slider sliderGreen;
+	Label labelBlue; FloatInput inputBlue; Slider sliderBlue;
+	Label labelRoughness; FloatInput inputRoughness; Slider sliderRoughness;
+	Label labelTransmission; FloatInput inputTransmission; Slider sliderTransmission;
+	Label labelIoR;FloatInput inputIoR;Slider sliderIoR;
+	Label labelMetallic; FloatInput inputMetallic;Slider sliderMetallic;
+	Label labelEmissionStrength;FloatInput inputEmissionStrength;Slider sliderEmissionStrength;
+	Label labelEmissionColor;
+	Label labelEmissionRed;FloatInput inputEmissionRed;Slider sliderEmissionRed;
+	Label labelEmissionGreen;FloatInput inputEmissionGreen;Slider sliderEmissionGreen;
+	Label labelEmissionBlue;FloatInput inputEmissionBlue;Slider sliderEmissionBlue;
 
 	Container containerModelData;
 	Label labelMesh;Dropdown dropdownMesh;

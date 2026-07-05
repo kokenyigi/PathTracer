@@ -169,26 +169,27 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerTextureData.SetInactive();
 
 
-
+	/**
+	 * Down here we define all of the controls that our lovely materialData container has.
+	 */
 	containerMaterialData.SetMargin(MARGIN_TOP,10.0);
 	containerMaterialData.SetMargin(MARGIN_LEFT,10.0);
 	containerMaterialData.SetMargin(MARGIN_RIGHT,10.0);
 	containerMaterialData.SetMargin(MARGIN_TOP,10.0);
 	containerMaterialData.SetBGColor(0.2,0.2,0.2);
 
-	labelTexture.SetMargin(MARGIN_TOP,15.0f);
+	labelTexture.SetMargin(MARGIN_TOP,10.0f);
 	labelTexture.SetMargin(MARGIN_LEFT,0.0f);
 	labelTexture.SetHeight(30.0f);
-	labelTexture.SetWidth(200.0f);
+	labelTexture.SetWidth(130.0f);
 	labelTexture.SetText("Texture: ");
 	labelTexture.SetTextColor(1,1,1);
-
 	containerMaterialData.AddControl(&labelTexture);
 
-	dropdownTexture.SetMargin(MARGIN_TOP,0.0f);
-	dropdownTexture.SetMargin(MARGIN_LEFT,200.0f);
-	dropdownTexture.SetHeight(50.0f);
-	dropdownTexture.SetWidth(200.0f);
+	dropdownTexture.SetMargin(MARGIN_TOP,5.0f);
+	dropdownTexture.SetMargin(MARGIN_LEFT,130.0f);
+	dropdownTexture.SetHeight(40.0f);
+	dropdownTexture.SetWidth(300.0f);
 	dropdownTexture.SetBGColor(0.9,0.9,0.9);
 	dropdownTexture.SetHoverColor(1,1,1);
 	dropdownTexture.SetClickColor(0,1,0);
@@ -201,91 +202,368 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	dropdownTexture.SetScrollBarHoveredColor(0.7,0.7,0.7);
 	dropdownTexture.SetScrollBarClickedColor(0,1,0);
 	dropdownTexture.SetMaxVisibleOptionCount(5);
-	dropdownTexture.AddOption("null",0);
-	//dropdownTexture.SetScrollBarSize(15.0f);
-
+	dropdownTexture.AddOption("none",-1);
+	dropdownTexture.SetScrollBarSize(15.0f);
 	containerMaterialData.AddControl(&dropdownTexture);
 
-	labelColor.SetMargin(MARGIN_TOP,75.0f);
+	labelColor.SetMargin(MARGIN_TOP,60.0f);
 	labelColor.SetMargin(MARGIN_LEFT,0.0f);
 	labelColor.SetHeight(30.0f);
 	labelColor.SetWidth(120.0f);
-	labelColor.SetText("Color r: ");
+	labelColor.SetText("Color:");
 	labelColor.SetTextColor(1,1,1);
-
 	containerMaterialData.AddControl(&labelColor);
 
-	inputRed.SetMargin(MARGIN_TOP,60.0f);
-	inputRed.SetMargin(MARGIN_LEFT,140.0f);
-	inputRed.SetHeight(50.0f);
-	inputRed.SetWidth(80.0f);
+
+	labelRed.SetMargin(MARGIN_TOP,110.0f);
+	labelRed.SetMargin(MARGIN_LEFT,20.0f);
+	labelRed.SetHeight(30.0f);
+	labelRed.SetWidth(50.0f);
+	labelRed.SetTextColor(1,1,1);
+	labelRed.SetText("r:");
+	containerMaterialData.AddControl(&labelRed);
+
+	inputRed.SetMargin(MARGIN_TOP,105.0f);
+	inputRed.SetMargin(MARGIN_LEFT,60.0f);
+	inputRed.SetHeight(40.0f);
+	inputRed.SetWidth(90.0f);
 	inputRed.SetTextColor(0,0,0);
-	inputRed.SetEditHeadColor(0,1,0);
+	inputRed.SetEditHeadColor(1,0,0);
 	inputRed.SetFloat(0.0f);
 	inputRed.SetBGColor(1,1,1);
-
 	containerMaterialData.AddControl(&inputRed);
 
-	labelGreen.SetMargin(MARGIN_TOP,75.0f);
-	labelGreen.SetMargin(MARGIN_LEFT,220.0f);
-	labelGreen.SetHeight(30.0f);
-	labelGreen.SetWidth(30.0f);
-	labelGreen.SetText("g: ");
-	labelGreen.SetTextColor(1,1,1);
+	sliderRed.SetMargin(MARGIN_TOP,110.0f);
+	sliderRed.SetMargin(MARGIN_LEFT,170.0f);
+	sliderRed.SetHeight(30.0f);
+	sliderRed.SetWidth(200.0f);
+	sliderRed.SetSliderHeadSize(30.0f);
+	sliderRed.SetSliderBaseBGColor(1,1,1);
+	sliderRed.SetSliderBaseColor(0,0,0);
+	sliderRed.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderRed.SetSliderClickedColor(1,0,0);
+	sliderRed.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderRed);
 
+
+	labelGreen.SetMargin(MARGIN_TOP,160.0f);
+	labelGreen.SetMargin(MARGIN_LEFT,20.0f);
+	labelGreen.SetHeight(30.0f);
+	labelGreen.SetWidth(50.0f);
+	labelGreen.SetTextColor(1,1,1);
+	labelGreen.SetText("g:");
 	containerMaterialData.AddControl(&labelGreen);
 
-	inputGreen.SetMargin(MARGIN_TOP,60.0f);
-	inputGreen.SetMargin(MARGIN_LEFT,250.0f);
-	inputGreen.SetHeight(50.0f);
-	inputGreen.SetWidth(80.0f);
+	inputGreen.SetMargin(MARGIN_TOP,155.0f);
+	inputGreen.SetMargin(MARGIN_LEFT,60.0f);
+	inputGreen.SetHeight(40.0f);
+	inputGreen.SetWidth(90.0f);
 	inputGreen.SetTextColor(0,0,0);
 	inputGreen.SetEditHeadColor(0,1,0);
 	inputGreen.SetFloat(0.0f);
 	inputGreen.SetBGColor(1,1,1);
-
 	containerMaterialData.AddControl(&inputGreen);
 
-	labelBlue.SetMargin(MARGIN_TOP,75.0f);
-	labelBlue.SetMargin(MARGIN_LEFT,330.0f);
-	labelBlue.SetHeight(30.0f);
-	labelBlue.SetWidth(30.0f);
-	labelBlue.SetText("b: ");
-	labelBlue.SetTextColor(1,1,1);
+	sliderGreen.SetMargin(MARGIN_TOP,160.0f);
+	sliderGreen.SetMargin(MARGIN_LEFT,170.0f);
+	sliderGreen.SetHeight(30.0f);
+	sliderGreen.SetWidth(200.0f);
+	sliderGreen.SetSliderHeadSize(30.0f);
+	sliderGreen.SetSliderBaseBGColor(1,1,1);
+	sliderGreen.SetSliderBaseColor(0,0,0);
+	sliderGreen.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderGreen.SetSliderClickedColor(0,1,0);
+	sliderGreen.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderGreen);
 
+
+	labelBlue.SetMargin(MARGIN_TOP,210.0f);
+	labelBlue.SetMargin(MARGIN_LEFT,20.0f);
+	labelBlue.SetHeight(30.0f);
+	labelBlue.SetWidth(50.0f);
+	labelBlue.SetTextColor(1,1,1);
+	labelBlue.SetText("b:");
 	containerMaterialData.AddControl(&labelBlue);
 
-	inputBlue.SetMargin(MARGIN_TOP,60.0f);
-	inputBlue.SetMargin(MARGIN_LEFT,360.0f);
-	inputBlue.SetHeight(50.0f);
-	inputBlue.SetWidth(80.0f);
+	inputBlue.SetMargin(MARGIN_TOP,205.0f);
+	inputBlue.SetMargin(MARGIN_LEFT,60.0f);
+	inputBlue.SetHeight(40.0f);
+	inputBlue.SetWidth(90.0f);
 	inputBlue.SetTextColor(0,0,0);
-	inputBlue.SetEditHeadColor(0,1,0);
+	inputBlue.SetEditHeadColor(0,0,1);
 	inputBlue.SetFloat(0.0f);
 	inputBlue.SetBGColor(1,1,1);
-
 	containerMaterialData.AddControl(&inputBlue);
 
-	labelRoughness.SetMargin(MARGIN_TOP,135.0f);
+	sliderBlue.SetMargin(MARGIN_TOP,210.0f);
+	sliderBlue.SetMargin(MARGIN_LEFT,170.0f);
+	sliderBlue.SetHeight(30.0f);
+	sliderBlue.SetWidth(200.0f);
+	sliderBlue.SetSliderHeadSize(30.0f);
+	sliderBlue.SetSliderBaseBGColor(1,1,1);
+	sliderBlue.SetSliderBaseColor(0,0,0);
+	sliderBlue.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderBlue.SetSliderClickedColor(0,0,1);
+	sliderBlue.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderBlue);
+
+
+	labelMetallic.SetMargin(MARGIN_TOP,260.0f);
+	labelMetallic.SetMargin(MARGIN_LEFT,0.0f);
+	labelMetallic.SetHeight(30.0f);
+	labelMetallic.SetWidth(150.0f);
+	labelMetallic.SetTextColor(1,1,1);
+	labelMetallic.SetText("Metallic: ");
+	containerMaterialData.AddControl(&labelMetallic);
+
+	inputMetallic.SetMargin(MARGIN_TOP,255.0f);
+	inputMetallic.SetMargin(MARGIN_LEFT,150.0f);
+	inputMetallic.SetHeight(40.0f);
+	inputMetallic.SetWidth(90.0f);
+	inputMetallic.SetTextColor(0,0,0);
+	inputMetallic.SetEditHeadColor(0.5,0.5,0.5);
+	inputMetallic.SetFloat(0.0f);
+	inputMetallic.SetBGColor(1,1,1);
+	containerMaterialData.AddControl(&inputMetallic);
+
+	sliderMetallic.SetMargin(MARGIN_TOP,260.0f);
+	sliderMetallic.SetMargin(MARGIN_LEFT,260.0f);
+	sliderMetallic.SetHeight(30.0f);
+	sliderMetallic.SetWidth(200.0f);
+	sliderMetallic.SetSliderHeadSize(30.0f);
+	sliderMetallic.SetSliderBaseBGColor(1,1,1);
+	sliderMetallic.SetSliderBaseColor(0,0,0);
+	sliderMetallic.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderMetallic.SetSliderClickedColor(0.5,0.5,0.5);
+	sliderMetallic.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderMetallic);
+
+
+	labelRoughness.SetMargin(MARGIN_TOP,310.0f);
 	labelRoughness.SetMargin(MARGIN_LEFT,0.0f);
 	labelRoughness.SetHeight(30.0f);
-	labelRoughness.SetWidth(200.0f);
-	labelRoughness.SetText("Roughness: ");
+	labelRoughness.SetWidth(150.0f);
 	labelRoughness.SetTextColor(1,1,1);
-
+	labelRoughness.SetText("Roughness: ");
 	containerMaterialData.AddControl(&labelRoughness);
 
-	inputRoughness.SetMargin(MARGIN_TOP,120.0f);
-	inputRoughness.SetMargin(MARGIN_LEFT,200.0f);
-	inputRoughness.SetHeight(50.0f);
-	inputRoughness.SetWidth(100.0f);
+	inputRoughness.SetMargin(MARGIN_TOP,305.0f);
+	inputRoughness.SetMargin(MARGIN_LEFT,160.0f);
+	inputRoughness.SetHeight(40.0f);
+	inputRoughness.SetWidth(90.0f);
 	inputRoughness.SetTextColor(0,0,0);
-	inputRoughness.SetEditHeadColor(0,1,0);
+	inputRoughness.SetEditHeadColor(1,0.5,0.0);
 	inputRoughness.SetFloat(0.0f);
 	inputRoughness.SetBGColor(1,1,1);
-
 	containerMaterialData.AddControl(&inputRoughness);
 
+	sliderRoughness.SetMargin(MARGIN_TOP,310.0f);
+	sliderRoughness.SetMargin(MARGIN_LEFT,270.0f);
+	sliderRoughness.SetHeight(30.0f);
+	sliderRoughness.SetWidth(200.0f);
+	sliderRoughness.SetSliderHeadSize(30.0f);
+	sliderRoughness.SetSliderBaseBGColor(1,1,1);
+	sliderRoughness.SetSliderBaseColor(0,0,0);
+	sliderRoughness.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderRoughness.SetSliderClickedColor(1,0.5,0.0);
+	sliderRoughness.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderRoughness);
+
+
+	labelTransmission.SetMargin(MARGIN_TOP,360.0f);
+	labelTransmission.SetMargin(MARGIN_LEFT,0.0f);
+	labelTransmission.SetHeight(30.0f);
+	labelTransmission.SetWidth(200.0f);
+	labelTransmission.SetTextColor(1,1,1);
+	labelTransmission.SetText("Transmission: ");
+	containerMaterialData.AddControl(&labelTransmission);
+
+	inputTransmission.SetMargin(MARGIN_TOP,355.0f);
+	inputTransmission.SetMargin(MARGIN_LEFT,210.0f);
+	inputTransmission.SetHeight(40.0f);
+	inputTransmission.SetWidth(90.0f);
+	inputTransmission.SetTextColor(0,0,0);
+	inputTransmission.SetEditHeadColor(1,0.0,0.6);
+	inputTransmission.SetFloat(0.0f);
+	inputTransmission.SetBGColor(1,1,1);
+	containerMaterialData.AddControl(&inputTransmission);
+
+	sliderTransmission.SetMargin(MARGIN_TOP,360.0f);
+	sliderTransmission.SetMargin(MARGIN_LEFT,320.0f);
+	sliderTransmission.SetHeight(30.0f);
+	sliderTransmission.SetWidth(160.0f);
+	sliderTransmission.SetSliderHeadSize(30.0f);
+	sliderTransmission.SetSliderBaseBGColor(1,1,1);
+	sliderTransmission.SetSliderBaseColor(0,0,0);
+	sliderTransmission.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderTransmission.SetSliderClickedColor(1,0.0,0.6);
+	sliderTransmission.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderTransmission);
+
+
+	labelIoR.SetMargin(MARGIN_TOP,410.0f);
+	labelIoR.SetMargin(MARGIN_LEFT,0.0f);
+	labelIoR.SetHeight(30.0f);
+	labelIoR.SetWidth(60.0f);
+	labelIoR.SetTextColor(1,1,1);
+	labelIoR.SetText("IoR: ");
+	containerMaterialData.AddControl(&labelIoR);
+
+	inputIoR.SetMargin(MARGIN_TOP,405.0f);
+	inputIoR.SetMargin(MARGIN_LEFT,80.0f);
+	inputIoR.SetHeight(40.0f);
+	inputIoR.SetWidth(90.0f);
+	inputIoR.SetTextColor(0,0,0);
+	inputIoR.SetEditHeadColor(1,0.8,0.0);
+	inputIoR.SetFloat(0.0f);
+	inputIoR.SetBGColor(1,1,1);
+	containerMaterialData.AddControl(&inputIoR);
+
+	sliderIoR.SetMargin(MARGIN_TOP,410.0f);
+	sliderIoR.SetMargin(MARGIN_LEFT,190.0f);
+	sliderIoR.SetHeight(30.0f);
+	sliderIoR.SetWidth(200.0f);
+	sliderIoR.SetSliderHeadSize(30.0f);
+	sliderIoR.SetSliderBaseBGColor(1,1,1);
+	sliderIoR.SetSliderBaseColor(0,0,0);
+	sliderIoR.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderIoR.SetSliderClickedColor(1,0.8,0.0);
+	sliderIoR.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderIoR);
+
+
+	labelEmissionStrength.SetMargin(MARGIN_TOP,460.0f);
+	labelEmissionStrength.SetMargin(MARGIN_LEFT,0.0f);
+	labelEmissionStrength.SetHeight(30.0f);
+	labelEmissionStrength.SetWidth(190.0f);
+	labelEmissionStrength.SetTextColor(1,1,1);
+	labelEmissionStrength.SetText("E. Strength: ");
+	containerMaterialData.AddControl(&labelEmissionStrength);
+
+	inputEmissionStrength.SetMargin(MARGIN_TOP,455.0f);
+	inputEmissionStrength.SetMargin(MARGIN_LEFT,190.0f);
+	inputEmissionStrength.SetHeight(40.0f);
+	inputEmissionStrength.SetWidth(90.0f);
+	inputEmissionStrength.SetTextColor(0,0,0);
+	inputEmissionStrength.SetEditHeadColor(0,0.3,0.8);
+	inputEmissionStrength.SetFloat(0.0f);
+	inputEmissionStrength.SetBGColor(1,1,1);
+	containerMaterialData.AddControl(&inputEmissionStrength);
+
+	sliderEmissionStrength.SetMargin(MARGIN_TOP,460.0f);
+	sliderEmissionStrength.SetMargin(MARGIN_LEFT,300.0f);
+	sliderEmissionStrength.SetHeight(30.0f);
+	sliderEmissionStrength.SetWidth(170.0f);
+	sliderEmissionStrength.SetSliderHeadSize(30.0f);
+	sliderEmissionStrength.SetSliderBaseBGColor(1,1,1);
+	sliderEmissionStrength.SetSliderBaseColor(0,0,0);
+	sliderEmissionStrength.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderEmissionStrength.SetSliderClickedColor(0,0.3,0.8);
+	sliderEmissionStrength.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderEmissionStrength);
+
+
+	labelEmissionColor.SetMargin(MARGIN_TOP,510.0f);
+	labelEmissionColor.SetMargin(MARGIN_LEFT,0.0f);
+	labelEmissionColor.SetHeight(30.0f);
+	labelEmissionColor.SetWidth(200.0f);
+	labelEmissionColor.SetText("E. Color:");
+	labelEmissionColor.SetTextColor(1,1,1);
+	containerMaterialData.AddControl(&labelEmissionColor);
+
+
+	labelEmissionRed.SetMargin(MARGIN_TOP,560.0f);
+	labelEmissionRed.SetMargin(MARGIN_LEFT,20.0f);
+	labelEmissionRed.SetHeight(30.0f);
+	labelEmissionRed.SetWidth(50.0f);
+	labelEmissionRed.SetTextColor(1,1,1);
+	labelEmissionRed.SetText("r:");
+	containerMaterialData.AddControl(&labelEmissionRed);
+
+	inputEmissionRed.SetMargin(MARGIN_TOP,555.0f);
+	inputEmissionRed.SetMargin(MARGIN_LEFT,60.0f);
+	inputEmissionRed.SetHeight(40.0f);
+	inputEmissionRed.SetWidth(90.0f);
+	inputEmissionRed.SetTextColor(0,0,0);
+	inputEmissionRed.SetEditHeadColor(1,0,0);
+	inputEmissionRed.SetFloat(0.0f);
+	inputEmissionRed.SetBGColor(1,1,1);
+	containerMaterialData.AddControl(&inputEmissionRed);
+
+	sliderEmissionRed.SetMargin(MARGIN_TOP,560.0f);
+	sliderEmissionRed.SetMargin(MARGIN_LEFT,170.0f);
+	sliderEmissionRed.SetHeight(30.0f);
+	sliderEmissionRed.SetWidth(200.0f);
+	sliderEmissionRed.SetSliderHeadSize(30.0f);
+	sliderEmissionRed.SetSliderBaseBGColor(1,1,1);
+	sliderEmissionRed.SetSliderBaseColor(0,0,0);
+	sliderEmissionRed.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderEmissionRed.SetSliderClickedColor(1,0,0);
+	sliderEmissionRed.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderEmissionRed);
+
+
+	labelEmissionGreen.SetMargin(MARGIN_TOP,610.0f);
+	labelEmissionGreen.SetMargin(MARGIN_LEFT,20.0f);
+	labelEmissionGreen.SetHeight(30.0f);
+	labelEmissionGreen.SetWidth(50.0f);
+	labelEmissionGreen.SetTextColor(1,1,1);
+	labelEmissionGreen.SetText("g:");
+	containerMaterialData.AddControl(&labelEmissionGreen);
+
+	inputEmissionGreen.SetMargin(MARGIN_TOP,605.0f);
+	inputEmissionGreen.SetMargin(MARGIN_LEFT,60.0f);
+	inputEmissionGreen.SetHeight(40.0f);
+	inputEmissionGreen.SetWidth(90.0f);
+	inputEmissionGreen.SetTextColor(0,0,0);
+	inputEmissionGreen.SetEditHeadColor(0,1,0);
+	inputEmissionGreen.SetFloat(0.0f);
+	inputEmissionGreen.SetBGColor(1,1,1);
+	containerMaterialData.AddControl(&inputEmissionGreen);
+
+	sliderEmissionGreen.SetMargin(MARGIN_TOP,610.0f);
+	sliderEmissionGreen.SetMargin(MARGIN_LEFT,170.0f);
+	sliderEmissionGreen.SetHeight(30.0f);
+	sliderEmissionGreen.SetWidth(200.0f);
+	sliderEmissionGreen.SetSliderHeadSize(30.0f);
+	sliderEmissionGreen.SetSliderBaseBGColor(1,1,1);
+	sliderEmissionGreen.SetSliderBaseColor(0,0,0);
+	sliderEmissionGreen.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderEmissionGreen.SetSliderClickedColor(0,1,0);
+	sliderEmissionGreen.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderEmissionGreen);
+
+
+	labelEmissionBlue.SetMargin(MARGIN_TOP,660.0f);
+	labelEmissionBlue.SetMargin(MARGIN_LEFT,20.0f);
+	labelEmissionBlue.SetHeight(30.0f);
+	labelEmissionBlue.SetWidth(50.0f);
+	labelEmissionBlue.SetTextColor(1,1,1);
+	labelEmissionBlue.SetText("b:");
+	containerMaterialData.AddControl(&labelEmissionBlue);
+
+	inputEmissionBlue.SetMargin(MARGIN_TOP,655.0f);
+	inputEmissionBlue.SetMargin(MARGIN_LEFT,60.0f);
+	inputEmissionBlue.SetHeight(40.0f);
+	inputEmissionBlue.SetWidth(90.0f);
+	inputEmissionBlue.SetTextColor(0,0,0);
+	inputEmissionBlue.SetEditHeadColor(0,0,1);
+	inputEmissionBlue.SetFloat(0.0f);
+	inputEmissionBlue.SetBGColor(1,1,1);
+	containerMaterialData.AddControl(&inputEmissionBlue);
+
+	sliderEmissionBlue.SetMargin(MARGIN_TOP,660.0f);
+	sliderEmissionBlue.SetMargin(MARGIN_LEFT,170.0f);
+	sliderEmissionBlue.SetHeight(30.0f);
+	sliderEmissionBlue.SetWidth(200.0f);
+	sliderEmissionBlue.SetSliderHeadSize(30.0f);
+	sliderEmissionBlue.SetSliderBaseBGColor(1,1,1);
+	sliderEmissionBlue.SetSliderBaseColor(0,0,0);
+	sliderEmissionBlue.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderEmissionBlue.SetSliderClickedColor(0,0,1);
+	sliderEmissionBlue.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	containerMaterialData.AddControl(&sliderEmissionBlue);
+	
 	containerRight.AddControl(&containerMaterialData);
 
 	containerMaterialData.SetInactive();
