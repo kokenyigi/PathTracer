@@ -1881,8 +1881,9 @@ void App::ChosenMaterialButtonCallback(void *context, int materialIndex)
 
 	MaterialInfo materialInfo = app->storedMaterialInfos[materialIndex];
 	MaterialData storedMaterialData;
-	std::cout << app->_scene.GetMaterialData(materialInfo.materialIndex,&storedMaterialData) << "\n";
+	app->_scene.GetMaterialData(materialInfo.materialIndex,&storedMaterialData);
 
+	//std::cout<<"Sotred Albedo texture Index: " << storedMaterialData.albedoTextureIndex <<"\n";
 	app->dropdownTexture.SetChosenOption(storedMaterialData.albedoTextureIndex == -1 ? 0 : storedMaterialData.albedoTextureIndex + 1);
 
 	app->inputRed.SetFloat(storedMaterialData.albedoColor.x);
@@ -1923,7 +1924,7 @@ void App::AlbedoTextureChosenCallback(void *context, int optionTextureIndex)
 		int materialIndex = app->chosenMaterialIndex;
 		MaterialData oldData;
 		app->_scene.GetMaterialData(materialIndex,&oldData);
-		oldData.albedoTextureIndex = optionTextureIndex == 0 ? -1 : optionTextureIndex - 1;
+		oldData.albedoTextureIndex = optionTextureIndex;
 		app->_scene.TryAlterMaterial(materialIndex,oldData);
 	}
 }
