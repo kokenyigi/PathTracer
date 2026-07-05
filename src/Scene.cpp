@@ -813,6 +813,8 @@ bool Scene::TryLoadPathTracedTexture(const std::string &filePathRelative, std::v
     width = loadedTextureWidth;
     height = loadedTextureHeight;
 
+    // Here we do a pre-allocation for faster loading times, 
+    // and move all the data from the continuos array into the structured array
     newRgbaDatas.resize(loadedTextureWidth * loadedTextureHeight);
     for(int i=0; i<loadedTextureWidth * loadedTextureHeight; ++i)
     {
@@ -822,8 +824,11 @@ bool Scene::TryLoadPathTracedTexture(const std::string &filePathRelative, std::v
         newRgbaDatas[i].a = pngByteStream[4*i + 3];
     }
 
-    textureInfo->width = width;
-    textureInfo->height = height;
+    if(textureInfo != nullptr)
+    {
+        textureInfo->width = width;
+        textureInfo->height = height;
+    }
 
     stbi_image_free(pngByteStream);
 
@@ -834,9 +839,41 @@ bool Scene::TryLoadPathTracedTexture(const std::string &filePathRelative, std::v
 bool Scene::TryLoadTexture(const std::string &filePathRelative, TextureInfo *textureInfo)
 {
     std::vector<RgbaData> newRgbaDatas;
+    int newTextureWidth = -1;
+    int newTextureHeight = -1;
 
+    bool wasTextureLoadingSuccesful = TryLoadPathTracedTexture(filePathRelative,newRgbaDatas,
+        newTextureWidth,newTextureHeight,textureInfo);
+    
+    if(!wasTextureLoadingSuccesful) return false;
 
+    //Now, that our data is loaded, we have to merge it with out already established data buffers
+    // First, we need these two integer datas, for insertion into the gpu buffers.
+    int alreadyExistingRgbaValueCount = _rgbaDatas.size();
 
+    //We can safely just append the RGBA values 
+    _rgbaDatas.insert(_rgbaDatas.end(),newRgbaDatas.begin(),newRgbaDatas.end());
 
+    //Creation of the texture
+    TextureData newTextureData;
+    newTextureData.width = newTextureWidth;
+    newTextureData.height = newTextureHeight;
+    //Because this is the index where the loaded texture's first rgba(top left) corner value starts
+    newTextureData.startIndex = alreadyExistingRgbaValueCount; 
+
+    int alreadyExistingTextureDataCount = _textureDatas.size();
+    if(textureInfo != nullptr)
+    {
+        textureInfo->textureIndex = alreadyExistingTextureDataCount;
+    }
+    _textureDatas.push_back(newTextureData);
+
+    //Now that we merged our data CPU-side, we have to do the same GPU side, for this we use our convinience function
+    AppendToClBuffer(clContext,clCommandQueue,&_rgbaDatasBuffer,sizeof(RgbaData),alreadyExistingRgbaValueCount,
+        newTextureWidth*newTextureHeight,newRgbaDatas.data());
+    AppendToClBuffer(clContext,clCommandQueue,&_textureDatasBuffer,sizeof(TextureData),alreadyExistingTextureDataCount,1,
+        &newTextureData);
+
+    return true;
 }
 

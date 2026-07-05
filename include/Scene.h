@@ -302,7 +302,8 @@ private:
 
     /**
      * This function loads the necessary float bytestream from the .png, .jpg, .bmp formatted binary file.
-     * It returns whether or not the reading was succesful. it also constructs the rgbaDatas vector, and stuff
+     * It returns whether or not the reading was succesful. it also constructs the rgbaDatas vector, and acts as
+     * basically a helper function for the main tryloadtexture func.
      */
     bool TryLoadPathTracedTexture(const std::string& filePathRelative,std::vector<RgbaData>& newRgbaDatas,
         int& width, int& height,TextureInfo* textureInfo = nullptr);
