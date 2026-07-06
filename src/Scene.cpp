@@ -843,6 +843,7 @@ bool Scene::TryLoadPathTracedTexture(const std::string &filePathRelative, std::v
 }
 
 
+
 bool Scene::TryLoadTexture(const std::string &filePathRelative, TextureInfo *textureInfo)
 {
     std::vector<RgbaData> newRgbaDatas;
@@ -976,6 +977,78 @@ bool Scene::TryAlterModel(int modelIndex, const ModelDataCpu &alteredModelData)
         cl_int clError;
         clError = clEnqueueWriteBuffer(clCommandQueue,_modelDataBuffer,CL_TRUE,sizeof(ModelDataGpu)*modelIndex,
             sizeof(ModelDataGpu),&alteredModelDataGpu,0,nullptr,nullptr);
+        CHECK_ERROR(clError);
+
+        return true;
+    }
+    return false;
+}
+
+
+void Scene::RecalculateWorldTransformOfObject(int objectIndex)
+{
+    glm::vec3 position = _objectTransforms[objectIndex].position;
+    glm::vec3 scale = _objectTransforms[objectIndex].scale;
+    glm::vec3 rotation = _objectTransforms[objectIndex].rotation;
+
+    glm::mat4 rotationTransform = glm::rotate(glm::mat4(1.0f),glm::radians(rotation.x),glm::vec3(1,0,0)) * 
+        glm::rotate(glm::mat4(1.0f),glm::radians(rotation.y),glm::vec3(0,1,0)) * 
+        glm::rotate(glm::mat4(1.0f),glm::radians(rotation.z),glm::vec3(0,0,1));
+
+    glm::mat4 worldTransform = glm::translate(glm::mat4(1.0f),position) * rotationTransform * glm::scale(glm::mat4(1.0f),scale);
+
+    _objectDatas[objectIndex].worldTransform = worldTransform;
+    _objectDatas[objectIndex].invWorldTransform = glm::inverse(worldTransform);
+}
+
+bool Scene::TryAddObject(ObjectInfo *objectInfo)
+{
+    if(_modelDatas.size() <= 0 || _objectDatas.size() >= _maximumObjectCount) return false;
+
+    Transform newObjectTransform;
+    ObjectData newObjectData;
+    newObjectData.modelIndex = 0;
+    
+    int alreadyExistingObjectDataCount = _objectDatas.size();
+    _objectTransforms.push_back(newObjectTransform);
+    _objectDatas.push_back(newObjectData);
+
+    if(objectInfo != nullptr)
+    {
+        objectInfo->objectIndex = alreadyExistingObjectDataCount;
+    }
+
+    //We calculate the world and invWorld transforms based on transform of objects
+    RecalculateWorldTransformOfObject(alreadyExistingObjectDataCount);
+
+    AppendToClBuffer(clContext,clCommandQueue,&_objectDataBuffer,sizeof(ObjectData),alreadyExistingObjectDataCount,1,&newObjectData);
+
+    return true;
+}
+
+bool Scene::GetObjectState(int objectIndex, ObjectState *objectState)
+{
+    if(objectIndex >= 0 && objectIndex < _objectTransforms.size())
+    {
+        objectState->modelIndex = _objectDatas[objectIndex].modelIndex;
+        objectState->transform = _objectTransforms[objectIndex];
+        return true;
+    }
+    return false;
+}
+
+bool Scene::TryAlterObject(int objectIndex, const ObjectState& alteredObjectState)
+{
+    if(objectIndex >= 0 && objectIndex < _objectTransforms.size())
+    {
+        _objectTransforms[objectIndex] = alteredObjectState.transform;
+        _objectDatas[objectIndex].modelIndex = alteredObjectState.modelIndex;
+        RecalculateWorldTransformOfObject(objectIndex);
+
+        //Upload changes to GPU
+        cl_int clError;
+        clError = clEnqueueWriteBuffer(clCommandQueue,_objectDataBuffer,CL_TRUE,sizeof(ObjectData)*objectIndex,
+            sizeof(ObjectData),&_objectDatas[objectIndex],0,nullptr,nullptr);
         CHECK_ERROR(clError);
 
         return true;

@@ -707,19 +707,18 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerObjectData.SetMargin(MARGIN_TOP,10.0);
 	containerObjectData.SetBGColor(0.2,0.2,0.2);
 
-	labelModel.SetMargin(MARGIN_TOP,0.0f);
+	labelModel.SetMargin(MARGIN_TOP,10.0f);
 	labelModel.SetMargin(MARGIN_LEFT,0.0f);
-	labelModel.SetHeight(50.0f);
-	labelModel.SetWidth(200.0f);
+	labelModel.SetHeight(30.0f);
+	labelModel.SetWidth(170.0f);
 	labelModel.SetText("Model: ");
 	labelModel.SetTextColor(1,1,1);
-
 	containerObjectData.AddControl(&labelModel);
 
-	dropdownModel.SetMargin(MARGIN_TOP,0.0f);
-	dropdownModel.SetMargin(MARGIN_LEFT,200.0f);
-	dropdownModel.SetHeight(50.0f);
-	dropdownModel.SetWidth(200.0f);
+	dropdownModel.SetMargin(MARGIN_TOP,5.0f);
+	dropdownModel.SetMargin(MARGIN_LEFT,180.0f);
+	dropdownModel.SetHeight(40.0f);
+	dropdownModel.SetWidth(250.0f);
 	dropdownModel.SetBGColor(0.9,0.9,0.9);
 	dropdownModel.SetHoverColor(1,1,1);
 	dropdownModel.SetClickColor(0,1,0);
@@ -732,10 +731,274 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	dropdownModel.SetScrollBarHoveredColor(0.7,0.7,0.7);
 	dropdownModel.SetScrollBarClickedColor(0,1,0);
 	dropdownModel.SetMaxVisibleOptionCount(5);
-	dropdownModel.AddOption("null",0);
 	dropdownModel.SetScrollBarSize(15.0f);
-
+	dropdownModel.SetCallbackContext(this);
+	dropdownModel.SetCallback(ModelIndexChosenDropdownCallback);
 	containerObjectData.AddControl(&dropdownModel);
+
+
+	labelPosition.SetMargin(MARGIN_TOP,60.0f);
+	labelPosition.SetMargin(MARGIN_LEFT,0.0f);
+	labelPosition.SetHeight(30.0f);
+	labelPosition.SetWidth(240.0f);
+	labelPosition.SetText("Position: ");
+	labelPosition.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelPosition);
+
+	labelXPos.SetMargin(MARGIN_TOP,110.0f);
+	labelXPos.SetMargin(MARGIN_LEFT,20.0f);
+	labelXPos.SetHeight(30.0f);
+	labelXPos.SetWidth(50.0f);
+	labelXPos.SetText("x:");
+	labelXPos.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelXPos);
+
+	inputXPos.SetMargin(MARGIN_TOP,105.0f);
+	inputXPos.SetMargin(MARGIN_LEFT,80.0f);
+	inputXPos.SetHeight(40.0f);
+	inputXPos.SetWidth(200.0f);
+	inputXPos.SetTextColor(0,0,0);
+	inputXPos.SetEditHeadColor(1,0,0);
+	inputXPos.SetFloat(0.0f);
+	inputXPos.SetBGColor(1,1,1);
+	inputXPos.SetCallbackContext(this);
+	inputXPos.SetFloatCallback(CompTypeAlteredCallback<0,0>);
+	containerObjectData.AddControl(&inputXPos);
+
+
+	labelYPos.SetMargin(MARGIN_TOP,160.0f);
+	labelYPos.SetMargin(MARGIN_LEFT,20.0f);
+	labelYPos.SetHeight(30.0f);
+	labelYPos.SetWidth(50.0f);
+	labelYPos.SetText("y:");
+	labelYPos.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelYPos);
+
+	inputYPos.SetMargin(MARGIN_TOP,155.0f);
+	inputYPos.SetMargin(MARGIN_LEFT,80.0f);
+	inputYPos.SetHeight(40.0f);
+	inputYPos.SetWidth(200.0f);
+	inputYPos.SetTextColor(0,0,0);
+	inputYPos.SetEditHeadColor(0,1,0);
+	inputYPos.SetFloat(0.0f);
+	inputYPos.SetBGColor(1,1,1);
+	inputYPos.SetCallbackContext(this);
+	inputYPos.SetFloatCallback(CompTypeAlteredCallback<1,0>);
+	containerObjectData.AddControl(&inputYPos);
+
+
+	labelZPos.SetMargin(MARGIN_TOP,210.0f);
+	labelZPos.SetMargin(MARGIN_LEFT,20.0f);
+	labelZPos.SetHeight(30.0f);
+	labelZPos.SetWidth(50.0f);
+	labelZPos.SetText("z:");
+	labelZPos.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelZPos);
+
+	inputZPos.SetMargin(MARGIN_TOP,205.0f);
+	inputZPos.SetMargin(MARGIN_LEFT,80.0f);
+	inputZPos.SetHeight(40.0f);
+	inputZPos.SetWidth(200.0f);
+	inputZPos.SetTextColor(0,0,0);
+	inputZPos.SetEditHeadColor(0,0,1);
+	inputZPos.SetFloat(0.0f);
+	inputZPos.SetBGColor(1,1,1);
+	inputZPos.SetCallbackContext(this);
+	inputZPos.SetFloatCallback(CompTypeAlteredCallback<2,0>);
+	containerObjectData.AddControl(&inputZPos);
+
+
+	labelScale.SetMargin(MARGIN_TOP,260.0f);
+	labelScale.SetMargin(MARGIN_LEFT,0.0f);
+	labelScale.SetHeight(30.0f);
+	labelScale.SetWidth(240.0f);
+	labelScale.SetText("Scale: ");
+	labelScale.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelScale);
+
+
+	labelXScale.SetMargin(MARGIN_TOP,310.0f);
+	labelXScale.SetMargin(MARGIN_LEFT,20.0f);
+	labelXScale.SetHeight(30.0f);
+	labelXScale.SetWidth(50.0f);
+	labelXScale.SetText("x:");
+	labelXScale.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelXScale);
+
+	inputXScale.SetMargin(MARGIN_TOP,305.0f);
+	inputXScale.SetMargin(MARGIN_LEFT,80.0f);
+	inputXScale.SetHeight(40.0f);
+	inputXScale.SetWidth(200.0f);
+	inputXScale.SetTextColor(0,0,0);
+	inputXScale.SetEditHeadColor(1,0,0);
+	inputXScale.SetFloat(0.0f);
+	inputXScale.SetBGColor(1,1,1);
+	inputXScale.SetCallbackContext(this);
+	inputXScale.SetFloatInterval(FLT_MIN,FLT_MAX);
+	inputXScale.SetFloatCallback(CompTypeAlteredCallback<0,1>);
+	containerObjectData.AddControl(&inputXScale);
+
+
+	labelYScale.SetMargin(MARGIN_TOP,360.0f);
+	labelYScale.SetMargin(MARGIN_LEFT,20.0f);
+	labelYScale.SetHeight(30.0f);
+	labelYScale.SetWidth(50.0f);
+	labelYScale.SetText("y:");
+	labelYScale.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelYScale);
+
+	inputYScale.SetMargin(MARGIN_TOP,355.0f);
+	inputYScale.SetMargin(MARGIN_LEFT,80.0f);
+	inputYScale.SetHeight(40.0f);
+	inputYScale.SetWidth(200.0f);
+	inputYScale.SetTextColor(0,0,0);
+	inputYScale.SetEditHeadColor(0,1,0);
+	inputYScale.SetFloat(0.0f);
+	inputYScale.SetBGColor(1,1,1);
+	inputYScale.SetCallbackContext(this);
+	inputYScale.SetFloatInterval(FLT_MIN,FLT_MAX);
+	inputYScale.SetFloatCallback(CompTypeAlteredCallback<1,1>);
+	containerObjectData.AddControl(&inputYScale);
+
+
+	labelZScale.SetMargin(MARGIN_TOP,410.0f);
+	labelZScale.SetMargin(MARGIN_LEFT,20.0f);
+	labelZScale.SetHeight(30.0f);
+	labelZScale.SetWidth(50.0f);
+	labelZScale.SetText("z:");
+	labelZScale.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelZScale);
+
+	inputZScale.SetMargin(MARGIN_TOP,405.0f);
+	inputZScale.SetMargin(MARGIN_LEFT,80.0f);
+	inputZScale.SetHeight(40.0f);
+	inputZScale.SetWidth(200.0f);
+	inputZScale.SetTextColor(0,0,0);
+	inputZScale.SetEditHeadColor(0,0,1);
+	inputZScale.SetFloat(0.0f);
+	inputZScale.SetBGColor(1,1,1);
+	inputZScale.SetFloatInterval(FLT_MIN,FLT_MAX);
+	inputZScale.SetCallbackContext(this);
+	inputZScale.SetFloatCallback(CompTypeAlteredCallback<2,1>);
+	containerObjectData.AddControl(&inputZScale);
+	
+
+	labelRotation.SetMargin(MARGIN_TOP,460.0f);
+	labelRotation.SetMargin(MARGIN_LEFT,0.0f);
+	labelRotation.SetHeight(30.0f);
+	labelRotation.SetWidth(240.0f);
+	labelRotation.SetText("Rotation: ");
+	labelRotation.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelRotation);
+
+
+	labelXRot.SetMargin(MARGIN_TOP,510.0f);
+	labelXRot.SetMargin(MARGIN_LEFT,20.0f);
+	labelXRot.SetHeight(30.0f);
+	labelXRot.SetWidth(50.0f);
+	labelXRot.SetText("x:");
+	labelXRot.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelXRot);
+
+	inputXRot.SetMargin(MARGIN_TOP,505.0f);
+	inputXRot.SetMargin(MARGIN_LEFT,80.0f);
+	inputXRot.SetHeight(40.0f);
+	inputXRot.SetWidth(200.0f);
+	inputXRot.SetTextColor(0,0,0);
+	inputXRot.SetEditHeadColor(1,0,0);
+	inputXRot.SetFloat(0.0f);
+	inputXRot.SetBGColor(1,1,1);
+	inputXRot.SetFloatInterval(0.0f,360.0f);
+	inputXRot.SetCallbackContext(this);
+	inputXRot.SetFloatCallback(CompTypeAlteredCallback<0,2>);
+	containerObjectData.AddControl(&inputXRot);
+
+	sliderXRot.SetMargin(MARGIN_TOP,510.0f);
+	sliderXRot.SetMargin(MARGIN_LEFT,300.0f);
+	sliderXRot.SetHeight(30.0f);
+	sliderXRot.SetWidth(180.0f);
+	sliderXRot.SetSliderHeadSize(30.0f);
+	sliderXRot.SetSliderBaseBGColor(1,1,1);
+	sliderXRot.SetSliderBaseColor(0,0,0);
+	sliderXRot.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderXRot.SetSliderClickedColor(1,0,0);
+	sliderXRot.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderXRot.SetSliderValueChangedCallbackContext(this);
+	sliderXRot.SetSliderValueChangedCallback(CompTypeAlteredCallback<0,2,true>);
+	containerObjectData.AddControl(&sliderXRot);
+
+
+	labelYRot.SetMargin(MARGIN_TOP,560.0f);
+	labelYRot.SetMargin(MARGIN_LEFT,20.0f);
+	labelYRot.SetHeight(30.0f);
+	labelYRot.SetWidth(50.0f);
+	labelYRot.SetText("y:");
+	labelYRot.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelYRot);
+
+	inputYRot.SetMargin(MARGIN_TOP,555.0f);
+	inputYRot.SetMargin(MARGIN_LEFT,80.0f);
+	inputYRot.SetHeight(40.0f);
+	inputYRot.SetWidth(200.0f);
+	inputYRot.SetTextColor(0,0,0);
+	inputYRot.SetEditHeadColor(0,1,0);
+	inputYRot.SetFloat(0.0f);
+	inputYRot.SetBGColor(1,1,1);
+	inputYRot.SetFloatInterval(0.0f,360.0f);
+	inputYRot.SetCallbackContext(this);
+	inputYRot.SetFloatCallback(CompTypeAlteredCallback<1,2>);
+	containerObjectData.AddControl(&inputYRot);
+
+	sliderYRot.SetMargin(MARGIN_TOP,560.0f);
+	sliderYRot.SetMargin(MARGIN_LEFT,300.0f);
+	sliderYRot.SetHeight(30.0f);
+	sliderYRot.SetWidth(180.0f);
+	sliderYRot.SetSliderHeadSize(30.0f);
+	sliderYRot.SetSliderBaseBGColor(1,1,1);
+	sliderYRot.SetSliderBaseColor(0,0,0);
+	sliderYRot.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderYRot.SetSliderClickedColor(0,1,0);
+	sliderYRot.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderYRot.SetSliderValueChangedCallbackContext(this);
+	sliderYRot.SetSliderValueChangedCallback(CompTypeAlteredCallback<1,2,true>);
+	containerObjectData.AddControl(&sliderYRot);
+
+
+	labelZRot.SetMargin(MARGIN_TOP,610.0f);
+	labelZRot.SetMargin(MARGIN_LEFT,20.0f);
+	labelZRot.SetHeight(30.0f);
+	labelZRot.SetWidth(50.0f);
+	labelZRot.SetText("z:");
+	labelZRot.SetTextColor(1,1,1);
+	containerObjectData.AddControl(&labelZRot);
+
+	inputZRot.SetMargin(MARGIN_TOP,605.0f);
+	inputZRot.SetMargin(MARGIN_LEFT,80.0f);
+	inputZRot.SetHeight(40.0f);
+	inputZRot.SetWidth(200.0f);
+	inputZRot.SetTextColor(0,0,0);
+	inputZRot.SetEditHeadColor(0,0,1);
+	inputZRot.SetFloat(0.0f);
+	inputZRot.SetBGColor(1,1,1);
+	inputZRot.SetFloatInterval(0.0f,360.0f);
+	inputZRot.SetCallbackContext(this);
+	inputZRot.SetFloatCallback(CompTypeAlteredCallback<2,2>);
+	containerObjectData.AddControl(&inputZRot);
+
+	sliderZRot.SetMargin(MARGIN_TOP,610.0f);
+	sliderZRot.SetMargin(MARGIN_LEFT,300.0f);
+	sliderZRot.SetHeight(30.0f);
+	sliderZRot.SetWidth(180.0f);
+	sliderZRot.SetSliderHeadSize(30.0f);
+	sliderZRot.SetSliderBaseBGColor(1,1,1);
+	sliderZRot.SetSliderBaseColor(0,0,0);
+	sliderZRot.SetSliderHoveredColor(0.1,0.1,0.1);
+	sliderZRot.SetSliderClickedColor(0,0,1);
+	sliderZRot.SetSliderDirection(SLIDER_DIRECTION_HORIZONTAL);
+	sliderZRot.SetSliderValueChangedCallbackContext(this);
+	sliderZRot.SetSliderValueChangedCallback(CompTypeAlteredCallback<2,2,true>);
+	containerObjectData.AddControl(&sliderZRot);
+	
 
 	containerRight.AddControl(&containerObjectData);
 
@@ -903,10 +1166,17 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	objectPanel.SetScrollBarHoveredColor(0.6,0.6,0.6);
 	objectPanel.SetScrollBarClickedColor(0,1,0);
 	
-	Button* tempObject = new Button();
-	tempObject->SetText("Test object");
-	objectPanel.AddControl(tempObject);
-	
+	buttonAddObject.SetBGColor(0.6,0.6,0.6);
+	buttonAddObject.SetHoverColor(0.7,0.7,0.7);
+	buttonAddObject.SetClickColor(1,1,1);
+	buttonAddObject.SetText("ADD");
+	buttonAddObject.SetTextColor(0,0,0);
+	buttonAddObject.SetCallBackContext(this);
+	buttonAddObject.SetCallback(AddObjectButtonCallback);
+	objectPanel.AddControl(&buttonAddObject);
+
+	chosenObjectGroup.SetCallback(ChosenObjectButtonCallback);
+
 	containerApplication.AddControl(&objectPanel);
 
 	objectPanel.SetInactive();
@@ -2204,5 +2474,66 @@ void App::MaterialIndexChosenDropdownCallback(void *context, int chosenOptionInd
 		app->_scene.GetModelData(modelIndex,&oldData);
 		oldData.materialIndex = chosenOptionIndex;
 		app->_scene.TryAlterModel(modelIndex,oldData);
+	}
+}
+
+
+void App::AddObjectButtonCallback(void *context)
+{
+	App* app = (App*)context;
+
+	ObjectInfo newObjectInfo;
+	bool wasAddingObjectSuccessful = app->_scene.TryAddObject(&newObjectInfo);
+	if(wasAddingObjectSuccessful)
+	{	
+		RadioButton* newObjectButton = new RadioButton();
+		newObjectButton->SetText(std::to_string(newObjectInfo.objectIndex));
+		newObjectButton->SetCallBackContext(context);
+		newObjectButton->SetIndex(newObjectInfo.objectIndex);
+
+		app->chosenObjectGroup.AddToGroup(newObjectButton);
+		app->objectPanel.AddControl(newObjectButton);		
+	}
+}
+
+void App::ChosenObjectButtonCallback(void *context, int objectIndex)
+{
+	App* app = (App*)context;
+
+	app->chosenObjectIndex = objectIndex;
+
+	ObjectState storedObjectState;
+	app->_scene.GetObjectState(objectIndex,&storedObjectState);
+
+	app->dropdownModel.SetChosenOption(storedObjectState.modelIndex);
+
+	app->inputXPos.SetFloat(storedObjectState.transform.position.x);
+	app->inputYPos.SetFloat(storedObjectState.transform.position.y);
+	app->inputZPos.SetFloat(storedObjectState.transform.position.z);
+
+	app->inputXScale.SetFloat(storedObjectState.transform.scale.x);
+	app->inputYScale.SetFloat(storedObjectState.transform.scale.y);
+	app->inputZScale.SetFloat(storedObjectState.transform.scale.z);
+
+
+	app->inputXRot.SetFloat(storedObjectState.transform.rotation.x);
+	app->sliderXRot.SetSliderValue(storedObjectState.transform.rotation.x / 360.0f);
+	app->inputYRot.SetFloat(storedObjectState.transform.rotation.y);
+	app->sliderYRot.SetSliderValue(storedObjectState.transform.rotation.y / 360.0f);
+	app->inputZRot.SetFloat(storedObjectState.transform.rotation.z);
+	app->sliderZRot.SetSliderValue(storedObjectState.transform.rotation.z / 360.0f);
+}
+
+void App::ModelIndexChosenDropdownCallback(void *context, int chosenOptionIndex)
+{
+	App* app = (App*)context;
+	if(app->chosenObjectIndex != -1)
+	{
+		int objectIndex = app->chosenObjectIndex;
+
+		ObjectState oldObjectState;
+		app->_scene.GetObjectState(objectIndex,&oldObjectState);
+		oldObjectState.modelIndex = chosenOptionIndex;
+		app->_scene.TryAlterObject(objectIndex,oldObjectState);
 	}
 }

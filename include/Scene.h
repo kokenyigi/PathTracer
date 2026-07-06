@@ -238,6 +238,21 @@ struct ModelInfo
     int modelIndex = -1;
 };
 
+
+/**
+ * Basically information about the loaded object, it only contains an index for now
+ */
+struct ObjectInfo
+{
+    int objectIndex;
+};
+
+struct ObjectState
+{
+    int modelIndex = -1;
+    Transform transform;
+};
+
 /**
  * This class is basically a renderer, it handles IO, and renders the given scene into a texture.
  * In our application it is used to render the scene inside a canvas control.
@@ -372,11 +387,15 @@ public:
     bool GetModelData(int modelIndex,ModelDataCpu* modelData); // retval == false if index out of bounds
     bool TryAlterModel(int modelIndex,const ModelDataCpu& alteredModelData); //same
 
-
-    bool TryAddObject();
-    bool GetObjectTransformData(int objectIndex, Transform* objectTransform);
-    bool TryAlterObject(int objectIndex, const Transform& alteredTransform);
-    bool TryDeleteObject(int objectIndex);
+    /**
+     * This function tries to add an object to an already allocated object buffer both CPU and GPU side.
+     * It can fail: if objectBuffer is full or if no models have been created yet (MAKE A MODEL FIRST)
+     * retval = success identifier
+     */
+    bool TryAddObject(ObjectInfo* objectInfo = nullptr);
+    bool GetObjectState(int objectIndex, ObjectState* objectState); // getter for objectState
+    bool TryAlterObject(int objectIndex, const ObjectState& alteredObjectState); //also writes data to GPU
+    bool TryDeleteObject(int objectIndex); // Back-swaps object, and erases end element
 
     void Delete();
 
@@ -431,6 +450,9 @@ private:
     bool TryLoadPathTracedTexture(const std::string& filePathRelative,std::vector<RgbaData>& newRgbaDatas,
         int& width, int& height,TextureInfo* textureInfo = nullptr);
     
+
+    //This helper function just simply calculates the world transformation of an object.
+    void RecalculateWorldTransformOfObject(int objectIndex);
 };
 
 

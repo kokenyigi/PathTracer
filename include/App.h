@@ -91,6 +91,18 @@ private:
 
 	Container containerObjectData;
 	Label labelModel; Dropdown dropdownModel;
+	Label labelPosition;
+	Label labelXPos;FloatInput inputXPos;
+	Label labelYPos;FloatInput inputYPos;
+	Label labelZPos;FloatInput inputZPos;
+	Label labelScale;
+	Label labelXScale;FloatInput inputXScale;
+	Label labelYScale;FloatInput inputYScale;
+	Label labelZScale;FloatInput inputZScale;
+	Label labelRotation;
+	Label labelXRot;FloatInput inputXRot;Slider sliderXRot;
+	Label labelYRot;FloatInput inputYRot;Slider sliderYRot;
+	Label labelZRot;FloatInput inputZRot;Slider sliderZRot;
 
 
 	Container containerLeft;
@@ -194,6 +206,12 @@ public:
 	static void MeshIndexChosenDropdownCallback(void* context, int chosenOptionIndex);
 	static void MaterialIndexChosenDropdownCallback(void* context, int chosenOptionIndex);
 
+	static void AddObjectButtonCallback(void * context);
+	static void ChosenObjectButtonCallback(void * context, int objectIndex);
+	static void ModelIndexChosenDropdownCallback(void* context, int chosenOptionIndex);
+	template<int axis,int compType,bool isSlider = false> // axis: 0-x, 1-y, 2-z, compType: 0-Pos, 1-Scl, 2-Rot,isSlider self explenatory
+	static void CompTypeAlteredCallback(void* context , float newValueOnAxis);
+
 	static void FileSelectionMenuItemCallback(void * context, int index);
 	static void FileSelectionMenuLoadButtonCallback(void* context);
 	static void FileSelectionMenuCancelButtonCallback(void* context);
@@ -224,4 +242,50 @@ private:
 };
 
 
+template <int axis, int compType, bool isSlider>
+inline void App::CompTypeAlteredCallback(void *context, float newValueOnAxis)
+{
+	App* app = (App*)context;
+	if(app->chosenObjectIndex != -1)
+	{
+		int objectIndex = app->chosenObjectIndex;
+		ObjectState oldObjectState;
+		app->_scene.GetObjectState(objectIndex,&oldObjectState);
+		if(compType == 0)
+		{
+			float* positionArray = &oldObjectState.transform.position.x;
+			positionArray[axis] = newValueOnAxis;
+		}
+		else if(compType == 1)
+		{
+			float* scaleArray = &oldObjectState.transform.scale.x;
+			scaleArray[axis] = newValueOnAxis;
+		}
+		else
+		{
+			float* rotationArray = &oldObjectState.transform.rotation.x;
+			if(isSlider)
+			{
+				rotationArray[axis] = newValueOnAxis*360.0f; // since value is normalized
+
+				if(axis==0){app->inputXRot.SetFloat(newValueOnAxis*360.0f);}
+				else if(axis==1){app->inputYRot.SetFloat(newValueOnAxis*360.0f);}
+				else{app->inputZRot.SetFloat(newValueOnAxis*360.0f);}
+			}
+			else
+			{
+				rotationArray[axis] = newValueOnAxis; // is not normalized
+
+				if(axis==0){app->sliderXRot.SetSliderValue(newValueOnAxis/360.0f);}
+				else if(axis==1){app->sliderYRot.SetSliderValue(newValueOnAxis/360.0f);}
+				else{app->sliderZRot.SetSliderValue(newValueOnAxis/360.0f);}
+			}
+		}
+
+		app->_scene.TryAlterObject(objectIndex,oldObjectState);
+	}
+}
+
 #endif
+
+
