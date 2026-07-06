@@ -152,6 +152,28 @@ struct MaterialData
     int padding1;
 };
 
+/**
+ * This structure stores a model CPU side, and it has a meshIndex, because only through this index can we set a proper mesh
+ *  to the model (As a user we cant set the bvhrootNode directly, so we have to use this indirection)
+ */
+struct ModelDataCpu
+{
+    int meshIndex = -1;
+    int materialIndex = -1;
+};
+/**
+ * This struct is very very similiar to the one above, and means the exact same: a specification of a model in GPU space.
+ * However, it is missing the indirection created by meshindex. IMPORTANT mental model: There is a thing
+ *  we can learn from Database, from all things: if ever there is a one-one relation (for every item of one relation there is exactly
+ *  one relation on the other side, for efficiency's sake we can merge these relations straigth up, and this is exactly what
+ *  we will do, because GPU side everything has to be as fast as it just can be.)
+ */
+struct ModelDataGpu
+{
+    int bvhRootIndex = -1;
+    int materialIndex = -1;
+};
+
 
 
 /**
@@ -185,6 +207,13 @@ struct TextureInfo
 struct MaterialInfo
 {
     int materialIndex = -1;
+};
+
+
+//Same as before, just for communication
+struct ModelInfo
+{
+    int modelIndex = -1;
 };
 
 /**
@@ -242,6 +271,9 @@ private:
     //float
     std::vector<MaterialData> _materialDatas;
     cl_mem _materialDataBuffer;
+
+    std::vector<ModelDataCpu> _modelDatas;
+    cl_mem _modelDataBuffer;
     
 
 
@@ -303,11 +335,16 @@ public:
      */
     bool TryAddMaterial(MaterialInfo* materialInfo = nullptr);
     bool GetMaterialData(int materialIndex, MaterialData* materialData); //returns false when index out of bounds
+    bool TryAlterMaterial(int materialIndex, const MaterialData& alterredMaterialData); // same
 
     /**
-     * This following function will alter the given material, returns whether or not this operation was succesful
+     * This function tries to add a modeldata instance to the already existing ones both CPU and GPU side, it fails loudly with a false
+     *  return value, if there are no meshes or materials already present (Why would u wanna create a model without meshes and materials)
+     *  returns true on success, and sets the mesh to the 0.th index and material to the 0.th as well.
      */
-    bool TryAlterMaterial(int materialIndex, const MaterialData& alterredMaterialData);
+    bool TryAddModel(ModelInfo* modelInfo = nullptr);
+    bool GetModelData(int modelIndex,ModelDataCpu* modelData); // retval == false if index out of bounds
+    bool TryAlterModel(int modelIndex,const ModelDataCpu& alteredModelData); //same
 
     void Delete();
 
