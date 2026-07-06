@@ -21,6 +21,9 @@
 Scene::Scene()
 {    
     _camera.Init(glm::vec3(0,0,4.0f),glm::vec3(0,0,0),glm::vec3(0,1,0),_viewportWidth,_viewportHeight);
+
+    _objectTransforms.reserve(_maximumObjectCount);
+    _objectDatas.reserve(_maximumObjectCount);
 }
 
 
@@ -99,6 +102,9 @@ void Scene::InitCL()
     CHECK_ERROR(clError);
 
     clCameraDataBuffer = clCreateBuffer(clContext,CL_MEM_READ_ONLY,sizeof(CameraData),nullptr,&clError);
+    CHECK_ERROR(clError);
+
+    _objectDataBuffer = clCreateBuffer(clContext,CL_MEM_READ_ONLY,sizeof(ObjectData) * _maximumObjectCount,nullptr,&clError);
     CHECK_ERROR(clError);
 
 }

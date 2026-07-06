@@ -126,7 +126,8 @@ private:
 	int chosenModelIndex = -1;
 	LayoutPanel modelPanel; Button buttonModelAdd; RadioButtonGroup chosenModelGroup;
 
-	LayoutPanel objectPanel;
+	int chosenObjectIndex = -1;
+	LayoutPanel objectPanel; Button buttonAddObject; RadioButtonGroup chosenObjectGroup;
 
 
 	Container containerFileMenu;

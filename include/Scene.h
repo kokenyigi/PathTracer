@@ -175,6 +175,28 @@ struct ModelDataGpu
 };
 
 
+/**
+ * For every object in the scene, we also have a cpu-side only transform component, which just simply shows 
+ *  the raw pos, scale, rot components for display and easy querry. 
+ * Once this struct is altered from the outside, or the inside, object data's worldtransform 
+ *  and invworldtransform have to be recalculated.
+ * Rotation is stored in euler indices
+ */
+struct Transform
+{
+    glm::vec3 position = glm::vec3(0);
+    glm::vec3 scale = glm::vec3(1);
+    glm::vec3 rotation = glm::vec3(0);
+};
+
+
+struct ObjectData
+{
+    int modelIndex = -1;
+    glm::mat4 worldTransform = glm::mat4(1.0f);
+    glm::mat4 invWorldTransform = glm::mat4(1.0f);
+};
+
 
 /**
  * This structure is just a way to enable communication of Mesh information to the outside eg.: View (App) layer
@@ -275,6 +297,10 @@ private:
     std::vector<ModelDataCpu> _modelDatas;
     cl_mem _modelDataBuffer;
     
+    int _maximumObjectCount = 200;
+    std::vector<Transform> _objectTransforms;
+    std::vector<ObjectData> _objectDatas;
+    cl_mem _objectDataBuffer;
 
 
 
@@ -345,6 +371,12 @@ public:
     bool TryAddModel(ModelInfo* modelInfo = nullptr);
     bool GetModelData(int modelIndex,ModelDataCpu* modelData); // retval == false if index out of bounds
     bool TryAlterModel(int modelIndex,const ModelDataCpu& alteredModelData); //same
+
+
+    bool TryAddObject();
+    bool GetObjectTransformData(int objectIndex, Transform* objectTransform);
+    bool TryAlterObject(int objectIndex, const Transform& alteredTransform);
+    bool TryDeleteObject(int objectIndex);
 
     void Delete();
 
