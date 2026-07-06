@@ -632,18 +632,18 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerModelData.SetMargin(MARGIN_TOP,10.0);
 	containerModelData.SetBGColor(0.2,0.2,0.2);
 
-	labelMesh.SetMargin(MARGIN_TOP,0.0f);
+	labelMesh.SetMargin(MARGIN_TOP,10.0f);
 	labelMesh.SetMargin(MARGIN_LEFT,0.0f);
-	labelMesh.SetHeight(50.0f);
-	labelMesh.SetWidth(200.0f);
+	labelMesh.SetHeight(30.0f);
+	labelMesh.SetWidth(100.0f);
 	labelMesh.SetText("Mesh: ");
 	labelMesh.SetTextColor(1,1,1);
 
 	containerModelData.AddControl(&labelMesh);
 
-	dropdownMesh.SetMargin(MARGIN_TOP,0.0f);
-	dropdownMesh.SetMargin(MARGIN_LEFT,200.0f);
-	dropdownMesh.SetHeight(50.0f);
+	dropdownMesh.SetMargin(MARGIN_TOP,5.0f);
+	dropdownMesh.SetMargin(MARGIN_LEFT,100.0f);
+	dropdownMesh.SetHeight(40.0f);
 	dropdownMesh.SetWidth(200.0f);
 	dropdownMesh.SetBGColor(0.9,0.9,0.9);
 	dropdownMesh.SetHoverColor(1,1,1);
@@ -657,23 +657,25 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	dropdownMesh.SetScrollBarHoveredColor(0.7,0.7,0.7);
 	dropdownMesh.SetScrollBarClickedColor(0,1,0);
 	dropdownMesh.SetMaxVisibleOptionCount(5);
-	dropdownMesh.AddOption("null",0);
+	//dropdownMesh.AddOption("null",0);
 	dropdownMesh.SetScrollBarSize(15.0f);
+	dropdownMesh.SetCallbackContext(this);
+	dropdownMesh.SetCallback(MeshIndexChosenDropdownCallback);
 
 	containerModelData.AddControl(&dropdownMesh);
 
 	labelMaterial.SetMargin(MARGIN_TOP,60.0f);
 	labelMaterial.SetMargin(MARGIN_LEFT,0.0f);
-	labelMaterial.SetHeight(50.0f);
+	labelMaterial.SetHeight(30.0f);
 	labelMaterial.SetWidth(200.0f);
 	labelMaterial.SetText("Material: ");
 	labelMaterial.SetTextColor(1,1,1);
 
 	containerModelData.AddControl(&labelMaterial);
 
-	dropdownMaterial.SetMargin(MARGIN_TOP,60.0f);
-	dropdownMaterial.SetMargin(MARGIN_LEFT,200.0f);
-	dropdownMaterial.SetHeight(50.0f);
+	dropdownMaterial.SetMargin(MARGIN_TOP,55.0f);
+	dropdownMaterial.SetMargin(MARGIN_LEFT,150.0f);
+	dropdownMaterial.SetHeight(40.0f);
 	dropdownMaterial.SetWidth(200.0f);
 	dropdownMaterial.SetBGColor(0.9,0.9,0.9);
 	dropdownMaterial.SetHoverColor(1,1,1);
@@ -687,8 +689,10 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	dropdownMaterial.SetScrollBarHoveredColor(0.7,0.7,0.7);
 	dropdownMaterial.SetScrollBarClickedColor(0,1,0);
 	dropdownMaterial.SetMaxVisibleOptionCount(5);
-	dropdownMaterial.AddOption("null",0);
+	//dropdownMaterial.AddOption("null",0);
 	dropdownMaterial.SetScrollBarSize(15.0f);
+	dropdownMaterial.SetCallbackContext(this);
+	dropdownMaterial.SetCallback(MaterialIndexChosenDropdownCallback);
 
 	containerModelData.AddControl(&dropdownMaterial);
 
@@ -864,10 +868,17 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	modelPanel.SetScrollBarHoveredColor(0.6,0.6,0.6);
 	modelPanel.SetScrollBarClickedColor(0,1,0);
 	
-	Button* tempModel = new Button();
-	tempModel->SetText("Test Model");
-	modelPanel.AddControl(tempModel);
-	
+	buttonModelAdd.SetBGColor(0.6,0.6,0.6);
+	buttonModelAdd.SetHoverColor(0.7,0.7,0.7);
+	buttonModelAdd.SetClickColor(1,1,1);
+	buttonModelAdd.SetText("ADD");
+	buttonModelAdd.SetTextColor(0,0,0);
+	buttonModelAdd.SetCallBackContext(this);
+	buttonModelAdd.SetCallback(AddModelButtonCallback);
+	modelPanel.AddControl(&buttonModelAdd);
+
+	chosenModelGroup.SetCallback(ChosenModelButtonCallback);
+
 	containerApplication.AddControl(&modelPanel);
 
 	modelPanel.SetInactive();
@@ -2132,5 +2143,66 @@ void App::EmissionBlueAlteredCallback(void *context, float blueEmissionValue)
 
 		app->inputEmissionBlue.SetFloat(blueEmissionValue);
 		app->sliderEmissionBlue.SetSliderValue(blueEmissionValue);
+	}
+}
+
+void App::AddModelButtonCallback(void *context)
+{
+	App* app = (App*)context;
+
+	ModelInfo newModelInfo;
+	bool wasAddingModelSuccessful = app->_scene.TryAddModel(&newModelInfo);
+	if(wasAddingModelSuccessful)
+	{
+		app->storedModelInfos.push_back(newModelInfo);
+		
+		RadioButton* newModelButton = new RadioButton();
+		newModelButton->SetText(std::to_string(newModelInfo.modelIndex));
+		newModelButton->SetCallBackContext(context);
+		newModelButton->SetIndex(newModelInfo.modelIndex);
+
+		app->chosenModelGroup.AddToGroup(newModelButton);
+		app->modelPanel.AddControl(newModelButton);
+		app->dropdownModel.AddOption(std::to_string(newModelInfo.modelIndex),newModelInfo.modelIndex);
+	}
+}
+
+void App::ChosenModelButtonCallback(void *context, int modelIndex)
+{
+	App* app = (App*)context;
+
+	app->chosenModelIndex = modelIndex;
+
+	ModelInfo modelInfo = app->storedModelInfos[modelIndex];
+	ModelDataCpu storedModelDataCpu;
+	app->_scene.GetModelData(modelInfo.modelIndex,&storedModelDataCpu);
+
+	app->dropdownMesh.SetChosenOption(storedModelDataCpu.meshIndex);
+	app->dropdownMaterial.SetChosenOption(storedModelDataCpu.materialIndex);
+}
+
+void App::MeshIndexChosenDropdownCallback(void *context, int chosenOptionIndex)
+{
+	App* app = (App*)context;
+	if(app->chosenModelIndex != -1)
+	{
+		int modelIndex = app->chosenModelIndex;
+		ModelDataCpu oldData;
+		app->_scene.GetModelData(modelIndex,&oldData);
+		oldData.meshIndex = chosenOptionIndex;
+		app->_scene.TryAlterModel(modelIndex,oldData);
+	}
+}
+
+void App::MaterialIndexChosenDropdownCallback(void *context, int chosenOptionIndex)
+{
+	App* app = (App*)context;
+	if(app->chosenModelIndex != -1)
+	{
+		int modelIndex = app->chosenModelIndex;
+		ModelDataCpu oldData;
+		app->_scene.GetModelData(modelIndex,&oldData);
+		oldData.materialIndex = chosenOptionIndex;
+		app->_scene.TryAlterModel(modelIndex,oldData);
 	}
 }

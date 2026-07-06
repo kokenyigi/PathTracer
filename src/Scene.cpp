@@ -890,7 +890,8 @@ bool Scene::TryAddMaterial(MaterialInfo * materialInfo)
 
     _materialDatas.push_back(newMaterialData);
 
-    AppendToClBuffer(clContext,clCommandQueue,&_materialDataBuffer,sizeof(MaterialData),alreadyExistingMaterialDataCount,1,&newMaterialData);
+    AppendToClBuffer(clContext,clCommandQueue,&_materialDataBuffer,sizeof(MaterialData),alreadyExistingMaterialDataCount,
+        1,&newMaterialData);
 
     return true;
 }
@@ -915,6 +916,63 @@ bool Scene::TryAlterMaterial(int materialIndex, const MaterialData &alterredMate
         clError = clEnqueueWriteBuffer(clCommandQueue,_materialDataBuffer,CL_TRUE,sizeof(MaterialData)*materialIndex,
             sizeof(MaterialData),&alterredMaterialData,0,nullptr,nullptr);
         CHECK_ERROR(clError);
+    }
+    return false;
+}
+
+bool Scene::TryAddModel(ModelInfo *modelInfo)
+{
+    // If there are no meshes or no materials already created fail.
+    if(_meshBvhRootIndexData.size() <= 0 || _materialDatas.size() <= 0) return false;
+
+    ModelDataCpu newModelDataCpu;
+    newModelDataCpu.meshIndex = 0;
+    newModelDataCpu.materialIndex = 0;
+
+    ModelDataGpu newModelDataGpu;
+    newModelDataGpu.materialIndex = 0;
+    newModelDataGpu.bvhRootIndex = _meshBvhRootIndexData[0];
+
+    int alreadyExistingModelDatas = _modelDatas.size();
+    if(modelInfo != nullptr)
+    {
+        modelInfo->modelIndex = alreadyExistingModelDatas;
+    }
+
+    _modelDatas.push_back(newModelDataCpu);
+
+    AppendToClBuffer(clContext,clCommandQueue,&_modelDataBuffer,sizeof(ModelDataGpu),alreadyExistingModelDatas,
+        1,&newModelDataGpu);
+
+    return true;
+}
+
+bool Scene::GetModelData(int modelIndex, ModelDataCpu *modelData)
+{
+    if(modelIndex >= 0 && modelIndex < _modelDatas.size())
+    {
+        *modelData = _modelDatas[modelIndex];
+        return true;
+    }
+    return false;
+}
+
+bool Scene::TryAlterModel(int modelIndex, const ModelDataCpu &alteredModelData)
+{
+    if(modelIndex>=0 && modelIndex < _modelDatas.size())
+    {
+        ModelDataGpu alteredModelDataGpu;
+        alteredModelDataGpu.materialIndex = alteredModelData.materialIndex;
+        alteredModelDataGpu.bvhRootIndex = _meshBvhRootIndexData[alteredModelData.meshIndex];
+
+        _modelDatas[modelIndex] = alteredModelData;
+
+        cl_int clError;
+        clError = clEnqueueWriteBuffer(clCommandQueue,_modelDataBuffer,CL_TRUE,sizeof(ModelDataGpu)*modelIndex,
+            sizeof(ModelDataGpu),&alteredModelDataGpu,0,nullptr,nullptr);
+        CHECK_ERROR(clError);
+
+        return true;
     }
     return false;
 }

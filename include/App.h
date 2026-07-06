@@ -122,7 +122,10 @@ private:
 	int chosenMaterialIndex = -1;
 	LayoutPanel materialPanel;Button buttonMaterialAdd; RadioButtonGroup chosenMaterialGroup;
 	
-	LayoutPanel modelPanel;
+	std::vector<ModelInfo> storedModelInfos;
+	int chosenModelIndex = -1;
+	LayoutPanel modelPanel; Button buttonModelAdd; RadioButtonGroup chosenModelGroup;
+
 	LayoutPanel objectPanel;
 
 
@@ -184,6 +187,11 @@ public:
 	static void EmissionRedAlteredCallback(void* context,float redValue);
 	static void EmissionGreenAlteredCallback(void* context,float greenValue);
 	static void EmissionBlueAlteredCallback(void* context,float blueValue);
+
+	static void AddModelButtonCallback(void * context);
+	static void ChosenModelButtonCallback(void * context, int modelIndex);
+	static void MeshIndexChosenDropdownCallback(void* context, int chosenOptionIndex);
+	static void MaterialIndexChosenDropdownCallback(void* context, int chosenOptionIndex);
 
 	static void FileSelectionMenuItemCallback(void * context, int index);
 	static void FileSelectionMenuLoadButtonCallback(void* context);
