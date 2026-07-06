@@ -122,6 +122,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	
 	containerRight.AddControl(&containerMeshData);
 
+	containerMeshData.SetInactive();
+
 	containerTextureData.SetMargin(MARGIN_TOP,10.0);
 	containerTextureData.SetMargin(MARGIN_LEFT,10.0);
 	containerTextureData.SetMargin(MARGIN_RIGHT,10.0);
@@ -998,7 +1000,19 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sliderZRot.SetSliderValueChangedCallbackContext(this);
 	sliderZRot.SetSliderValueChangedCallback(CompTypeAlteredCallback<2,2,true>);
 	containerObjectData.AddControl(&sliderZRot);
-	
+
+
+	buttonDeleteObject.SetMargin(MARGIN_BOTTOM,20.0f);
+	buttonDeleteObject.SetWidth(150.0f);
+	buttonDeleteObject.SetHeight(50.0f);
+	buttonDeleteObject.SetText("DELETE");
+	buttonDeleteObject.SetTextColor(0,0,0);
+	buttonDeleteObject.SetBGColor(0.9,0.9,0.9);
+	buttonDeleteObject.SetHoverColor(0.9,0,0);
+	buttonDeleteObject.SetClickColor(0.9,0,0);
+	buttonDeleteObject.SetCallBackContext(this);
+	buttonDeleteObject.SetCallback(DeleteObjectButtonCallback);
+	containerObjectData.AddControl(&buttonDeleteObject);
 
 	containerRight.AddControl(&containerObjectData);
 
@@ -1763,6 +1777,8 @@ void App::ChosenMeshButtonCallback(void *context, int meshIndex)
 	// [TODO] FIXXXXX
 	App* app = (App*)context;
 
+	app->containerMeshData.SetActive();
+
 	MeshInfo chosenMeshButtonsMeshInfo = app->storedMeshInfos[meshIndex];
 
 	app->labelVertexCountNumber.SetText(std::to_string(chosenMeshButtonsMeshInfo.vertexCount));
@@ -1801,6 +1817,8 @@ void App::TryLoadTextureData()
 void App::ChosenTextureButtonCallback(void *context, int textureIndex)
 {
 	App* app = (App*)context;
+
+	app->containerTextureData.SetActive();
 
 	TextureInfo chosenTextureButtonTextureInfo = app->storedTextureInfos[textureIndex];
 
@@ -1979,29 +1997,35 @@ void App::MainButtonsNeonGUICallback(void *context, int index)
 	app->modelPanel.SetInactive();
 	app->objectPanel.SetInactive();
 
+	app->chosenMeshGroup.SetToggledOff();
+	app->chosenTextureGroup.SetToggledOff();
+	app->chosenMaterialGroup.SetToggledOff();
+	app->chosenModelGroup.SetToggledOff();
+	app->chosenObjectGroup.SetToggledOff();
+
 	if(index == 0)
 	{
-		app->containerMeshData.SetActive();
+		//app->containerMeshData.SetActive();
 		app->meshPanel.SetActive();
 	}
 	else if(index==1)
 	{
-		app->containerTextureData.SetActive();
+		//app->containerTextureData.SetActive();
 		app->texturePanel.SetActive();
 	}
 	else if(index==2)
 	{
-		app->containerMaterialData.SetActive();
+		//app->containerMaterialData.SetActive();
 		app->materialPanel.SetActive();
 	}
 	else if(index==3)
 	{
-		app->containerModelData.SetActive();
+		//app->containerModelData.SetActive();
 		app->modelPanel.SetActive();
 	}
 	else
 	{
-		app->containerObjectData.SetActive();
+		//app->containerObjectData.SetActive();
 		app->objectPanel.SetActive();
 	}
 }
@@ -2107,6 +2131,7 @@ void App::FileSelectionMenuCancelButtonCallback(void *context)
 	app->_viewState = AppViewState::VIEWSTATE_MAINMENU;
 }
 
+
 void App::FileSelectionMenuItemCallback(void *context, int index)
 {
 	App* app = (App*)context;
@@ -2157,6 +2182,8 @@ void App::AddMaterialButtonCallback(void *context)
 void App::ChosenMaterialButtonCallback(void *context, int materialIndex)
 {
 	App* app = (App*)context;
+
+	app->containerMaterialData.SetActive();
 
 	app->chosenMaterialIndex = materialIndex;
 
@@ -2441,6 +2468,8 @@ void App::ChosenModelButtonCallback(void *context, int modelIndex)
 {
 	App* app = (App*)context;
 
+	app->containerModelData.SetActive();
+
 	app->chosenModelIndex = modelIndex;
 
 	ModelInfo modelInfo = app->storedModelInfos[modelIndex];
@@ -2500,6 +2529,12 @@ void App::ChosenObjectButtonCallback(void *context, int objectIndex)
 {
 	App* app = (App*)context;
 
+	
+
+	app->containerObjectData.SetActive();
+
+	app->buttonDeleteObject.MouseMove();
+
 	app->chosenObjectIndex = objectIndex;
 
 	ObjectState storedObjectState;
@@ -2535,5 +2570,41 @@ void App::ModelIndexChosenDropdownCallback(void *context, int chosenOptionIndex)
 		app->_scene.GetObjectState(objectIndex,&oldObjectState);
 		oldObjectState.modelIndex = chosenOptionIndex;
 		app->_scene.TryAlterObject(objectIndex,oldObjectState);
+	}
+}
+
+void App::DeleteObjectButtonCallback(void *context)
+{
+	App* app = (App*)context;
+	if(app->chosenObjectIndex != -1)
+	{
+		int objectIndex = app->chosenObjectIndex;
+		bool wasDeletionSuccesful = app->_scene.TryDeleteObject(objectIndex);
+		if(wasDeletionSuccesful)
+		{
+			//We untoggle the currently toggled object button, and disable the objectData container
+			// we only do this to keep a clean state
+			RadioButton* currentlyToggled = app->chosenObjectGroup._currentToggled;
+			if(currentlyToggled != nullptr)
+			{
+				currentlyToggled->SetToggledOff();
+			}
+			app->containerObjectData.SetInactive();
+			app->buttonDeleteObject.Click(0,1);
+
+			std::vector<Control *>& children = app->objectPanel.GetChildren();
+			int objectButtonDeletionIndex = objectIndex + 1;
+			int objectButtonsEndIndex = children.size() -1;
+			RadioButton* deletionButton = (RadioButton*)children[objectButtonDeletionIndex];
+			RadioButton* endButton = (RadioButton*)children[objectButtonsEndIndex];
+			if(objectButtonDeletionIndex != objectButtonsEndIndex)
+			{
+				//we do a copying
+				deletionButton->SetText(endButton->GetText());
+			}
+
+			delete endButton;
+			children.pop_back();
+		}
 	}
 }

@@ -47,3 +47,12 @@ void RadioButton::RadioButtonClick(int button, int action)
         }
     }
 }
+
+void RadioButtonGroup::SetToggledOff()
+{
+    if(_currentToggled != nullptr)
+    {
+        RadioButton* current = (RadioButton*)_currentToggled;
+        current->SetToggledOff();
+    }
+}

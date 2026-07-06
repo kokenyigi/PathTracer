@@ -1021,7 +1021,12 @@ bool Scene::TryAddObject(ObjectInfo *objectInfo)
     //We calculate the world and invWorld transforms based on transform of objects
     RecalculateWorldTransformOfObject(alreadyExistingObjectDataCount);
 
-    AppendToClBuffer(clContext,clCommandQueue,&_objectDataBuffer,sizeof(ObjectData),alreadyExistingObjectDataCount,1,&newObjectData);
+    cl_int clError;
+    clError = clEnqueueWriteBuffer(clCommandQueue,_objectDataBuffer,CL_TRUE,sizeof(ObjectData)*alreadyExistingObjectDataCount,
+        sizeof(ObjectData),&newObjectData,0,nullptr,nullptr);
+    CHECK_ERROR(clError);
+    //AppendToClBuffer(clContext,clCommandQueue,&_objectDataBuffer,sizeof(ObjectData),alreadyExistingObjectDataCount,1,&newObjectData);
+
 
     return true;
 }
@@ -1053,5 +1058,32 @@ bool Scene::TryAlterObject(int objectIndex, const ObjectState& alteredObjectStat
 
         return true;
     }
+    return false;
+}
+
+bool Scene::TryDeleteObject(int objectIndex)
+{
+    if(objectIndex >= 0 && _objectDatas.size() > objectIndex)
+    {
+        int backIndex = _objectDatas.size() - 1;
+        if(objectIndex != backIndex)
+        {
+            //We have to do a copying
+            _objectDatas[objectIndex] = _objectDatas[backIndex];
+            _objectTransforms[objectIndex] = _objectTransforms[backIndex];
+
+            cl_int clError;
+            clError = clEnqueueWriteBuffer(clCommandQueue,_objectDataBuffer,CL_TRUE,sizeof(ObjectData)*objectIndex,
+                sizeof(ObjectData),&_objectDatas[objectIndex],0,nullptr,nullptr);
+            CHECK_ERROR(clError);
+        }
+
+        //Deletion is simply just forgeting about a given index.
+        _objectDatas.pop_back();
+        _objectTransforms.pop_back();
+        
+        return true;
+    }
+
     return false;
 }

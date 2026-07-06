@@ -103,6 +103,7 @@ private:
 	Label labelXRot;FloatInput inputXRot;Slider sliderXRot;
 	Label labelYRot;FloatInput inputYRot;Slider sliderYRot;
 	Label labelZRot;FloatInput inputZRot;Slider sliderZRot;
+	Button buttonDeleteObject;
 
 
 	Container containerLeft;
@@ -211,6 +212,7 @@ public:
 	static void ModelIndexChosenDropdownCallback(void* context, int chosenOptionIndex);
 	template<int axis,int compType,bool isSlider = false> // axis: 0-x, 1-y, 2-z, compType: 0-Pos, 1-Scl, 2-Rot,isSlider self explenatory
 	static void CompTypeAlteredCallback(void* context , float newValueOnAxis);
+	static void DeleteObjectButtonCallback(void* context);
 
 	static void FileSelectionMenuItemCallback(void * context, int index);
 	static void FileSelectionMenuLoadButtonCallback(void* context);

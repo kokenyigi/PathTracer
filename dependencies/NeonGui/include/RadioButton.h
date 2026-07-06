@@ -68,6 +68,8 @@ public:
         radioButton->SetGroupContext(nullptr);
     }
 
+    void SetToggledOff();
+
     void SetCallback(void(*callBack)(void*,int)) {_callBack = callBack;} 
 private:
 };

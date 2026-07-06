@@ -291,8 +291,8 @@ private:
     std::vector<TriangleIndicesData> _triangleIndicesData;
     cl_mem _triangleIndicesDataBuffer;
 
-    int _maximumBottomLevelBvhDepth = 32;
-    int _sahBinSize = 32;
+    const int _maximumBottomLevelBvhDepth = 32;
+    const int _sahBinSize = 32;
     std::vector<BvhNodeData> _bottomLevelBvhNodeDatas;
     cl_mem _bottomLevelBvhNodeDatasBuffer;
 
@@ -312,7 +312,7 @@ private:
     std::vector<ModelDataCpu> _modelDatas;
     cl_mem _modelDataBuffer;
     
-    int _maximumObjectCount = 200;
+    const int _maximumObjectCount = 200;
     std::vector<Transform> _objectTransforms;
     std::vector<ObjectData> _objectDatas;
     cl_mem _objectDataBuffer;
