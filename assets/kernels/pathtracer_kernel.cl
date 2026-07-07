@@ -356,12 +356,12 @@ TraceResult IntersectObject(const Ray* ray, int objectIndex,const Scene* scene)
                     if(distanceToMinNode < distanceToMaxNode)
                     {
                         stack[stackCount] = node->minChild;
-                        stack[stackCount + 1] = node->minChild;
+                        stack[stackCount + 1] = node->maxChild;
                     }
                     else
                     {
                         stack[stackCount] = node->maxChild;
-                        stack[stackCount + 1] = node->maxChild;
+                        stack[stackCount + 1] = node->minChild;
                     }
                     stackCount += 2;
                 }
@@ -401,6 +401,38 @@ TraceResult IntersectObject(const Ray* ray, int objectIndex,const Scene* scene)
     }
 
     return retval;
+}
+
+TraceResult TraceRay(const Ray* ray, const Scene* scene)
+{
+    TraceResult retval;
+    retval.t = FLT_MAX;
+
+    for(int objectIndex = 0; objectIndex < scene->objectCount; ++objectIndex)
+    {
+        TraceResult currentResult = IntersectObject(ray,objectIndex,scene);
+        if(currentResult.t > ray->tMin && currentResult.t < ray->tMax && currentResult.t < retval.t)
+        {
+            retval = currentResult;
+        }
+    }
+
+    return retval;
+}
+
+float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
+{
+    TraceResult primaryResult = TraceRay(primaryRay,scene);
+    if(primaryResult.t > primaryRay->tMin && primaryResult.t < primaryRay->tMax)
+    {
+        int materialIndex = primaryResult.materialIndex;
+        float3 albedoColor = scene->materialData[materialIndex].albedoColor.xyz;
+        return albedoColor;
+    }
+    else
+    {
+        return primaryRay->direction;
+    }
 }
 
 
@@ -458,7 +490,9 @@ __kernel void renderimage(
     primaryRay.tMin = cameraData->zNear;
     primaryRay.tMax = cameraData->zFar;
     primaryRay.invDirection = 1.0f / rayDirection;
+
+    float3 calculatedColor = CalculateRayColor(&primaryRay,&scene);
     
 
-    write_imagef(output,threadCoords,(float4)(rayDirection,1.0f));
+    write_imagef(output,threadCoords,(float4)(calculatedColor,1.0f));
 }

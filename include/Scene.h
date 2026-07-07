@@ -74,6 +74,8 @@ struct VertexAttributeData
 {
     cl_float4 normal;
     cl_float2 textureCoords;
+    float padding1;
+    float padding2;
 };
 
 /**

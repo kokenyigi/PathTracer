@@ -231,7 +231,7 @@ void Scene::PathTracedRender()
     cameraData.fovx = _camera.GetFovx();
     cameraData.aspect = _camera.GetAspect();
     cameraData.zNear = _camera.GetZNear();
-    cameraData.zNear = _camera.GetZFar();
+    cameraData.zFar = _camera.GetZFar();
 
     clError = clEnqueueWriteBuffer(clCommandQueue,clCameraDataBuffer,CL_TRUE,0,sizeof(CameraData),&cameraData,0,nullptr,nullptr);
     CHECK_ERROR(clError);
@@ -250,7 +250,7 @@ void Scene::PathTracedRender()
     clError = clSetKernelArg(clPathTracerKernel,11,sizeof(cl_mem),&_modelDataBuffer);CHECK_ERROR(clError);
     clError = clSetKernelArg(clPathTracerKernel,12,sizeof(cl_mem),&_objectDataBuffer);CHECK_ERROR(clError);
     cl_int objectCount = _objectDatas.size();
-    clError = clSetKernelArg(clPathTracerKernel,13,sizeof(cl_int),&objectCount);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,13,sizeof(int),&objectCount);CHECK_ERROR(clError);
 
     size_t localSize[2] = { 16, 16 };
     size_t globalSize[2] = {((_viewportWidth + localSize[0] -1) / localSize[0]) * localSize[0],
@@ -602,9 +602,9 @@ void Scene::SplitBvhNodeRecursive(int bvhNodeIndex, int recursionDepth, const st
         BvhNodeData maxChildBvhNode;
         maxChildBvhNode.minChild = -1;
         maxChildBvhNode.maxChild = -1;
-        maxChildBvhNode.startIndex = currentNode.startIndex + minSideTriangleCount + 1;
+        maxChildBvhNode.startIndex = currentNode.startIndex + minSideTriangleCount;
         maxChildBvhNode.endIndex = currentNode.endIndex;
-        maxChildBvhNode.box = CalculateAABB4BasedOnTriangles(currentNode.startIndex + minSideTriangleCount + 1,currentNode.endIndex,
+        maxChildBvhNode.box = CalculateAABB4BasedOnTriangles(currentNode.startIndex + minSideTriangleCount,currentNode.endIndex,
             vertexPositions,triangleVertexIndices);
 
         int maxChildIndex = bvhNodeStrorage.size();
