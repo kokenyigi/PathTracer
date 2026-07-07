@@ -54,11 +54,6 @@ struct CameraData
     float zFar;
 };
 
-/**
- * Three - dimensional Axis Alligned Bounding Box
- *  THe OpenCL way -> cl_float3 = cl_float4 allignment wise.
- */
-
 
 /**
  * Just a simple way to unify the namespace namings.
@@ -193,6 +188,9 @@ struct Transform
 struct ObjectData
 {
     int modelIndex = -1;
+    int padding1;
+    int padding2;
+    int padding3;
     glm::mat4 worldTransform = glm::mat4(1.0f);
     glm::mat4 invWorldTransform = glm::mat4(1.0f);
 };

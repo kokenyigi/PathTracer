@@ -240,6 +240,17 @@ void Scene::PathTracedRender()
     clError = clSetKernelArg(clPathTracerKernel,1,sizeof(int),&_viewportWidth);CHECK_ERROR(clError);
     clError = clSetKernelArg(clPathTracerKernel,2,sizeof(int),&_viewportHeight);CHECK_ERROR(clError);
     clError = clSetKernelArg(clPathTracerKernel,3,sizeof(cl_mem),&clCameraDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,4,sizeof(cl_mem),&_vertexPositionDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,5,sizeof(cl_mem),&_vertexAttributeDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,6,sizeof(cl_mem),&_triangleIndicesDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,7,sizeof(cl_mem),&_bottomLevelBvhNodeDatasBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,8,sizeof(cl_mem),&_rgbaDatasBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,9,sizeof(cl_mem),&_textureDatasBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,10,sizeof(cl_mem),&_materialDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,11,sizeof(cl_mem),&_modelDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,12,sizeof(cl_mem),&_objectDataBuffer);CHECK_ERROR(clError);
+    cl_int objectCount = _objectDatas.size();
+    clError = clSetKernelArg(clPathTracerKernel,13,sizeof(cl_int),&objectCount);CHECK_ERROR(clError);
 
     size_t localSize[2] = { 16, 16 };
     size_t globalSize[2] = {((_viewportWidth + localSize[0] -1) / localSize[0]) * localSize[0],
