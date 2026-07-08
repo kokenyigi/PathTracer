@@ -67,6 +67,7 @@ public:
     void SetMaxVisibleOptionCount(int count) {_maxVisibleOptionCount = count; DropdownResize();}
     void SetChosenOption(int index); //TODO
     void SetScrollBarSize(float size, ValueType type = ValueType::FIXED) {_optionsPanel.SetScrollbarSize(size,type);}
+    void ClearOptions();
 
     void AddOption(const std::string& optionName, int optionIndex);
 

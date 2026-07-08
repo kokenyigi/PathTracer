@@ -158,8 +158,8 @@ struct MaterialData
  */
 struct ModelDataCpu
 {
-    int meshIndex = -1;
-    int materialIndex = -1;
+    int meshIndex = 0;
+    int materialIndex = 0;
 };
 /**
  * This struct is very very similiar to the one above, and means the exact same: a specification of a model in GPU space.
@@ -249,7 +249,7 @@ struct ObjectInfo
 
 struct ObjectState
 {
-    int modelIndex = -1;
+    int modelIndex = 0;
     Transform transform;
 };
 

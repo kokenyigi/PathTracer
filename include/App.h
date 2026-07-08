@@ -25,8 +25,8 @@ enum class AppViewState
 	VIEWSTATE_MAINMENU,
 	VIEWSTATE_MESHLOAD,
 	VIEWSTATE_TEXTURELOAD,
-	VIEWSTATE_PERSISTENCELOAD,
-	VIEWSTATE_PERSISTENCESAVE
+	VIEWSTATE_PERSISTENCESAVE,
+	VIEWSTATE_PERSISTENCELOAD
 };
 
 class App
@@ -107,8 +107,9 @@ private:
 
 
 	Container containerLeft;
-
-
+	Button buttonNewScene;
+	Button buttonSaveScene;
+	Button buttonLoadScene;
 	
 
 	
@@ -153,12 +154,18 @@ private:
 	Container containerFileSelection;
 	LayoutPanel panelFileSelection;
 	RadioButtonGroup fileSelectionButtonsGroup;
-
+	TextInput inputSaveFileName;	
 	Container containerLoadCancelButtons;
-	Button buttonLoadFile; Button buttonCancel;
+	Button buttonSaveFile;Button buttonLoadFile; Button buttonCancel;
 
+	
 	std::vector<std::string> _loadedDirectorySpecificFilenames;
 	int _selectedFileNameIndex = -1;
+	std::string _chosenEditedFileName = "";
+
+	//Persistence
+	std::vector<std::string> _meshRelativeFilePaths;
+	std::vector<std::string> _textureRelativeFilePaths;
 
 public:
 	App(int windowWidth = 1000, int windowHeight = 800, const char* windowTitle = "_debugTitle");
@@ -214,9 +221,16 @@ public:
 	static void CompTypeAlteredCallback(void* context , float newValueOnAxis);
 	static void DeleteObjectButtonCallback(void* context);
 
+
+	static void NewSceneButtonCallback(void* context);
+	static void SaveSceneButtonCallback(void* context);
+	static void LoadSceneButtonCallback(void* context);
+
 	static void FileSelectionMenuItemCallback(void * context, int index);
 	static void FileSelectionMenuLoadButtonCallback(void* context);
 	static void FileSelectionMenuCancelButtonCallback(void* context);
+	static void FileMenuSaveTextInputCallback(void* context, const std::string& newString);
+	static void FileMenuSaveButtonCallback(void* context);
 
 
 	static void CanvasResizeCallback(void * context, int newW, int newH);
@@ -238,14 +252,15 @@ private:
 	void SwapToFileSelectionMenu();
 	void SwapBackToMainMenu();
 
-	bool TryLoadMesh(const std::string& meshFilePathRelative);
-	bool TryLoadTexture(const std::string& textureFilePathRelative);
-	void AddMaterial();
-	bool TryAddModel();
-	bool TryAddObject();
+	bool TryLoadMesh(const std::string& meshFileName);
+	bool TryLoadTexture(const std::string& textureFileName);
+	void AddMaterial(const MaterialData& newMaterialData);
+	bool TryAddModel(const ModelDataCpu& newModelData);
+	bool TryAddObject(const ObjectState& newObjectState);
 
+	void SaveScene(const std::string& sceneSavingFileNameRelative);
 	bool TryLoadScene(const std::string& sceneFilePathRelative);
-	void SaveScene(const std::string& sceneFileName);
+	
 
 	/**
 	 * This procedure fully reset's the app's state, that means, it will both Scene-side and App-side delete the created structures 

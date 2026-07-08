@@ -33,6 +33,33 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerLeft.SetWidth(250.0f,ValueType::FIXED);
 	containerLeft.SetBGColor(0.2,0.2,0.2);
 
+	buttonNewScene.SetMargin(MARGIN_TOP,10.0f);
+	buttonNewScene.SetMargin(MARGIN_LEFT,10.0f);
+	buttonNewScene.SetHeight(40.0f);
+	buttonNewScene.SetWidth(80.0f);
+	buttonNewScene.SetBGColor(0.4,0.4,0.4);
+	buttonNewScene.SetHoverColor(0.5,0.5,0.5);
+	buttonNewScene.SetClickColor(0.6,0.6,0.6);
+	buttonNewScene.SetTextColor(1,1,1);
+	buttonNewScene.SetText("NEW");
+	buttonNewScene.SetCallBackContext(this);
+	buttonNewScene.SetCallback(NewSceneButtonCallback);
+	containerLeft.AddControl(&buttonNewScene);
+
+
+	buttonSaveScene.SetMargin(MARGIN_TOP,60.0f);
+	buttonSaveScene.SetMargin(MARGIN_LEFT,10.0f);
+	buttonSaveScene.SetHeight(40.0f);
+	buttonSaveScene.SetWidth(80.0f);
+	buttonSaveScene.SetBGColor(0.4,0.4,0.4);
+	buttonSaveScene.SetHoverColor(0.5,0.5,0.5);
+	buttonSaveScene.SetClickColor(0.6,0.6,0.6);
+	buttonSaveScene.SetTextColor(1,1,1);
+	buttonSaveScene.SetText("SAVE");
+	buttonSaveScene.SetCallBackContext(this);
+	buttonSaveScene.SetCallback(SaveSceneButtonCallback);
+	containerLeft.AddControl(&buttonSaveScene);
+
 	containerApplication.AddControl(&containerLeft);
 
 	containerRight.SetMargin(MARGIN_TOP,50.0f,ValueType::FIXED);
@@ -1374,7 +1401,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	fileSelectionButtonsGroup.SetCallback(FileSelectionMenuItemCallback);
 
-	containerLoadCancelButtons.SetMargin(MARGIN_BOTTOM,125.0f);
+	containerLoadCancelButtons.SetMargin(MARGIN_BOTTOM,50.0f);
 	containerLoadCancelButtons.SetHeight(50.0f);
 	containerLoadCancelButtons.SetWidth(600.0f);
 	containerLoadCancelButtons.SetBGColor(0.1,0.1,0.1);
@@ -1395,6 +1422,22 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	containerLoadCancelButtons.AddControl(&buttonLoadFile);
 
+	buttonSaveFile.SetMargin(MARGIN_BOTTOM,0.0f);
+	buttonSaveFile.SetMargin(MARGIN_TOP,0.0f);
+	buttonSaveFile.SetMargin(MARGIN_LEFT,0.0f);
+	buttonSaveFile.SetWidth(150.0f);
+	buttonSaveFile.SetBGColor(0.2,0.2,0.2);
+	buttonSaveFile.SetHoverColor(0.0,0.8,0.0);
+	buttonSaveFile.SetClickColor(0.2,0.2,0.22);
+	buttonSaveFile.SetText("SAVE");
+	buttonSaveFile.SetTextColor(0,0,0);
+	buttonSaveFile.SetCallBackContext(this),
+	buttonSaveFile.SetCallback(FileMenuSaveButtonCallback);
+
+
+
+	containerLoadCancelButtons.AddControl(&buttonSaveFile);
+
 	buttonCancel.SetMargin(MARGIN_BOTTOM,0.0f);
 	buttonCancel.SetMargin(MARGIN_TOP,0.0f);
 	buttonCancel.SetMargin(MARGIN_RIGHT,0.0f);
@@ -1408,6 +1451,18 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	buttonCancel.SetCallback(FileSelectionMenuCancelButtonCallback);
 
 	containerLoadCancelButtons.AddControl(&buttonCancel);
+
+	inputSaveFileName.SetMargin(MARGIN_BOTTOM,150.0f);
+	inputSaveFileName.SetHeight(50.0f);
+	inputSaveFileName.SetWidth(400.0f);
+	inputSaveFileName.SetBGColor(1,1,1);
+	inputSaveFileName.SetText("-");
+	inputSaveFileName.SetTextColor(0,0,0);
+	inputSaveFileName.SetEditHeadColor(0,1,0);
+	inputSaveFileName.SetCallbackContext(this);
+	inputSaveFileName.SetTextChangedCallback(FileMenuSaveTextInputCallback);
+
+	containerFileSelection.AddControl(&inputSaveFileName);
 
 	m_GUI.AddControl(&containerFileSelection);
 
@@ -1714,6 +1769,20 @@ void App::SwapToFileSelectionMenu()
 	containerFileSelection.SetActive();
 	containerApplication.SetInactive();
 
+	if(_viewState == AppViewState::VIEWSTATE_PERSISTENCESAVE)
+	{
+		buttonSaveFile.SetActive();
+		inputSaveFileName.SetActive();
+		inputSaveFileName.SetText("default");
+		buttonLoadFile.SetInactive();
+	}
+	else
+	{
+		buttonSaveFile.SetInactive();
+		inputSaveFileName.SetInactive();
+		buttonLoadFile.SetActive();
+	}
+
 	buttonCancel.Click(0,1);
 	buttonCancel.MouseMove();
 	buttonLoadFile.Click(0,1);
@@ -1737,8 +1806,10 @@ void App::SwapBackToMainMenu()
 	//... TODO
 }
 
-bool App::TryLoadMesh(const std::string& meshFilePathRelative)
+bool App::TryLoadMesh(const std::string& meshFileName)
 {
+	std::string meshFilePathRelative = "assets/models/" + meshFileName;
+
 	MeshInfo sceneLoadedMeshInfo;
 	bool wasMeshLoadingSuccessful = _scene.TryLoadMesh(meshFilePathRelative,&sceneLoadedMeshInfo);
 	if(wasMeshLoadingSuccessful)
@@ -1758,6 +1829,8 @@ bool App::TryLoadMesh(const std::string& meshFilePathRelative)
 		chosenMeshGroup.AddToGroup(newChosenMeshButton);
 		meshPanel.AddControl(newChosenMeshButton);
 		dropdownMesh.AddOption(std::to_string(meshIndex),meshIndex);
+
+		_meshRelativeFilePaths.push_back(meshFileName);
 	}
 
 	return wasMeshLoadingSuccessful;
@@ -1782,8 +1855,10 @@ void App::ChosenMeshButtonCallback(void *context, int meshIndex)
 }
 
 
-bool App::TryLoadTexture(const std::string& textureFilePathRelative)
+bool App::TryLoadTexture(const std::string& textureFileName)
 {
+	std::string textureFilePathRelative = "assets/textures/" + textureFileName;
+
 	TextureInfo sceneLoadedTextureInfo;
 	bool wasTextureLoadingSuccessful = _scene.TryLoadTexture(textureFilePathRelative,&sceneLoadedTextureInfo);
 	if(wasTextureLoadingSuccessful)
@@ -1802,11 +1877,159 @@ bool App::TryLoadTexture(const std::string& textureFilePathRelative)
 		chosenTextureGroup.AddToGroup(newChosenTextureButton);
 		texturePanel.AddControl(newChosenTextureButton);
 		dropdownTexture.AddOption(std::to_string(textureIndex),textureIndex);
+
+		_textureRelativeFilePaths.push_back(textureFileName);
 	}
 
 	return wasTextureLoadingSuccessful;
 }
 
+void App::AddMaterial(const MaterialData& newMaterialData)
+{
+	MaterialInfo newMaterialInfo;
+	bool wasAddingMaterialSuccessful = _scene.TryAddMaterial(&newMaterialInfo);
+	if(wasAddingMaterialSuccessful)
+	{
+		storedMaterialInfos.push_back(newMaterialInfo);
+
+		_scene.TryAlterMaterial(newMaterialInfo.materialIndex,newMaterialData);
+		
+		RadioButton* newMaterialButton = new RadioButton();
+		newMaterialButton->SetText(std::to_string(newMaterialInfo.materialIndex));
+		newMaterialButton->SetCallBackContext(this);
+		newMaterialButton->SetIndex(newMaterialInfo.materialIndex);
+
+		chosenMaterialGroup.AddToGroup(newMaterialButton);
+		materialPanel.AddControl(newMaterialButton);
+		dropdownMaterial.AddOption(std::to_string(newMaterialInfo.materialIndex),newMaterialInfo.materialIndex);
+	}
+}
+
+bool App::TryAddModel(const ModelDataCpu &newModelData)
+{
+    ModelInfo newModelInfo;
+	bool wasAddingModelSuccessful = _scene.TryAddModel(&newModelInfo);
+	if(wasAddingModelSuccessful)
+	{
+		storedModelInfos.push_back(newModelInfo);
+
+		_scene.TryAlterModel(newModelInfo.modelIndex,newModelData);
+		
+		RadioButton* newModelButton = new RadioButton();
+		newModelButton->SetText(std::to_string(newModelInfo.modelIndex));
+		newModelButton->SetCallBackContext(this);
+		newModelButton->SetIndex(newModelInfo.modelIndex);
+
+		chosenModelGroup.AddToGroup(newModelButton);
+		modelPanel.AddControl(newModelButton);
+		dropdownModel.AddOption(std::to_string(newModelInfo.modelIndex),newModelInfo.modelIndex);
+	}
+
+	return wasAddingModelSuccessful;
+}
+
+bool App::TryAddObject(const ObjectState &newObjectState)
+{
+    ObjectInfo newObjectInfo;
+	bool wasAddingObjectSuccessful = _scene.TryAddObject(&newObjectInfo);
+	if(wasAddingObjectSuccessful)
+	{	
+		_scene.TryAlterObject(newObjectInfo.objectIndex,newObjectState);
+
+		RadioButton* newObjectButton = new RadioButton();
+		newObjectButton->SetText(std::to_string(newObjectInfo.objectIndex));
+		newObjectButton->SetCallBackContext(this);
+		newObjectButton->SetIndex(newObjectInfo.objectIndex);
+
+		chosenObjectGroup.AddToGroup(newObjectButton);
+		objectPanel.AddControl(newObjectButton);		
+	}
+
+	return wasAddingObjectSuccessful;
+}
+
+void App::SaveScene(const std::string &sceneSavingFileNameRelative)
+{
+	std::cout<<"Saving Scene into: " << sceneSavingFileNameRelative << "\n";
+}
+
+void App::Reset()
+{
+	_scene.Reset();
+
+	storedMeshInfos.clear();
+	storedTextureInfos.clear();
+	storedMaterialInfos.clear();
+	storedModelInfos.clear();
+
+	chosenMeshGroup.SetToggledOff();
+	chosenTextureGroup.SetToggledOff();
+	chosenMaterialGroup.SetToggledOff();
+	chosenModelGroup.SetToggledOff();
+	chosenObjectGroup.SetToggledOff();
+
+	dropdownMesh.ClearOptions();
+	dropdownTexture.ClearOptions();
+	dropdownMaterial.ClearOptions();
+	dropdownModel.ClearOptions();
+
+	for(int i=1;i<meshPanel.GetChildren().size();++i)
+	{
+		RadioButton* givenButton = (RadioButton*)meshPanel.GetChildren()[i];
+		delete givenButton;
+	}
+	meshPanel.GetChildren().clear();
+	meshPanel.AddControl(&buttonLoadMesh);
+
+	for(int i=1;i<texturePanel.GetChildren().size();++i)
+	{
+		RadioButton* givenButton = (RadioButton*)texturePanel.GetChildren()[i];
+		delete givenButton;
+	}
+	texturePanel.GetChildren().clear();
+	texturePanel.AddControl(&buttonTextureLoad);
+
+	for(int i=1;i<materialPanel.GetChildren().size();++i)
+	{
+		RadioButton* givenButton = (RadioButton*)materialPanel.GetChildren()[i];
+		delete givenButton;
+	}
+	materialPanel.GetChildren().clear();
+	materialPanel.AddControl(&buttonMaterialAdd);
+
+	for(int i=1;i<modelPanel.GetChildren().size();++i)
+	{
+		RadioButton* givenButton = (RadioButton*)modelPanel.GetChildren()[i];
+		delete givenButton;
+	}
+	modelPanel.GetChildren().clear();
+	modelPanel.AddControl(&buttonModelAdd);
+
+	for(int i=1;i<objectPanel.GetChildren().size();++i)
+	{
+		RadioButton* givenButton = (RadioButton*)objectPanel.GetChildren()[i];
+		delete givenButton;
+	}
+	objectPanel.GetChildren().clear();
+	objectPanel.AddControl(&buttonAddObject);
+
+	containerMeshData.SetInactive();
+	containerTextureData.SetInactive();
+	containerMaterialData.SetInactive();
+	containerModelData.SetInactive();
+	containerObjectData.SetInactive();
+
+	mainButtonsGroup.SetToggledOff();
+
+	//meshPanel.SetInactive();
+	texturePanel.SetInactive();
+	materialPanel.SetInactive();
+	modelPanel.SetInactive();
+	objectPanel.SetInactive();
+
+	_meshRelativeFilePaths.clear();
+	_textureRelativeFilePaths.clear();
+}
 
 void App::ChosenTextureButtonCallback(void *context, int textureIndex)
 {
@@ -2089,9 +2312,11 @@ void App::LoadMeshButtonCallback(void *context)
 
 	if(app->_loadedDirectorySpecificFilenames.size()==0) return;
 	
+	app->_viewState = AppViewState::VIEWSTATE_MESHLOAD;
+
 	app->SwapToFileSelectionMenu();
 
-	app->_viewState = AppViewState::VIEWSTATE_MESHLOAD;
+	
 
 	app->RepopulateFileSelectionPanel();
 }
@@ -2107,9 +2332,11 @@ void App::LoadTextureButtonCallback(void *context)
 
 	if(app->_loadedDirectorySpecificFilenames.size()==0) return;
 	
+	app->_viewState = AppViewState::VIEWSTATE_TEXTURELOAD;
+
 	app->SwapToFileSelectionMenu();
 
-	app->_viewState = AppViewState::VIEWSTATE_TEXTURELOAD;
+	
 
 	app->RepopulateFileSelectionPanel();
 }
@@ -2125,11 +2352,44 @@ void App::FileSelectionMenuCancelButtonCallback(void *context)
 	app->_viewState = AppViewState::VIEWSTATE_MAINMENU;
 }
 
+void App::FileMenuSaveTextInputCallback(void *context, const std::string &newString)
+{
+	App* app = (App*)context;
+	app->_chosenEditedFileName = newString;
+	app->fileSelectionButtonsGroup.SetToggledOff();
+}
+
+void App::FileMenuSaveButtonCallback(void *context)
+{
+	App* app = (App*)context;
+	if(app->_chosenEditedFileName.length() == 0) return;
+
+	if(app->_chosenEditedFileName.length() >= 4)
+	{
+		//Lets check if the end of the filename end with .scn if not, we add it to it
+		const std::string& s = app->_chosenEditedFileName;
+		if(s[s.length()-1] != 'n' || s[s.length()-2] != 'c' || s[s.length()-3] != 's' || s[s.length()-4] != '.')
+		{
+			app->_chosenEditedFileName += ".scn";
+		}
+	}
+
+	std::string fullSaveRelativeFilePath = "assets/saves/" + app->_chosenEditedFileName;
+	app->SaveScene(fullSaveRelativeFilePath);
+
+	app->SwapBackToMainMenu();
+
+	app->_viewState = AppViewState::VIEWSTATE_MAINMENU;	
+}
 
 void App::FileSelectionMenuItemCallback(void *context, int index)
 {
 	App* app = (App*)context;
 	app->_selectedFileNameIndex = index;
+	if(app->_viewState == AppViewState::VIEWSTATE_PERSISTENCESAVE)
+	{
+		app->_chosenEditedFileName = app->_loadedDirectorySpecificFilenames[index];
+	}
 }
 
 void App::FileSelectionMenuLoadButtonCallback(void *context)
@@ -2141,13 +2401,11 @@ void App::FileSelectionMenuLoadButtonCallback(void *context)
 
 	if(app->_viewState == AppViewState::VIEWSTATE_MESHLOAD)
 	{
-		app->TryLoadMesh("assets/models/" + chosenFileName);
-
-		
+		app->TryLoadMesh( chosenFileName);
 	}
 	else if(app->_viewState == AppViewState::VIEWSTATE_TEXTURELOAD)
 	{
-		app->TryLoadTexture("assets/textures/" + chosenFileName);
+		app->TryLoadTexture( chosenFileName);
 	}
 
 	app->SwapBackToMainMenu();
@@ -2158,21 +2416,8 @@ void App::AddMaterialButtonCallback(void *context)
 {
 	App* app = (App*)context;
 
-	MaterialInfo newMaterialInfo;
-	bool wasAddingMaterialSuccessful = app->_scene.TryAddMaterial(&newMaterialInfo);
-	if(wasAddingMaterialSuccessful)
-	{
-		app->storedMaterialInfos.push_back(newMaterialInfo);
-		
-		RadioButton* newMaterialButton = new RadioButton();
-		newMaterialButton->SetText(std::to_string(newMaterialInfo.materialIndex));
-		newMaterialButton->SetCallBackContext(context);
-		newMaterialButton->SetIndex(newMaterialInfo.materialIndex);
-
-		app->chosenMaterialGroup.AddToGroup(newMaterialButton);
-		app->materialPanel.AddControl(newMaterialButton);
-		app->dropdownMaterial.AddOption(std::to_string(newMaterialInfo.materialIndex),newMaterialInfo.materialIndex);
-	}
+	MaterialData newBasicMaterialData;
+	app->AddMaterial(newBasicMaterialData);
 }
 
 void App::ChosenMaterialButtonCallback(void *context, int materialIndex)
@@ -2443,21 +2688,8 @@ void App::AddModelButtonCallback(void *context)
 {
 	App* app = (App*)context;
 
-	ModelInfo newModelInfo;
-	bool wasAddingModelSuccessful = app->_scene.TryAddModel(&newModelInfo);
-	if(wasAddingModelSuccessful)
-	{
-		app->storedModelInfos.push_back(newModelInfo);
-		
-		RadioButton* newModelButton = new RadioButton();
-		newModelButton->SetText(std::to_string(newModelInfo.modelIndex));
-		newModelButton->SetCallBackContext(context);
-		newModelButton->SetIndex(newModelInfo.modelIndex);
-
-		app->chosenModelGroup.AddToGroup(newModelButton);
-		app->modelPanel.AddControl(newModelButton);
-		app->dropdownModel.AddOption(std::to_string(newModelInfo.modelIndex),newModelInfo.modelIndex);
-	}
+	ModelDataCpu newModelData;
+	app->TryAddModel(newModelData);
 }
 
 void App::ChosenModelButtonCallback(void *context, int modelIndex)
@@ -2507,18 +2739,8 @@ void App::AddObjectButtonCallback(void *context)
 {
 	App* app = (App*)context;
 
-	ObjectInfo newObjectInfo;
-	bool wasAddingObjectSuccessful = app->_scene.TryAddObject(&newObjectInfo);
-	if(wasAddingObjectSuccessful)
-	{	
-		RadioButton* newObjectButton = new RadioButton();
-		newObjectButton->SetText(std::to_string(newObjectInfo.objectIndex));
-		newObjectButton->SetCallBackContext(context);
-		newObjectButton->SetIndex(newObjectInfo.objectIndex);
-
-		app->chosenObjectGroup.AddToGroup(newObjectButton);
-		app->objectPanel.AddControl(newObjectButton);		
-	}
+	ObjectState newObjectState;
+	app->TryAddObject(newObjectState);
 }
 
 void App::ChosenObjectButtonCallback(void *context, int objectIndex)
@@ -2603,4 +2825,30 @@ void App::DeleteObjectButtonCallback(void *context)
 			children.pop_back();
 		}
 	}
+}
+
+void App::NewSceneButtonCallback(void *context)
+{
+	App* app = (App*)context;
+	app->Reset();
+}
+
+void App::SaveSceneButtonCallback(void *context)
+{
+	App* app = (App*)context;
+
+	std::string savesFolderRelative = "assets/saves/"; // For now its this
+	std::vector<std::string> acceptableExtensions = {".scn"};
+
+	GetFileNamesWithSpecificExtension(savesFolderRelative,acceptableExtensions,app->_loadedDirectorySpecificFilenames);
+	
+	app->_viewState = AppViewState::VIEWSTATE_PERSISTENCESAVE;
+
+	app->SwapToFileSelectionMenu();
+
+	
+
+	
+
+	app->RepopulateFileSelectionPanel();
 }

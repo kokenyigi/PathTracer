@@ -46,6 +46,19 @@ void Dropdown::SetChosenOption(int index)
 	}
 }
 
+void Dropdown::ClearOptions()
+{
+	_optionsGroup.SetToggledOff();
+	for(int i = 0; i<_optionsPanel.GetChildren().size() ;++i)
+	{
+		delete _optionsPanel.GetChildren()[i];
+	}
+	_optionsPanel.GetChildren().clear();
+
+	_currentOptionCount = 0;
+	_chosenOptionLabel.SetText("-");
+}
+
 void Dropdown::AddOption(const std::string &optionName, int optionIndex)
 {
 	RadioButton* optionRadioButton = new RadioButton();
