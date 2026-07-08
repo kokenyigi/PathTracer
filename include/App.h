@@ -238,9 +238,22 @@ private:
 	void SwapToFileSelectionMenu();
 	void SwapBackToMainMenu();
 
-	void TryLoadMeshData();
-	void TryLoadTextureData();
-	//void TryLoadGamePersistenceData--orsmth
+	bool TryLoadMesh(const std::string& meshFilePathRelative);
+	bool TryLoadTexture(const std::string& textureFilePathRelative);
+	void AddMaterial();
+	bool TryAddModel();
+	bool TryAddObject();
+
+	bool TryLoadScene(const std::string& sceneFilePathRelative);
+	void SaveScene(const std::string& sceneFileName);
+
+	/**
+	 * This procedure fully reset's the app's state, that means, it will both Scene-side and App-side delete the created structures 
+	 *  like, meshes, textures, materials, models, objects and all buttons associated with them.
+	 * It acts as a full cleanup of the state, and will be mainly used when we want to load a new app state,( or scene) in.
+	 */
+	void Reset();
+	
 };
 
 

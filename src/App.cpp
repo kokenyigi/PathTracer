@@ -1737,13 +1737,8 @@ void App::SwapBackToMainMenu()
 	//... TODO
 }
 
-void App::TryLoadMeshData()
+bool App::TryLoadMesh(const std::string& meshFilePathRelative)
 {
-	std::string meshFilePathRelative = "assets/models/" + _loadedDirectorySpecificFilenames[_selectedFileNameIndex];
-
-	//std::cout<<"Began Loading meshData...\n";
-
-
 	MeshInfo sceneLoadedMeshInfo;
 	bool wasMeshLoadingSuccessful = _scene.TryLoadMesh(meshFilePathRelative,&sceneLoadedMeshInfo);
 	if(wasMeshLoadingSuccessful)
@@ -1765,8 +1760,7 @@ void App::TryLoadMeshData()
 		dropdownMesh.AddOption(std::to_string(meshIndex),meshIndex);
 	}
 
-
-	//std::cout<<"Ended Loading meshData...\n";
+	return wasMeshLoadingSuccessful;
 }
 
 
@@ -1788,10 +1782,8 @@ void App::ChosenMeshButtonCallback(void *context, int meshIndex)
 }
 
 
-void App::TryLoadTextureData()
+bool App::TryLoadTexture(const std::string& textureFilePathRelative)
 {
-	std::string textureFilePathRelative = "assets/textures/" + _loadedDirectorySpecificFilenames[_selectedFileNameIndex];
-
 	TextureInfo sceneLoadedTextureInfo;
 	bool wasTextureLoadingSuccessful = _scene.TryLoadTexture(textureFilePathRelative,&sceneLoadedTextureInfo);
 	if(wasTextureLoadingSuccessful)
@@ -1811,6 +1803,8 @@ void App::TryLoadTextureData()
 		texturePanel.AddControl(newChosenTextureButton);
 		dropdownTexture.AddOption(std::to_string(textureIndex),textureIndex);
 	}
+
+	return wasTextureLoadingSuccessful;
 }
 
 
@@ -2143,15 +2137,17 @@ void App::FileSelectionMenuLoadButtonCallback(void *context)
 	App* app = (App*)context;
 	if(app->_selectedFileNameIndex < 0 || app->_selectedFileNameIndex >= app->_loadedDirectorySpecificFilenames.size()) return;
 
+	std::string chosenFileName = app->_loadedDirectorySpecificFilenames[app->_selectedFileNameIndex];
+
 	if(app->_viewState == AppViewState::VIEWSTATE_MESHLOAD)
 	{
-		app->TryLoadMeshData();
+		app->TryLoadMesh("assets/models/" + chosenFileName);
 
 		
 	}
 	else if(app->_viewState == AppViewState::VIEWSTATE_TEXTURELOAD)
 	{
-		app->TryLoadTextureData();
+		app->TryLoadTexture("assets/textures/" + chosenFileName);
 	}
 
 	app->SwapBackToMainMenu();
