@@ -2022,6 +2022,7 @@ void App::Reset()
 	mainButtonsGroup.SetToggledOff();
 
 	//meshPanel.SetInactive();
+	meshPanel.SetActive();
 	texturePanel.SetInactive();
 	materialPanel.SetInactive();
 	modelPanel.SetInactive();
