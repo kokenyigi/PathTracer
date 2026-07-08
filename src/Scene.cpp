@@ -26,7 +26,59 @@ Scene::Scene()
     _objectDatas.reserve(_maximumObjectCount);
 }
 
+void Scene::Reset()
+{
+    cl_int clError;
+    if(_vertexPositionData.size() > 0)
+    {
+        _vertexPositionData.clear();
+        _vertexAttributeData.clear();
 
+        clError = clReleaseMemObject(_vertexPositionDataBuffer);CHECK_ERROR(clError);
+        clError = clReleaseMemObject(_vertexAttributeDataBuffer);CHECK_ERROR(clError);
+    }
+    if(_triangleIndicesData.size() > 0)
+    {
+        _triangleIndicesData.clear();
+
+        clError = clReleaseMemObject(_triangleIndicesDataBuffer);CHECK_ERROR(clError);
+    }
+    if(_bottomLevelBvhNodeDatas.size()>0)
+    {
+        _bottomLevelBvhNodeDatas.clear();
+        clError = clReleaseMemObject(_bottomLevelBvhNodeDatasBuffer);CHECK_ERROR(clError);
+    }
+    if(_meshBvhRootIndexData.size()>0)
+    {
+        _meshBvhRootIndexData.clear();
+    }
+    if(_textureDatas.size()>0)
+    {
+        _textureDatas.clear();
+        _rgbaDatas.clear();
+
+        clError = clReleaseMemObject(_rgbaDatasBuffer);CHECK_ERROR(clError);
+        clError = clReleaseMemObject(_textureDatasBuffer);CHECK_ERROR(clError);
+    }
+    if(_materialDatas.size()>0)
+    {
+        _materialDatas.clear();
+
+        clError = clReleaseMemObject(_materialDataBuffer);CHECK_ERROR(clError);
+    }
+    if(_objectDatas.size()>0)
+    {
+        _objectDatas.clear();
+
+        clError = clReleaseMemObject(_objectDataBuffer);CHECK_ERROR(clError);
+    }
+    if(_modelDatas.size()>0)
+    {
+        _modelDatas.clear();
+
+        clError = clReleaseMemObject(_modelDataBuffer);CHECK_ERROR(clError);
+    }
+}
 
 void Scene::InitCL()
 {

@@ -397,6 +397,15 @@ public:
     bool TryAlterObject(int objectIndex, const ObjectState& alteredObjectState); //also writes data to GPU
     bool TryDeleteObject(int objectIndex); // Back-swaps object, and erases end element
 
+
+    /**
+     * This functions resets all buffers and vectors, and every single memory 
+     *  that has been previously allocated both CPU and GPU side.
+     * NOTE: this invalidates any indices, or references from the outside to any container from the inside of the scene.
+     * Use With Caution!
+     */
+    void Reset();
+
     void Delete();
 
 private:
