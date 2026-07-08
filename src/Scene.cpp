@@ -313,7 +313,7 @@ void Scene::MouseMove(float newX, float newY)
             _previousMousePos = glm::vec2(newX,newY);
 
             _camera.Rotate(dx,dy);
-            
+            ResetPathTracedFrameIndex();
         }
     }
 }
@@ -355,7 +355,6 @@ void Scene::KeyInput(int key, int action, int mods)
         }
 
         _camera.TryInfluenceMovement(axis,direction,influence);
-        ResetPathTracedFrameIndex();
     }
 
     if(key == 70 && action == 1) // If F was pressed
