@@ -81,6 +81,8 @@ public:
 		return glm::perspective(2.0f*atanf( tanf( glm::radians( m_fovx/2.0f ) ) * 1.0f / aspect ), aspect, zNear, zFar); 
 	}
 
+	bool GetIsCameraMoving() {return (motionMults[0] + motionMults[1] + motionMults[2]) > 0;}
+
 	//If influence == 0 -> we no longer want to go forward. 
 	// if influence == 1 -> we want to move forwards
 

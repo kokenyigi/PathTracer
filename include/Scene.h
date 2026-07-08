@@ -112,6 +112,13 @@ struct RgbaData
     float a;
 };
 
+struct RgbData
+{
+    float r;
+    float g;
+    float b;
+};
+
 /**
  * This is the unit data structure which's primary goal is to index the array consisting of RGBA values.
  * startindex: the first rgba value's index that the texture begins with, and then the size  of the texture can be calculated 
@@ -317,7 +324,7 @@ private:
     std::vector<ObjectData> _objectDatas;
     cl_mem _objectDataBuffer;
 
-
+    unsigned int _frameIndex = 0;
 
     //Variables related to Rasterized rendering
     RenderBuffer _renderBuffer;
@@ -334,7 +341,7 @@ private:
     cl_command_queue clCommandQueue;
     cl_kernel clPathTracerKernel;
 
-    cl_mem clOpenglInteropTex;
+    cl_mem clOpenglInteropTex; cl_mem clHelperBuffer; // <-- stores the summed rgb values, which we will later divide
     cl_mem clCameraDataBuffer;
 
 public:
@@ -453,6 +460,10 @@ private:
 
     //This helper function just simply calculates the world transformation of an object.
     void RecalculateWorldTransformOfObject(int objectIndex);
+
+
+
+    void ResetPathTracedFrameIndex() {_frameIndex = 1;}
 };
 
 

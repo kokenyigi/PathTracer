@@ -1,3 +1,40 @@
+uint CalculateInitialRngState(int x, int y, int frameIndex)
+{
+    return (uint)((uint)(x) * (uint)(1973) + (uint)(y) * (uint)(9277) + (uint)(frameIndex) * (uint)(26699)) | (uint)(1);
+}
+
+uint WangHashAndAlterSeed(uint* seed)
+{
+    *seed = (uint)(*seed ^ (uint)(61)) ^ (uint)(*seed >> (uint)(16));
+    *seed *= (uint)(9);
+    *seed = *seed ^ (*seed >> 4);
+    *seed *= (uint)(0x27d4eb2d);
+    *seed = *seed ^ (*seed >> 15);
+    return *seed;
+}
+
+// Generates a random float uniformly in the 0.0f - 1.0f range
+// And also alters state!
+float GenerateRandomFloat(uint* state)
+{
+    return (float)(WangHashAndAlterSeed(state)) / 4294967296.0f;
+}
+
+// Generates a vector of unit length, uniformly distributed along a sphere's surface.
+float3 GenerateRandomVector(uint* state)
+{
+    float z = GenerateRandomFloat(state) * 2.0f - 1.0f; // The so called height of the vector, basically its z component
+    float phi = GenerateRandomFloat(state) * M_PI_2_F;
+
+    float r = sqrt(1 - z*z); // This is the perpendicular projection's length from (0,0) -> projected radius
+    float x = r * cos(phi);
+    float y = r * sin(phi);
+
+    return (float3)(x,y,z);
+}
+
+
+
 
 float3 Reflect(float3* v, float3* n)
 {
@@ -92,6 +129,14 @@ typedef struct
 } BvhNodeData;
 
 typedef float4 RgbaData;
+
+typedef struct 
+{
+    float r;
+    float g;
+    float b;
+
+} RgbData;
 
 typedef struct 
 {
@@ -265,6 +310,7 @@ BoxIntersectResult IntersectAABB4(const Ray* ray,__global const AABB4* box)
 
 typedef struct
 {
+    uint rngState;
     __global const VertexPositionData* vertexPositionData;
     __global const VertexAttributeData* vertexAttributeData;
     __global const TriangleIndicesData* triangleIndicesData;
@@ -420,24 +466,43 @@ TraceResult TraceRay(const Ray* ray, const Scene* scene)
     return retval;
 }
 
+#define MAX_BOUNCE_COUNT 5
+
 float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
 {
-    TraceResult primaryResult = TraceRay(primaryRay,scene);
-    if(primaryResult.t > primaryRay->tMin && primaryResult.t < primaryRay->tMax)
+    float3 retval = (float3)(0,0,0);
+    float3 throughPut = (float3)(1.0f,1.0f,1.0f);
+
+    Ray ray = *primaryRay;
+    for(int bounceIndex = 0; bounceIndex < MAX_BOUNCE_COUNT; ++ bounceIndex)
     {
-        int materialIndex = primaryResult.materialIndex;
-        float3 albedoColor = scene->materialData[materialIndex].albedoColor.xyz;
-        return albedoColor;
+        TraceResult traceResult = TraceRay(&ray,scene);
+        if(traceResult.t > primaryRay->tMin && traceResult.t < primaryRay->tMax)
+        {
+            int materialIndex = traceResult.materialIndex;
+            float3 albedo = scene->materialData[materialIndex].albedoColor.xyz;
+            float3 emission = scene->materialData[materialIndex].emissionStrength*scene->materialData[materialIndex].emissionColor.xyz;
+            
+            ray.origin = ray.origin + traceResult.t * ray.direction + traceResult.normal * 0.00001f;
+            ray.direction = normalize(traceResult.normal + GenerateRandomVector(&scene->rngState));
+            ray.invDirection = 1.0f / ray.direction;
+
+            retval += throughPut * emission;
+            throughPut *= albedo;
+        }
+        else
+        {
+            break;
+        }
     }
-    else
-    {
-        return primaryRay->direction;
-    }
+
+    return retval;
 }
 
 
 __kernel void renderimage(
     write_only image2d_t output,
+    __global RgbData* helperBuffer,
     const int viewPortWidth,
     const int viewPortHeight,
     __global const CameraData* cameraData,
@@ -450,7 +515,8 @@ __kernel void renderimage(
     __global const MaterialData* materialData,
     __global const ModelData* modelData,
     __global const ObjectData* objectData,
-    const int objectCount
+    const int objectCount,
+    const int frameIndex
     )
 {
     //The execution unit's coordinates based on N-dimensional Range
@@ -470,6 +536,7 @@ __kernel void renderimage(
     scene.modelData = modelData;
     scene.objectData = objectData;
     scene.objectCount = objectCount;
+    scene.rngState = CalculateInitialRngState(threadCoords.x,threadCoords.y,frameIndex);
 
     float halfWorldViewPortWidth =  tan(radians(cameraData->fovx) * 0.5f );
     float halfWorldViewPortHeight = halfWorldViewPortWidth / cameraData->aspect;
@@ -493,6 +560,27 @@ __kernel void renderimage(
 
     float3 calculatedColor = CalculateRayColor(&primaryRay,&scene);
     
+    if(frameIndex <= 1)
+    {
+        helperBuffer[threadCoords.x + threadCoords.y * viewPortWidth].r = calculatedColor.x;
+        helperBuffer[threadCoords.x + threadCoords.y * viewPortWidth].g = calculatedColor.y;
+        helperBuffer[threadCoords.x + threadCoords.y * viewPortWidth].b = calculatedColor.z;
+        write_imagef(output,threadCoords,(float4)(calculatedColor,1.0f));
+    }
+    else
+    {
+        float3 previousSumColor = (float3)(0,0,0);
+        previousSumColor.x = helperBuffer[threadCoords.x + threadCoords.y * viewPortWidth].r;
+        previousSumColor.y = helperBuffer[threadCoords.x + threadCoords.y * viewPortWidth].g;
+        previousSumColor.z = helperBuffer[threadCoords.x + threadCoords.y * viewPortWidth].b;
 
-    write_imagef(output,threadCoords,(float4)(calculatedColor,1.0f));
+        helperBuffer[threadCoords.x + threadCoords.y * viewPortWidth].r += calculatedColor.x;
+        helperBuffer[threadCoords.x + threadCoords.y * viewPortWidth].g += calculatedColor.y;
+        helperBuffer[threadCoords.x + threadCoords.y * viewPortWidth].b += calculatedColor.z;
+
+        float3 normalizedColor = (previousSumColor + calculatedColor) / frameIndex;
+        write_imagef(output,threadCoords,(float4)(normalizedColor,1.0f));
+    }
+
+    
 }

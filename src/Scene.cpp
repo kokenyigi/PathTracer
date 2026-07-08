@@ -101,6 +101,9 @@ void Scene::InitCL()
     clOpenglInteropTex = clCreateFromGLTexture(clContext,CL_MEM_WRITE_ONLY,GL_TEXTURE_2D,0,_renderTexture.GetId(),&clError);
     CHECK_ERROR(clError);
 
+    clHelperBuffer = clCreateBuffer(clContext,CL_MEM_READ_WRITE,sizeof(RgbData)*_viewportWidth*_viewportHeight,nullptr,&clError);
+    CHECK_ERROR(clError);
+
     clCameraDataBuffer = clCreateBuffer(clContext,CL_MEM_READ_ONLY,sizeof(CameraData),nullptr,&clError);
     CHECK_ERROR(clError);
 
@@ -181,7 +184,13 @@ void Scene::Resize(int newWidth, int newHeight)
 
     clOpenglInteropTex = clCreateFromGLTexture(clContext,CL_MEM_WRITE_ONLY,GL_TEXTURE_2D,0,_renderTexture.GetId(),&clError);
     CHECK_ERROR(clError);
+
+    clError = clReleaseMemObject(clHelperBuffer); CHECK_ERROR(clError);
+    clHelperBuffer = clCreateBuffer(clContext,CL_MEM_READ_WRITE,sizeof(RgbaData)*newWidth*newHeight,nullptr,&clError);
+    CHECK_ERROR(clError);
+    ResetPathTracedFrameIndex();
 }
+
 
 void Scene::Render()
 {
@@ -237,20 +246,22 @@ void Scene::PathTracedRender()
     CHECK_ERROR(clError);
 
     clError = clSetKernelArg(clPathTracerKernel,0,sizeof(cl_mem),&clOpenglInteropTex);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,1,sizeof(int),&_viewportWidth);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,2,sizeof(int),&_viewportHeight);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,3,sizeof(cl_mem),&clCameraDataBuffer);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,4,sizeof(cl_mem),&_vertexPositionDataBuffer);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,5,sizeof(cl_mem),&_vertexAttributeDataBuffer);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,6,sizeof(cl_mem),&_triangleIndicesDataBuffer);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,7,sizeof(cl_mem),&_bottomLevelBvhNodeDatasBuffer);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,8,sizeof(cl_mem),&_rgbaDatasBuffer);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,9,sizeof(cl_mem),&_textureDatasBuffer);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,10,sizeof(cl_mem),&_materialDataBuffer);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,11,sizeof(cl_mem),&_modelDataBuffer);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,12,sizeof(cl_mem),&_objectDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,1,sizeof(cl_mem),&clHelperBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,2,sizeof(int),&_viewportWidth);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,3,sizeof(int),&_viewportHeight);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,4,sizeof(cl_mem),&clCameraDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,5,sizeof(cl_mem),&_vertexPositionDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,6,sizeof(cl_mem),&_vertexAttributeDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,7,sizeof(cl_mem),&_triangleIndicesDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,8,sizeof(cl_mem),&_bottomLevelBvhNodeDatasBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,9,sizeof(cl_mem),&_rgbaDatasBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,10,sizeof(cl_mem),&_textureDatasBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,11,sizeof(cl_mem),&_materialDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,12,sizeof(cl_mem),&_modelDataBuffer);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,13,sizeof(cl_mem),&_objectDataBuffer);CHECK_ERROR(clError);
     cl_int objectCount = _objectDatas.size();
-    clError = clSetKernelArg(clPathTracerKernel,13,sizeof(int),&objectCount);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,14,sizeof(int),&objectCount);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,15,sizeof(int),&_frameIndex);CHECK_ERROR(clError);
 
     size_t localSize[2] = { 16, 16 };
     size_t globalSize[2] = {((_viewportWidth + localSize[0] -1) / localSize[0]) * localSize[0],
@@ -264,6 +275,11 @@ void Scene::PathTracedRender()
     CHECK_ERROR(clError);
 
     clFinish(clCommandQueue);
+
+    if(_frameIndex < 1000000000)
+    {
+        ++_frameIndex;
+    }
 }
 
 
@@ -271,6 +287,11 @@ void Scene::PathTracedRender()
 void Scene::Update(float deltaTime)
 {
     _camera.Update(deltaTime);
+
+    if(_camera.GetIsCameraMoving())
+    {
+        ResetPathTracedFrameIndex();
+    }
 }
 
 void Scene::MouseMove(float newX, float newY)
@@ -292,6 +313,7 @@ void Scene::MouseMove(float newX, float newY)
             _previousMousePos = glm::vec2(newX,newY);
 
             _camera.Rotate(dx,dy);
+            
         }
     }
 }
@@ -333,6 +355,7 @@ void Scene::KeyInput(int key, int action, int mods)
         }
 
         _camera.TryInfluenceMovement(axis,direction,influence);
+        ResetPathTracedFrameIndex();
     }
 
     if(key == 70 && action == 1) // If F was pressed
@@ -934,6 +957,9 @@ bool Scene::TryAlterMaterial(int materialIndex, const MaterialData &alterredMate
         clError = clEnqueueWriteBuffer(clCommandQueue,_materialDataBuffer,CL_TRUE,sizeof(MaterialData)*materialIndex,
             sizeof(MaterialData),&alterredMaterialData,0,nullptr,nullptr);
         CHECK_ERROR(clError);
+
+        ResetPathTracedFrameIndex();
+        return true;
     }
     return false;
 }
@@ -989,6 +1015,7 @@ bool Scene::TryAlterModel(int modelIndex, const ModelDataCpu &alteredModelData)
         clError = clEnqueueWriteBuffer(clCommandQueue,_modelDataBuffer,CL_TRUE,sizeof(ModelDataGpu)*modelIndex,
             sizeof(ModelDataGpu),&alteredModelDataGpu,0,nullptr,nullptr);
         CHECK_ERROR(clError);
+        ResetPathTracedFrameIndex();
 
         return true;
     }
@@ -1037,7 +1064,7 @@ bool Scene::TryAddObject(ObjectInfo *objectInfo)
         sizeof(ObjectData),&newObjectData,0,nullptr,nullptr);
     CHECK_ERROR(clError);
     //AppendToClBuffer(clContext,clCommandQueue,&_objectDataBuffer,sizeof(ObjectData),alreadyExistingObjectDataCount,1,&newObjectData);
-
+    ResetPathTracedFrameIndex();
 
     return true;
 }
@@ -1066,6 +1093,7 @@ bool Scene::TryAlterObject(int objectIndex, const ObjectState& alteredObjectStat
         clError = clEnqueueWriteBuffer(clCommandQueue,_objectDataBuffer,CL_TRUE,sizeof(ObjectData)*objectIndex,
             sizeof(ObjectData),&_objectDatas[objectIndex],0,nullptr,nullptr);
         CHECK_ERROR(clError);
+        ResetPathTracedFrameIndex();
 
         return true;
     }
@@ -1092,6 +1120,8 @@ bool Scene::TryDeleteObject(int objectIndex)
         //Deletion is simply just forgeting about a given index.
         _objectDatas.pop_back();
         _objectTransforms.pop_back();
+
+        ResetPathTracedFrameIndex();
         
         return true;
     }
