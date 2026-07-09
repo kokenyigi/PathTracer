@@ -479,6 +479,8 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
         TraceResult traceResult = TraceRay(&ray,scene);
         if(traceResult.t > primaryRay->tMin && traceResult.t < primaryRay->tMax)
         {
+            traceResult.normal = normalize(traceResult.normal);
+
             int materialIndex = traceResult.materialIndex;
             float3 albedo = scene->materialData[materialIndex].albedoColor.xyz;
             float3 emission = scene->materialData[materialIndex].emissionStrength*scene->materialData[materialIndex].emissionColor.xyz;
