@@ -24,7 +24,7 @@ float GenerateRandomFloat(uint* state)
 float3 GenerateRandomVector(uint* state)
 {
     float z = GenerateRandomFloat(state) * 2.0f - 1.0f; // The so called height of the vector, basically its z component
-    float phi = GenerateRandomFloat(state) * M_PI_2_F;
+    float phi = GenerateRandomFloat(state) * M_PI_F * 2.0f;
 
     float r = sqrt(1 - z*z); // This is the perpendicular projection's length from (0,0) -> projected radius
     float x = r * cos(phi);
@@ -543,13 +543,21 @@ __kernel void renderimage(
     float halfWorldViewPortWidth =  tan(radians(cameraData->fovx) * 0.5f );
     float halfWorldViewPortHeight = halfWorldViewPortWidth / cameraData->aspect;
 
+    float unitWorldViewPortWidth = halfWorldViewPortWidth * 2.0f / viewPortWidth;
+    float unitWorldViewPortHeight = halfWorldViewPortHeight * 2.0f / viewPortHeight;
+
     float2 pixelMidCoordsNdc;
     pixelMidCoordsNdc.x = (((float)threadCoords.x + 0.5f) / viewPortWidth) * 2.0f - 1.0f;
     pixelMidCoordsNdc.y = (((float)threadCoords.y + 0.5f) / viewPortHeight) * 2.0f - 1.0f;
 
+    float2 randomJitter = (float2)(GenerateRandomFloat(&scene.rngState),GenerateRandomFloat(&scene.rngState)) -0.5f;
+    float3 fullJitter = randomJitter.x *unitWorldViewPortWidth * cameraData->leftward.xyz + 
+        randomJitter.y *unitWorldViewPortHeight * cameraData->upward.xyz;
+
     float3 dirtyRayDirection = cameraData->forward.xyz - 
         pixelMidCoordsNdc.x * halfWorldViewPortWidth * cameraData->leftward.xyz +
-        pixelMidCoordsNdc.y * halfWorldViewPortHeight * cameraData->upward.xyz;
+        pixelMidCoordsNdc.y * halfWorldViewPortHeight * cameraData->upward.xyz + 
+        fullJitter;
 
     float3 rayDirection = normalize(dirtyRayDirection);
 
