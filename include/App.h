@@ -140,6 +140,7 @@ private:
 	int chosenModelIndex = -1;
 	LayoutPanel modelPanel; Button buttonModelAdd; RadioButtonGroup chosenModelGroup;
 
+	std::vector<ObjectInfo> storedObjectInfos;
 	int chosenObjectIndex = -1;
 	LayoutPanel objectPanel; Button buttonAddObject; RadioButtonGroup chosenObjectGroup;
 

@@ -3,6 +3,8 @@
 #include <iostream>
 #include <chrono>
 
+#include <fstream>
+
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -1946,6 +1948,7 @@ bool App::TryAddObject(const ObjectState &newObjectState)
 	bool wasAddingObjectSuccessful = _scene.TryAddObject(&newObjectInfo);
 	if(wasAddingObjectSuccessful)
 	{	
+		storedObjectInfos.push_back(newObjectInfo);
 		_scene.TryAlterObject(newObjectInfo.objectIndex,newObjectState);
 
 		RadioButton* newObjectButton = new RadioButton();
@@ -1963,15 +1966,73 @@ bool App::TryAddObject(const ObjectState &newObjectState)
 void App::SaveScene(const std::string &sceneSavingFileNameRelative)
 {
 	std::cout<<"Saving Scene into: " << sceneSavingFileNameRelative << "\n";
-	for(int i=0;i<_meshRelativeFilePaths.size();++i)
+
+	int meshCount = _meshRelativeFilePaths.size();
+	int textureCount = _textureRelativeFilePaths.size();
+	int materialCount = storedMaterialInfos.size();
+	int modelCount = storedModelInfos.size();
+	int objectCount = storedObjectInfos.size();
+
+	if(meshCount + textureCount + materialCount + modelCount + objectCount <= 0) return; // we have nothing to save
+
+	std::ofstream saveFile(sceneSavingFileNameRelative);
+
+	if(!saveFile) return; // couldn't open savefile
+
+	// Lets start saving otherwise
+	for(int i = 0; i<meshCount; ++i)
 	{
-		std::cout<<"Writing out mesh path: " << _meshRelativeFilePaths[i]<<"\n";
+		saveFile << "mesh " << _meshRelativeFilePaths[i] << "\n";
+	}
+	for(int i=0;i<textureCount;++i)
+	{
+		saveFile << "tex " << _textureRelativeFilePaths[i] << "\n";
+	}
+	for(int i=0;i<materialCount;++i)
+	{
+		int materialIndex = storedMaterialInfos[i].materialIndex;
+		MaterialData material;
+		bool doesMaterialExist = _scene.GetMaterialData(materialIndex,&material);
+		if(doesMaterialExist)
+		{
+			saveFile << "mat\n";
+			saveFile << material.albedoColor.x << " " << material.albedoColor.y << " " << material.albedoColor.z << "\n";
+			saveFile << material.albedoTextureIndex << "\n";
+			saveFile << material.emissionStrength << "\n";
+			saveFile << material.emissionColor.x << " " << material.emissionColor.y << " " << material.emissionColor.z << "\n";
+			saveFile << material.transmission << " "<<material.metallic << " " << material.roughness << " " << material.ior << "\n";
+		}
+	}
+	for(int i=0;i<modelCount;++i)
+	{
+		int modelIndex = storedModelInfos[i].modelIndex;
+		ModelDataCpu model;
+		bool doesModelExist = _scene.GetModelData(modelIndex,&model);
+		if(doesModelExist)
+		{
+			saveFile << "mod\n";
+			saveFile << model.meshIndex << "\n";
+			saveFile << model.materialIndex << "\n";
+		}
+	}
+	for(int i=0;i<objectCount;++i)
+	{
+		int objectIndex = storedObjectInfos[i].objectIndex;
+		ObjectState object;
+		bool doesObjectExist = _scene.GetObjectState(objectIndex,&object);
+		if(doesObjectExist)
+		{
+			saveFile << "obj\n";
+			saveFile << object.modelIndex << "\n";
+			saveFile << object.transform.position.x << " " << object.transform.position.y << " " << object.transform.position.z << "\n";
+			saveFile << object.transform.scale.x << " " << object.transform.scale.y << " " << object.transform.scale.z << "\n";
+			saveFile << object.transform.rotation.x << " " << object.transform.rotation.y << " " << object.transform.rotation.z << "\n";
+		}
 	}
 
-	for(int i=0;i<_textureRelativeFilePaths.size();++i)
-	{
-		std::cout<<"Writing out tex path: " << _textureRelativeFilePaths[i]<<"\n";
-	}
+	saveFile.close();
+
+	std::cout<<"Finished Saving the scene.\n";
 }
 
 void App::Reset()
@@ -1982,6 +2043,7 @@ void App::Reset()
 	storedTextureInfos.clear();
 	storedMaterialInfos.clear();
 	storedModelInfos.clear();
+	storedObjectInfos.clear();
 
 	chosenMeshGroup.SetToggledOff();
 	chosenTextureGroup.SetToggledOff();
@@ -2411,6 +2473,7 @@ void App::FileSelectionMenuItemCallback(void *context, int index)
 	if(app->_viewState == AppViewState::VIEWSTATE_PERSISTENCESAVE)
 	{
 		app->_chosenEditedFileName = app->_loadedDirectorySpecificFilenames[index];
+		app->inputSaveFileName.SetText(app->_loadedDirectorySpecificFilenames[index]);
 	}
 }
 
@@ -2845,6 +2908,8 @@ void App::DeleteObjectButtonCallback(void *context)
 
 			delete endButton;
 			children.pop_back();
+
+			app->storedObjectInfos.pop_back();
 		}
 	}
 }
