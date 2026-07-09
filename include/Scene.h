@@ -54,11 +54,6 @@ struct CameraData
     float zFar;
 };
 
-/**
- * Three - dimensional Axis Alligned Bounding Box
- *  THe OpenCL way -> cl_float3 = cl_float4 allignment wise.
- */
-
 
 /**
  * Just a simple way to unify the namespace namings.
@@ -79,6 +74,8 @@ struct VertexAttributeData
 {
     cl_float4 normal;
     cl_float2 textureCoords;
+    float padding1;
+    float padding2;
 };
 
 /**
@@ -113,6 +110,13 @@ struct RgbaData
     float g;
     float b;
     float a;
+};
+
+struct RgbData
+{
+    float r;
+    float g;
+    float b;
 };
 
 /**
@@ -193,6 +197,9 @@ struct Transform
 struct ObjectData
 {
     int modelIndex = -1;
+    int padding1;
+    int padding2;
+    int padding3;
     glm::mat4 worldTransform = glm::mat4(1.0f);
     glm::mat4 invWorldTransform = glm::mat4(1.0f);
 };
@@ -317,7 +324,7 @@ private:
     std::vector<ObjectData> _objectDatas;
     cl_mem _objectDataBuffer;
 
-
+    unsigned int _frameIndex = 0;
 
     //Variables related to Rasterized rendering
     RenderBuffer _renderBuffer;
@@ -334,7 +341,7 @@ private:
     cl_command_queue clCommandQueue;
     cl_kernel clPathTracerKernel;
 
-    cl_mem clOpenglInteropTex;
+    cl_mem clOpenglInteropTex; cl_mem clHelperBuffer; // <-- stores the summed rgb values, which we will later divide
     cl_mem clCameraDataBuffer;
 
 public:
@@ -462,6 +469,10 @@ private:
 
     //This helper function just simply calculates the world transformation of an object.
     void RecalculateWorldTransformOfObject(int objectIndex);
+
+
+
+    void ResetPathTracedFrameIndex() {_frameIndex = 1;}
 };
 
 
