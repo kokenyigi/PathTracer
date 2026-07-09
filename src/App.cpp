@@ -1787,6 +1787,8 @@ void App::SwapToFileSelectionMenu()
 	buttonCancel.MouseMove();
 	buttonLoadFile.Click(0,1);
 	buttonLoadFile.MouseMove();
+	buttonSaveFile.Click(0,1);
+	buttonSaveFile.MouseMove();
 }
 
 void App::SwapBackToMainMenu()
@@ -1801,7 +1803,17 @@ void App::SwapBackToMainMenu()
 	}
 	else if(_viewState == AppViewState::VIEWSTATE_TEXTURELOAD)
 	{
-
+		buttonTextureLoad.Click(0,1);
+		buttonTextureLoad.MouseMove();
+	}
+	else if(_viewState == AppViewState::VIEWSTATE_PERSISTENCESAVE)
+	{
+		buttonSaveScene.Click(0,1);
+		buttonSaveScene.MouseMove();
+	}
+	else if(_viewState == AppViewState::VIEWSTATE_PERSISTENCELOAD)
+	{
+		
 	}
 	//... TODO
 }
@@ -1951,6 +1963,15 @@ bool App::TryAddObject(const ObjectState &newObjectState)
 void App::SaveScene(const std::string &sceneSavingFileNameRelative)
 {
 	std::cout<<"Saving Scene into: " << sceneSavingFileNameRelative << "\n";
+	for(int i=0;i<_meshRelativeFilePaths.size();++i)
+	{
+		std::cout<<"Writing out mesh path: " << _meshRelativeFilePaths[i]<<"\n";
+	}
+
+	for(int i=0;i<_textureRelativeFilePaths.size();++i)
+	{
+		std::cout<<"Writing out tex path: " << _textureRelativeFilePaths[i]<<"\n";
+	}
 }
 
 void App::Reset()

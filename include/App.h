@@ -161,7 +161,7 @@ private:
 	
 	std::vector<std::string> _loadedDirectorySpecificFilenames;
 	int _selectedFileNameIndex = -1;
-	std::string _chosenEditedFileName = "";
+	std::string _chosenEditedFileName = "default.scn";
 
 	//Persistence
 	std::vector<std::string> _meshRelativeFilePaths;
