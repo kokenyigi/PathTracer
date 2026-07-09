@@ -290,39 +290,39 @@ private:
      * Moving memory is fucking slow.
      */
     std::vector<VertexPositionData> _vertexPositionData;
-    cl_mem _vertexPositionDataBuffer;
+    cl_mem _vertexPositionDataBuffer = nullptr;
 
     std::vector<VertexAttributeData> _vertexAttributeData;
-    cl_mem _vertexAttributeDataBuffer;
+    cl_mem _vertexAttributeDataBuffer = nullptr;
 
     std::vector<TriangleIndicesData> _triangleIndicesData;
-    cl_mem _triangleIndicesDataBuffer;
+    cl_mem _triangleIndicesDataBuffer = nullptr;
 
     const int _maximumBottomLevelBvhDepth = 32;
     const int _sahBinSize = 32;
     std::vector<BvhNodeData> _bottomLevelBvhNodeDatas;
-    cl_mem _bottomLevelBvhNodeDatasBuffer;
+    cl_mem _bottomLevelBvhNodeDatasBuffer = nullptr;
 
     std::vector<MeshBvhRootNodeIndexData> _meshBvhRootIndexData;
     //no buffer, we only need this cpu side
 
     std::vector<RgbaData> _rgbaDatas;
-    cl_mem _rgbaDatasBuffer;
+    cl_mem _rgbaDatasBuffer  = nullptr;
 
     std::vector<TextureData> _textureDatas;
-    cl_mem _textureDatasBuffer;
+    cl_mem _textureDatasBuffer = nullptr;
     
     //float
     std::vector<MaterialData> _materialDatas;
-    cl_mem _materialDataBuffer;
+    cl_mem _materialDataBuffer = nullptr;
 
     std::vector<ModelDataCpu> _modelDatas;
-    cl_mem _modelDataBuffer;
+    cl_mem _modelDataBuffer = nullptr;
     
     const int _maximumObjectCount = 200;
     std::vector<Transform> _objectTransforms;
     std::vector<ObjectData> _objectDatas;
-    cl_mem _objectDataBuffer;
+    cl_mem _objectDataBuffer = nullptr;
 
     unsigned int _frameIndex = 0;
 
@@ -341,8 +341,8 @@ private:
     cl_command_queue clCommandQueue;
     cl_kernel clPathTracerKernel;
 
-    cl_mem clOpenglInteropTex; cl_mem clHelperBuffer; // <-- stores the summed rgb values, which we will later divide
-    cl_mem clCameraDataBuffer;
+    cl_mem clOpenglInteropTex; cl_mem clHelperBuffer = nullptr; // <-- stores the summed rgb values, which we will later divide
+    cl_mem clCameraDataBuffer = nullptr;
 
 public:
     Scene();

@@ -87,7 +87,7 @@ void Scene::Reset()
         _modelDataBuffer = nullptr;
     }
 
-    //ResetPathTracedFrameIndex();
+    ResetPathTracedFrameIndex();
 }
 
 void Scene::InitCL()
