@@ -36,17 +36,22 @@ void Scene::Reset()
 
         clError = clReleaseMemObject(_vertexPositionDataBuffer);CHECK_ERROR(clError);
         clError = clReleaseMemObject(_vertexAttributeDataBuffer);CHECK_ERROR(clError);
+
+        _vertexAttributeDataBuffer = nullptr;
+        _vertexPositionDataBuffer= nullptr;
     }
     if(_triangleIndicesData.size() > 0)
     {
         _triangleIndicesData.clear();
 
         clError = clReleaseMemObject(_triangleIndicesDataBuffer);CHECK_ERROR(clError);
+        _triangleIndicesDataBuffer = nullptr;
     }
     if(_bottomLevelBvhNodeDatas.size()>0)
     {
         _bottomLevelBvhNodeDatas.clear();
         clError = clReleaseMemObject(_bottomLevelBvhNodeDatasBuffer);CHECK_ERROR(clError);
+        _bottomLevelBvhNodeDatasBuffer = nullptr;
     }
     if(_meshBvhRootIndexData.size()>0)
     {
@@ -59,25 +64,30 @@ void Scene::Reset()
 
         clError = clReleaseMemObject(_rgbaDatasBuffer);CHECK_ERROR(clError);
         clError = clReleaseMemObject(_textureDatasBuffer);CHECK_ERROR(clError);
+        _rgbaDatasBuffer = nullptr;
+        _textureDatasBuffer = nullptr;
     }
     if(_materialDatas.size()>0)
     {
         _materialDatas.clear();
 
         clError = clReleaseMemObject(_materialDataBuffer);CHECK_ERROR(clError);
+        _materialDataBuffer = nullptr;
     }
     if(_objectDatas.size()>0)
     {
         _objectDatas.clear();
-
-        //clError = clReleaseMemObject(_objectDataBuffer);CHECK_ERROR(clError);
+        _objectTransforms.clear();
     }
     if(_modelDatas.size()>0)
     {
         _modelDatas.clear();
 
         clError = clReleaseMemObject(_modelDataBuffer);CHECK_ERROR(clError);
+        _modelDataBuffer = nullptr;
     }
+
+    //ResetPathTracedFrameIndex();
 }
 
 void Scene::InitCL()
@@ -1126,7 +1136,7 @@ bool Scene::TryDeleteObject(int objectIndex)
 
             cl_int clError;
             clError = clEnqueueWriteBuffer(clCommandQueue,_objectDataBuffer,CL_TRUE,sizeof(ObjectData)*objectIndex,
-                sizeof(ObjectData),&_objectDatas[objectIndex],0,nullptr,nullptr);
+                sizeof(ObjectData),&_objectDatas[backIndex],0,nullptr,nullptr);
             CHECK_ERROR(clError);
         }
 
