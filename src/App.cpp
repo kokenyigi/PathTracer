@@ -4,6 +4,7 @@
 #include <chrono>
 
 #include <fstream>
+#include <sstream>
 
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
@@ -61,6 +62,20 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	buttonSaveScene.SetCallBackContext(this);
 	buttonSaveScene.SetCallback(SaveSceneButtonCallback);
 	containerLeft.AddControl(&buttonSaveScene);
+
+
+	buttonLoadScene.SetMargin(MARGIN_TOP,110.0f);
+	buttonLoadScene.SetMargin(MARGIN_LEFT,10.0f);
+	buttonLoadScene.SetHeight(40.0f);
+	buttonLoadScene.SetWidth(80.0f);
+	buttonLoadScene.SetBGColor(0.4,0.4,0.4);
+	buttonLoadScene.SetHoverColor(0.5,0.5,0.5);
+	buttonLoadScene.SetClickColor(0.6,0.6,0.6);
+	buttonLoadScene.SetTextColor(1,1,1);
+	buttonLoadScene.SetText("LOAD");
+	buttonLoadScene.SetCallBackContext(this);
+	buttonLoadScene.SetCallback(LoadSceneButtonCallback);
+	containerLeft.AddControl(&buttonLoadScene);
 
 	containerApplication.AddControl(&containerLeft);
 
@@ -1815,7 +1830,8 @@ void App::SwapBackToMainMenu()
 	}
 	else if(_viewState == AppViewState::VIEWSTATE_PERSISTENCELOAD)
 	{
-		
+		buttonLoadScene.Click(0,1);
+		buttonLoadScene.MouseMove();
 	}
 	//... TODO
 }
@@ -1965,7 +1981,7 @@ bool App::TryAddObject(const ObjectState &newObjectState)
 
 void App::SaveScene(const std::string &sceneSavingFileNameRelative)
 {
-	std::cout<<"Saving Scene into: " << sceneSavingFileNameRelative << "\n";
+	//std::cout<<"Saving Scene into: " << sceneSavingFileNameRelative << "\n";
 
 	int meshCount = _meshRelativeFilePaths.size();
 	int textureCount = _textureRelativeFilePaths.size();
@@ -1995,11 +2011,11 @@ void App::SaveScene(const std::string &sceneSavingFileNameRelative)
 		bool doesMaterialExist = _scene.GetMaterialData(materialIndex,&material);
 		if(doesMaterialExist)
 		{
-			saveFile << "mat\n";
-			saveFile << material.albedoColor.x << " " << material.albedoColor.y << " " << material.albedoColor.z << "\n";
-			saveFile << material.albedoTextureIndex << "\n";
-			saveFile << material.emissionStrength << "\n";
-			saveFile << material.emissionColor.x << " " << material.emissionColor.y << " " << material.emissionColor.z << "\n";
+			saveFile << "mat ";
+			saveFile << material.albedoColor.x << " " << material.albedoColor.y << " " << material.albedoColor.z << " ";
+			saveFile << material.albedoTextureIndex << " ";
+			saveFile << material.emissionStrength << " ";
+			saveFile << material.emissionColor.x << " " << material.emissionColor.y << " " << material.emissionColor.z << " ";
 			saveFile << material.transmission << " "<<material.metallic << " " << material.roughness << " " << material.ior << "\n";
 		}
 	}
@@ -2010,8 +2026,8 @@ void App::SaveScene(const std::string &sceneSavingFileNameRelative)
 		bool doesModelExist = _scene.GetModelData(modelIndex,&model);
 		if(doesModelExist)
 		{
-			saveFile << "mod\n";
-			saveFile << model.meshIndex << "\n";
+			saveFile << "mod ";
+			saveFile << model.meshIndex << " ";
 			saveFile << model.materialIndex << "\n";
 		}
 	}
@@ -2022,17 +2038,109 @@ void App::SaveScene(const std::string &sceneSavingFileNameRelative)
 		bool doesObjectExist = _scene.GetObjectState(objectIndex,&object);
 		if(doesObjectExist)
 		{
-			saveFile << "obj\n";
-			saveFile << object.modelIndex << "\n";
-			saveFile << object.transform.position.x << " " << object.transform.position.y << " " << object.transform.position.z << "\n";
-			saveFile << object.transform.scale.x << " " << object.transform.scale.y << " " << object.transform.scale.z << "\n";
+			saveFile << "obj ";
+			saveFile << object.modelIndex << " ";
+			saveFile << object.transform.position.x << " " << object.transform.position.y << " " << object.transform.position.z << " ";
+			saveFile << object.transform.scale.x << " " << object.transform.scale.y << " " << object.transform.scale.z << " ";
 			saveFile << object.transform.rotation.x << " " << object.transform.rotation.y << " " << object.transform.rotation.z << "\n";
 		}
 	}
 
 	saveFile.close();
 
-	std::cout<<"Finished Saving the scene.\n";
+	//std::cout<<"Finished Saving the scene.\n";
+}
+
+bool App::TryLoadScene(const std::string &sceneLoadingFileName)
+{
+	std::string fullToBeLoadedSceneFilePathRelative = "assets/saves/" + sceneLoadingFileName;
+
+	Reset();
+
+	std::ifstream loadFile(fullToBeLoadedSceneFilePathRelative);
+	std::string fileLineBuffer;
+	while(std::getline(loadFile,fileLineBuffer))
+	{
+		std::stringstream lineStringStream(fileLineBuffer);
+		std::vector<std::string> lineWords;
+		std::string wordBuffer;
+		while(lineStringStream >> wordBuffer)
+		{
+			lineWords.push_back(wordBuffer);
+		}
+
+		//now lineWords has all the words of the line
+		if(lineWords.size() == 0) continue; // empty line for some reason, we definitely skip.
+
+		if(lineWords[0] == "mesh")
+		{
+			if(lineWords.size() < 2) return false;
+			// We have found a mesh entry, lets try and load it.
+			bool wasLoadingMeshSuccesful = TryLoadMesh(lineWords[1]);
+			if(!wasLoadingMeshSuccesful) return false;
+		}
+		else if(lineWords[0] == "tex")
+		{
+			if(lineWords.size() < 2) return false;
+
+			bool wasLoadingTextureSuccessful = TryLoadTexture(lineWords[1]);
+			if(!wasLoadingTextureSuccessful) return false;
+		}
+		else if(lineWords[0] == "mat")
+		{
+			if(lineWords.size() < 13) return false;
+
+			MaterialData newMaterialData;
+			newMaterialData.albedoColor.x = std::stof(lineWords[1]);
+			newMaterialData.albedoColor.y = std::stof(lineWords[2]);
+			newMaterialData.albedoColor.z = std::stof(lineWords[3]);
+			newMaterialData.albedoTextureIndex = std::stod(lineWords[4]);
+			newMaterialData.emissionStrength = std::stof(lineWords[5]);
+			newMaterialData.emissionColor.x = std::stof(lineWords[6]);
+			newMaterialData.emissionColor.y = std::stof(lineWords[7]);
+			newMaterialData.emissionColor.z = std::stof(lineWords[8]);
+			newMaterialData.transmission = std::stof(lineWords[9]);
+			newMaterialData.metallic= std::stof(lineWords[10]);
+			newMaterialData.roughness = std::stof(lineWords[11]);
+			newMaterialData.ior = std::stof(lineWords[12]);
+
+			AddMaterial(newMaterialData);
+		}
+		else if(lineWords[0] == "mod")
+		{
+			if(lineWords.size() < 3) return false;
+
+			ModelDataCpu newModelData;
+			newModelData.meshIndex = std::stod(lineWords[1]);
+			newModelData.materialIndex = std::stod(lineWords[2]);
+
+			bool wasAddingModelSuccseful = TryAddModel(newModelData);
+			if(!wasAddingModelSuccseful) return false;
+		}
+		else if(lineWords[0] == "obj")
+		{
+			if(lineWords.size() < 11) return false;
+
+			ObjectState newObjectState;
+			newObjectState.modelIndex = std::stod(lineWords[1]);
+			newObjectState.transform.position.x = std::stof(lineWords[2]);
+			newObjectState.transform.position.y = std::stof(lineWords[3]);
+			newObjectState.transform.position.z = std::stof(lineWords[4]);
+			newObjectState.transform.scale.x = std::stof(lineWords[5]);
+			newObjectState.transform.scale.y = std::stof(lineWords[6]);
+			newObjectState.transform.scale.z = std::stof(lineWords[7]);
+			newObjectState.transform.rotation.x = std::stof(lineWords[8]);
+			newObjectState.transform.rotation.y = std::stof(lineWords[9]);
+			newObjectState.transform.rotation.z = std::stof(lineWords[10]);
+
+			bool wasAddingObjectSuccesful = TryAddObject(newObjectState);
+			if(!wasAddingObjectSuccesful) return false;
+		}
+	}
+
+	loadFile.close();
+
+    return true;
 }
 
 void App::Reset()
@@ -2492,6 +2600,14 @@ void App::FileSelectionMenuLoadButtonCallback(void *context)
 	{
 		app->TryLoadTexture( chosenFileName);
 	}
+	else if(app->_viewState == AppViewState::VIEWSTATE_PERSISTENCELOAD)
+	{
+		bool wasSceneloadingSuccesful = app->TryLoadScene(chosenFileName);
+		if(!wasSceneloadingSuccesful)
+		{
+			app->Reset();
+		}
+	}
 
 	app->SwapBackToMainMenu();
 	app->_viewState = AppViewState::VIEWSTATE_MAINMENU;
@@ -2928,6 +3044,8 @@ void App::SaveSceneButtonCallback(void *context)
 	std::vector<std::string> acceptableExtensions = {".scn"};
 
 	GetFileNamesWithSpecificExtension(savesFolderRelative,acceptableExtensions,app->_loadedDirectorySpecificFilenames);
+
+	if(app->_loadedDirectorySpecificFilenames.size() <= 0) return;
 	
 	app->_viewState = AppViewState::VIEWSTATE_PERSISTENCESAVE;
 
@@ -2936,6 +3054,22 @@ void App::SaveSceneButtonCallback(void *context)
 	
 
 	
+
+	app->RepopulateFileSelectionPanel();
+}
+
+void App::LoadSceneButtonCallback(void *context)
+{
+	App* app = (App*)context;
+
+	std::string savesFolderRelative = "assets/saves/"; // For now its this
+	std::vector<std::string> acceptableExtensions = {".scn"};
+
+	GetFileNamesWithSpecificExtension(savesFolderRelative,acceptableExtensions,app->_loadedDirectorySpecificFilenames);
+	
+	app->_viewState = AppViewState::VIEWSTATE_PERSISTENCELOAD;
+
+	app->SwapToFileSelectionMenu();
 
 	app->RepopulateFileSelectionPanel();
 }

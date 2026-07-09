@@ -70,7 +70,7 @@ void Scene::Reset()
     {
         _objectDatas.clear();
 
-        clError = clReleaseMemObject(_objectDataBuffer);CHECK_ERROR(clError);
+        //clError = clReleaseMemObject(_objectDataBuffer);CHECK_ERROR(clError);
     }
     if(_modelDatas.size()>0)
     {
