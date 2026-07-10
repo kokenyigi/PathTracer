@@ -479,14 +479,62 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
         TraceResult traceResult = TraceRay(&ray,scene);
         if(traceResult.t > primaryRay->tMin && traceResult.t < primaryRay->tMax)
         {
-            traceResult.normal = normalize(traceResult.normal);
+            float3 geometricNormal = normalize(traceResult.normal);
+            float3 hitPoint = ray.origin + traceResult.t * ray.direction;
 
             int materialIndex = traceResult.materialIndex;
             float3 albedo = scene->materialData[materialIndex].albedoColor.xyz;
             float3 emission = scene->materialData[materialIndex].emissionStrength*scene->materialData[materialIndex].emissionColor.xyz;
+            float ior = scene->materialData[materialIndex].ioR;
+            float metallic = scene->materialData[materialIndex].metallic;
+
             
-            ray.origin = ray.origin + traceResult.t * ray.direction + traceResult.normal * 0.00001f;
-            ray.direction = normalize(traceResult.normal + GenerateRandomVector(&scene->rngState));
+            // These probabilities add up to one, so that we can sample one of them by a random [0,1] number later on.
+            float specularComp = 0.0f; // Basically the possibility of the ray reflecting specularly.
+            float diffuseComp = 0.0f; // same, but diffusely
+            float transmissionComp = 0.0f; // same again, but transmission through material
+
+            // Schlick's approximation for the fresnel coefficient
+            float3 fresnelDielectricBase = pow((ior - 1.0f) / (ior + 1.0f),2.0f);
+            float3 fresnelMetalBase = albedo;
+            float3 F0 = mix(fresnelDielectricBase,fresnelMetalBase,metallic);
+            float cosTheta = max(dot(-ray.direction,geometricNormal),0.0f);
+            float3 fresnel = F0 + (1.0f - F0) * pow((1.0f - cosTheta),5.0f);
+            float fresnelComp = max(fresnel.z,max(fresnel.y,fresnel.x));
+
+            specularComp += fresnelComp;
+
+            
+            float remainingEnergy = 1.0f - fresnelComp;
+            diffuseComp += remainingEnergy * (1.0f-metallic);
+            specularComp += remainingEnergy * metallic;
+            
+
+            
+            float randomNumber = GenerateRandomFloat(&scene->rngState);
+            if(randomNumber > specularComp)
+            {
+                //Diffuse reflection
+                ray.direction = normalize(geometricNormal + GenerateRandomVector(&scene->rngState)); 
+                   
+            }
+            else
+            {
+                //specular reflection
+                float3 reflectedDirection = normalize(Reflect(&ray.direction, &geometricNormal));
+                ray.direction = reflectedDirection;
+                
+            }
+            
+
+            
+            
+            
+            
+            ray.origin = hitPoint + geometricNormal * 0.00001f;
+
+            
+            
             ray.invDirection = 1.0f / ray.direction;
 
             retval += throughPut * emission;
