@@ -36,6 +36,69 @@ float3 GenerateRandomVector(uint* state)
 
 
 
+float3 SampleGGXDistribution(float3 geometricNormal, float roughness, float random1, float random2)
+{
+    float alpha = roughness * roughness;
+    float phi = 2 * M_PI_F * random1; // radian between 0 and 2pi
+
+    float tanThetaSquared = alpha * alpha * random2 / (1.0f - random2); // Actual inverse CDF sampling
+
+    float cosTheta = sqrt(1.0f / (tanThetaSquared + 1.0f));
+    float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
+
+    float3 newNormalLocal;
+    newNormalLocal.x = sinTheta * cos(phi);
+    newNormalLocal.y = sinTheta * sin(phi);
+    newNormalLocal.z = cosTheta;
+
+    // Now we have to transform this locally-defined normal into world space
+    // For this we will need a Orto-normal-system, having Z as geometricnormal
+    float3 tangentFirst;
+    if(fabs(geometricNormal.z) < 0.9999f) // Here we basically check if the geometric normal isnt paralell with axis z(to do cross)
+    {
+        tangentFirst = normalize(cross((float3)(0,0,1),geometricNormal));
+    }
+    else
+    {
+        // If z didnt work, lets use y axis
+        tangentFirst = normalize(cross((float3)(0,1,0),geometricNormal));
+    }
+
+    float3 tangentSecond = cross(tangentFirst,geometricNormal); // both are normalized, and orthogonal
+
+    float3 sampledNormal = newNormalLocal.x * tangentFirst + newNormalLocal.y * tangentSecond + newNormalLocal.z * geometricNormal;
+
+    return sampledNormal;
+}
+
+
+float CalculateSmithMaskingShadowingG1(float nDotX,float alpha) // Where alpha is roughness ^ 2
+{
+    float alphaSquared = alpha * alpha;
+
+    /*
+    float denomA = nDotV * sqrt(alphaSquared + (1-alphaSquared)*nDotL*nDotL);
+    float denomB = nDotL * sqrt(alphaSquared + (1-alphaSquared)*nDotV*nDotV);
+
+    float denom = denomA + denomB;
+    if(denom > 0.0f)
+    {
+        return 0.5f  / denom;
+    }
+    return 0.0f;
+    */
+     return
+        (2.0f * nDotX) /
+        (nDotX +
+         sqrt(alphaSquared +
+              (1.0f - alphaSquared) *
+              nDotX * nDotX));
+
+
+    //return 2.0f * nDotL * nDotV / (denomA + denomB);
+}
+
+
 float3 Reflect(float3* v, float3* n)
 {
 	return (*v - 2 * *n * dot(*v, *n));
@@ -477,56 +540,103 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
     for(int bounceIndex = 0; bounceIndex < MAX_BOUNCE_COUNT; ++ bounceIndex)
     {
         TraceResult traceResult = TraceRay(&ray,scene);
-        if(traceResult.t > primaryRay->tMin && traceResult.t < primaryRay->tMax)
+        if(traceResult.t > ray.tMin && traceResult.t < ray.tMax)
         {
+            // Setup basic variables
+            // Geometric normal is the avarage normal, defined by the mesh.
             float3 geometricNormal = normalize(traceResult.normal);
+
+            // This boolean value is true if and only if the ray is hitting the face from its back side
+            bool isBackFace = dot(geometricNormal,ray.direction) > 0;
+
+            // This hitpoint is the one thats calculated by the triangle-intersection algorithm
+            // We will have to disposition this a bit along the geometric normal, so that we dont have shadow acne.
             float3 hitPoint = ray.origin + traceResult.t * ray.direction;
 
+            // Easier to dereference variables
             int materialIndex = traceResult.materialIndex;
             float3 albedo = scene->materialData[materialIndex].albedoColor.xyz;
             float3 emission = scene->materialData[materialIndex].emissionStrength*scene->materialData[materialIndex].emissionColor.xyz;
             float ior = scene->materialData[materialIndex].ioR;
             float metallic = scene->materialData[materialIndex].metallic;
+            float transmission = scene->materialData[materialIndex].transmission;
+            float roughness = scene->materialData[materialIndex].roughness;
+            float alpha = roughness * roughness;
 
+            retval += throughPut * emission;
+
+            // Calculation of the given microfacet normal
+            // We calculate it based on a model of the real world, 
+            //  and in this model we "sample" a normal based on the materials roughness.
+            // To actually calculate this, we will have to querry the inverse of the CDF of the PDF the model is based upon, which has a
+            //  normal distribution in this case.
+            float random1 = GenerateRandomFloat(&scene->rngState);
+            float random2 = GenerateRandomFloat(&scene->rngState);
+            float3 microFacetNormal = SampleGGXDistribution(geometricNormal,roughness,random1, random2);
             
-            // These probabilities add up to one, so that we can sample one of them by a random [0,1] number later on.
-            float specularComp = 0.0f; // Basically the possibility of the ray reflecting specularly.
-            float diffuseComp = 0.0f; // same, but diffusely
-            float transmissionComp = 0.0f; // same again, but transmission through material
+            
 
             // Schlick's approximation for the fresnel coefficient
             float3 fresnelDielectricBase = pow((ior - 1.0f) / (ior + 1.0f),2.0f);
             float3 fresnelMetalBase = albedo;
             float3 F0 = mix(fresnelDielectricBase,fresnelMetalBase,metallic);
-            float cosTheta = max(dot(-ray.direction,geometricNormal),0.0f);
+            float cosTheta = max(dot(-ray.direction,microFacetNormal),0.0f);
             float3 fresnel = F0 + (1.0f - F0) * pow((1.0f - cosTheta),5.0f);
             float fresnelComp = max(fresnel.z,max(fresnel.y,fresnel.x));
 
+            // These probabilities add up to one, so that we can sample one of them by a random [0,1] number later on.
+            float specularComp = 0.0f; // Basically the possibility of the ray reflecting specularly.
+            float diffuseComp = 0.0f; // same, but diffusely
+            float transmissionComp = 0.0f; // same again, but transmission through material
             specularComp += fresnelComp;
 
+            float remainingAfterFresnel = 1.0f - fresnelComp;
+            diffuseComp += remainingAfterFresnel * (1.0f-metallic);
+            specularComp += remainingAfterFresnel * metallic;
             
-            float remainingEnergy = 1.0f - fresnelComp;
-            diffuseComp += remainingEnergy * (1.0f-metallic);
-            specularComp += remainingEnergy * metallic;
-            
-
             
             float randomNumber = GenerateRandomFloat(&scene->rngState);
-            if(randomNumber > specularComp)
+            if(randomNumber <= diffuseComp)
             {
-                //Diffuse reflection
+                // Diffuse reflection
+                // We use a cosine-weighted hamisphere sampling around the geometric normal.
                 ray.direction = normalize(geometricNormal + GenerateRandomVector(&scene->rngState)); 
-                   
+                throughPut *= albedo; // We only multiply it by the albedo, since the brdf and pdf cancel eachother out.
             }
             else
             {
-                //specular reflection
-                float3 reflectedDirection = normalize(Reflect(&ray.direction, &geometricNormal));
-                ray.direction = reflectedDirection;
+                // Specular Reflection
+                // We sampled earlier a microfacet normal from the GGX sampling method,
+                //   and now we will reflect the ray according to that
+                // Since we used an importance-sampling technique here, GGX, we have to correct for it by
+                //  taking into consideration the used BRDF and PDF.
+                float3 reflectedDirection = normalize(Reflect(&ray.direction, &microFacetNormal));
+
+                // Some helper variables for the brdf & pdf
+                float NdotV = dot(geometricNormal,-ray.direction);
+                float NdotL = dot(geometricNormal,reflectedDirection);
+                float NdotM = dot(geometricNormal,microFacetNormal);
+                float VdotM = dot(-ray.direction,microFacetNormal);
+
+                if (NdotL <= 0.0f || NdotM <= 0.0f || NdotV <= 0.0f || VdotM <= 0.0f) 
+                {
+                    throughPut = (float3)(0.0f, 0.0f, 0.0f);
+                    break;
+                }
+
                 
+
+                float smithGeometricCoefficient = CalculateSmithMaskingShadowingG1(NdotV,alpha) * 
+                    CalculateSmithMaskingShadowingG1(NdotL,alpha); 
+                
+                ray.direction = reflectedDirection;
+                throughPut *= fresnel  * smithGeometricCoefficient * (VdotM) / (NdotV * NdotM) ;
+                throughPut /= specularComp;
+
             }
             
 
+            
             
             
             
@@ -537,8 +647,8 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             
             ray.invDirection = 1.0f / ray.direction;
 
-            retval += throughPut * emission;
-            throughPut *= albedo;
+            
+            
         }
         else
         {
