@@ -561,7 +561,9 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             float metallic = scene->materialData[materialIndex].metallic;
             float transmission = scene->materialData[materialIndex].transmission;
             float roughness = scene->materialData[materialIndex].roughness;
+
             float alpha = roughness * roughness;
+            transmission *= (1.0f - metallic);
 
             retval += throughPut * emission;
 
@@ -574,13 +576,21 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             float random2 = GenerateRandomFloat(&scene->rngState);
             float3 microFacetNormal = SampleGGXDistribution(geometricNormal,roughness,random1, random2);
             
-            
+            float activeIoR = ior;
+            float3 activeGeometricNormal = geometricNormal;
+            float3 activeMicrofacetNormal = microFacetNormal;
+            if(isBackFace)
+            {
+                activeIoR = 1.0f / ior;
+                activeMicrofacetNormal = -microFacetNormal;
+                activeGeometricNormal = -geometricNormal;
+            }
 
             // Schlick's approximation for the fresnel coefficient
             float3 fresnelDielectricBase = pow((ior - 1.0f) / (ior + 1.0f),2.0f);
             float3 fresnelMetalBase = albedo;
             float3 F0 = mix(fresnelDielectricBase,fresnelMetalBase,metallic);
-            float cosTheta = max(dot(-ray.direction,microFacetNormal),0.0f);
+            float cosTheta = dot(-ray.direction,activeMicrofacetNormal);
             float3 fresnel = F0 + (1.0f - F0) * pow((1.0f - cosTheta),5.0f);
             float fresnelComp = max(fresnel.z,max(fresnel.y,fresnel.x));
 
@@ -590,10 +600,29 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             float transmissionComp = 0.0f; // same again, but transmission through material
             specularComp += fresnelComp;
 
+            // The energy left inside the light can now go in 2 directions.
+            // Firstly, it can refract Into the material, or object, this is decide by how transmissive the material is.
+            // Secondly, if the material isnt that transmissive, the rest of the energy goes into reflective energy.
             float remainingAfterFresnel = 1.0f - fresnelComp;
-            diffuseComp += remainingAfterFresnel * (1.0f-metallic);
-            specularComp += remainingAfterFresnel * metallic;
+            float reflectiveAmount = remainingAfterFresnel * (1.0f - transmission);
+            float transmissiveAmount = remainingAfterFresnel * transmission;
+            transmissionComp += transmissiveAmount;
+
+            // If, after both fresnel specular reflectional energy, and transmissive refracting energy
+            //   there is still energy inside the light, we have to decide what portion of that energy is going to be diffusive
+            //   and what portion will be specular. This is decided by how metallic the material is.
+            diffuseComp += reflectiveAmount * (1.0f-metallic);
+            specularComp += reflectiveAmount * metallic;
             
+            
+            
+            float3 refractDirection;
+            bool canRefract = Refract(&ray.direction , &activeMicrofacetNormal, activeIoR, &refractDirection);
+            if(!canRefract)
+            {
+                specularComp += transmissionComp;
+                transmissionComp = 0.0f;
+            }
             
             float randomNumber = GenerateRandomFloat(&scene->rngState);
             if(randomNumber <= diffuseComp)
@@ -602,53 +631,77 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                 // We use a cosine-weighted hamisphere sampling around the geometric normal.
                 ray.direction = normalize(geometricNormal + GenerateRandomVector(&scene->rngState)); 
                 throughPut *= albedo; // We only multiply it by the albedo, since the brdf and pdf cancel eachother out.
+
+                ray.origin = hitPoint + activeGeometricNormal* 0.00001f;
             }
             else
             {
-                // Specular Reflection
-                // We sampled earlier a microfacet normal from the GGX sampling method,
-                //   and now we will reflect the ray according to that
-                // Since we used an importance-sampling technique here, GGX, we have to correct for it by
-                //  taking into consideration the used BRDF and PDF.
-                float3 reflectedDirection = normalize(Reflect(&ray.direction, &microFacetNormal));
+                float NdotV = dot(activeGeometricNormal,-ray.direction);
+                float NdotM = dot(activeGeometricNormal,activeMicrofacetNormal);
+                float VdotM = dot(-ray.direction,activeMicrofacetNormal);
 
-                // Some helper variables for the brdf & pdf
-                float NdotV = dot(geometricNormal,-ray.direction);
-                float NdotL = dot(geometricNormal,reflectedDirection);
-                float NdotM = dot(geometricNormal,microFacetNormal);
-                float VdotM = dot(-ray.direction,microFacetNormal);
-
-                if (NdotL <= 0.0f || NdotM <= 0.0f || NdotV <= 0.0f || VdotM <= 0.0f) 
+                
+                if(NdotM <= 0.0f || NdotV <= 0.0f || VdotM <= 0.0f)
                 {
-                    throughPut = (float3)(0.0f, 0.0f, 0.0f);
+                    throughPut = (float3)(0,0,0);
                     break;
                 }
+                          
 
-                
+                if(randomNumber <= diffuseComp + specularComp)
+                {
+                    // Specular Reflection
+                    // We sampled earlier a microfacet normal from the GGX sampling method,
+                    //   and now we will reflect the ray according to that
+                    // Since we used an importance-sampling technique here, GGX, we have to correct for it by
+                    //  taking into consideration the used BRDF and PDF.
+                    float3 reflectedDirection = normalize(Reflect(&ray.direction, &activeMicrofacetNormal));
 
-                float smithGeometricCoefficient = CalculateSmithMaskingShadowingG1(NdotV,alpha) * 
-                    CalculateSmithMaskingShadowingG1(NdotL,alpha); 
+                    // Some helper variables for the brdf & pdf
+                    float NdotL = dot(activeGeometricNormal,reflectedDirection);
+
+                    
+                    if (NdotL <= 0.0f) 
+                    {
+                        // If we have degenerate microfacet normal reflection, we throw the ray away
+                        // This isnt taht good... [TODO] fix
+                        throughPut = (float3)(0.0f, 0.0f, 0.0f);
+                        break;
+                    }
+                    
+
+                    float smithGeometricCoefficient = CalculateSmithMaskingShadowingG1(NdotV,alpha) * 
+                        CalculateSmithMaskingShadowingG1(NdotL,alpha); 
+                    
+                    ray.direction = reflectedDirection;
+                    throughPut *= fresnel  * smithGeometricCoefficient * (VdotM) / (NdotV * NdotM) ;
+                    throughPut /= specularComp;
+
+                    ray.origin = hitPoint + activeGeometricNormal* 0.00001f;
+                }
+                else
+                {
+                    // Refraction based on the microfacet normal, and ray direction, and Snell's law.
+                    // Previously we already checked for total internal reflection, therefore if we are here
+                    //   we are guaranteed that we can refract.
+                    float NdotL = fabs(dot(refractDirection,activeGeometricNormal));
+                    float G = CalculateSmithMaskingShadowingG1(NdotV,alpha) * CalculateSmithMaskingShadowingG1(NdotL,alpha);
+
+                    ray.direction = normalize(refractDirection);
+
+                    
+                    throughPut *= (1.0f - fresnel) * activeIoR * activeIoR * G * (VdotM) / (NdotV * NdotM);
+                    throughPut /= transmissionComp;
+
+                    ray.origin = hitPoint + activeGeometricNormal * -0.00001f;
+
+                }
                 
-                ray.direction = reflectedDirection;
-                throughPut *= fresnel  * smithGeometricCoefficient * (VdotM) / (NdotV * NdotM) ;
-                throughPut /= specularComp;
 
             }
-            
-
-            
-            
-            
-            
-            
-            ray.origin = hitPoint + geometricNormal * 0.00001f;
-
-            
+        
             
             ray.invDirection = 1.0f / ray.direction;
-
-            
-            
         }
         else
         {
