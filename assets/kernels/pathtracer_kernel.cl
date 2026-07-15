@@ -703,12 +703,13 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                 float NdotM = dot(activeGeometricNormal,activeMicrofacetNormal);
                 float VdotM = dot(-ray.direction,activeMicrofacetNormal);
 
-                
-                if(NdotM <= 0.00001f || NdotV <= 0.00001f || VdotM <= 0.00001f)
+                /*
+                if(NdotV <= 0.00001f || VdotM <= 0.00001f)
                 {
                     throughPut = (float3)(0,0,0);
                     break;
                 }
+                */
                           
 
                 if(randomNumber <= diffuseComp + specularComp)
@@ -731,6 +732,7 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                         throughPut = (float3)(0.0f, 0.0f, 0.0f);
                         break;
                     }
+                    
                     
                     /*
                     float smithGeometricCoefficient = CalculateSmithMaskingShadowingG1(NdotV,alpha) * 
