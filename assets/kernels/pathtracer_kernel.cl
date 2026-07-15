@@ -617,9 +617,25 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             float roughness = scene->materialData[materialIndex].roughness;
 
             float alpha = roughness * roughness;
-            transmission *= (1.0f - metallic);
+            if(metallic > 0.00001f)
+            {
+                transmission = 0.0f;
+            }
 
             retval += throughPut * emission;
+
+            float currentIoR = 1.0f;
+            float nextIoR = ior;
+            float activeIoR = ior;
+            float3 activeGeometricNormal = geometricNormal;
+
+            if(isBackFace)
+            {
+                activeIoR = 1.0f / ior;            
+                activeGeometricNormal = -geometricNormal;
+                currentIoR = ior;
+                nextIoR = 1.0f;
+            }
 
             // Calculation of the given microfacet normal
             // We calculate it based on a model of the real world, 
@@ -628,21 +644,10 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             //  normal distribution in this case.
             float random1 = GenerateRandomFloat(&scene->rngState);
             float random2 = GenerateRandomFloat(&scene->rngState);
-            float3 microFacetNormal = SampleVisibleGGX(geometricNormal,-ray.direction,roughness,random1, random2);
+            float3 activeMicrofacetNormal = SampleVisibleGGX(activeGeometricNormal,-ray.direction,roughness,random1, random2);
             
-            float currentIoR = 1.0f;
-            float nextIoR = ior;
-            float activeIoR = ior;
-            float3 activeGeometricNormal = geometricNormal;
-            float3 activeMicrofacetNormal = microFacetNormal;
-            if(isBackFace)
-            {
-                activeIoR = 1.0f / ior;
-                activeMicrofacetNormal = -microFacetNormal;
-                activeGeometricNormal = -geometricNormal;
-                currentIoR = ior;
-                nextIoR = 1.0f;
-            }
+            
+            
 
             // Schlick's approximation for the fresnel coefficient
             float3 fresnelDielectricBase = pow((currentIoR - nextIoR) / (currentIoR + nextIoR),2.0f);
