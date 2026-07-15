@@ -71,6 +71,60 @@ float3 SampleGGXDistribution(float3 geometricNormal, float roughness, float rand
     return sampledNormal;
 }
 
+float3 SampleVisibleGGX(float3 geometricNormal, float3 viewDirection, float roughness, float random1, float random2)
+{
+    float alpha = roughness * roughness;
+
+    float3 tangent;
+    if(fabs(geometricNormal.z) < 0.9999f)
+    {
+        tangent = normalize(cross((float3)(0,0,1),geometricNormal));
+    }
+    else
+    {
+        tangent = normalize(cross((float3)(0,1,0),geometricNormal));
+    }
+    float3 bitangent = cross(geometricNormal,tangent);
+
+    float3 Ve = (float3)(
+        dot(viewDirection,tangent),
+        dot(viewDirection,bitangent),
+        dot(viewDirection,geometricNormal));
+    
+    float3 Vh = normalize((float3)(alpha*Ve.x,alpha*Ve.y,Ve.z));
+
+    float lengthSquared = Vh.x * Vh.x + Vh.y * Vh.y;
+    float3 T1;
+    float3 T2;
+    if(lengthSquared > 0.0f)
+    {
+        T1 = (float3)(-Vh.y,Vh.x,0.0f) * rsqrt(lengthSquared); 
+    }
+    else
+    {
+        T1 = (float3)(1,0,0);
+    }
+    T2 = cross(Vh,T1);
+
+    float radius = sqrt(random1);
+    float phi = 2 * M_PI_F * random2;
+    float t1 = radius * cos(phi);
+    float t2 = radius * sin(phi);
+
+    float s = 0.5f * (1.0f + Vh.z);
+    t2 = mix(sqrt(max(0.0f,1.0f - t1*t1)),t2,s);
+
+    float3 Nh = t1 * T1 + t2 * T2 + sqrt(max(0.0f,1.0f - t1*t1-t2*t2)) * Vh;
+
+    float3 Ne = normalize((float3)(
+        alpha * Nh.x,
+        alpha * Nh.y,
+        max(0.0f,Nh.z)
+    ));
+
+    return (Ne.x * tangent + Ne.y * bitangent + Ne.z*geometricNormal);
+}
+
 
 float CalculateSmithMaskingShadowingG1(float nDotX,float alpha) // Where alpha is roughness ^ 2
 {
@@ -574,8 +628,10 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             //  normal distribution in this case.
             float random1 = GenerateRandomFloat(&scene->rngState);
             float random2 = GenerateRandomFloat(&scene->rngState);
-            float3 microFacetNormal = SampleGGXDistribution(geometricNormal,roughness,random1, random2);
+            float3 microFacetNormal = SampleVisibleGGX(geometricNormal,-ray.direction,roughness,random1, random2);
             
+            float currentIoR = 1.0f;
+            float nextIoR = ior;
             float activeIoR = ior;
             float3 activeGeometricNormal = geometricNormal;
             float3 activeMicrofacetNormal = microFacetNormal;
@@ -584,10 +640,12 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                 activeIoR = 1.0f / ior;
                 activeMicrofacetNormal = -microFacetNormal;
                 activeGeometricNormal = -geometricNormal;
+                currentIoR = ior;
+                nextIoR = 1.0f;
             }
 
             // Schlick's approximation for the fresnel coefficient
-            float3 fresnelDielectricBase = pow((ior - 1.0f) / (ior + 1.0f),2.0f);
+            float3 fresnelDielectricBase = pow((currentIoR - nextIoR) / (currentIoR + nextIoR),2.0f);
             float3 fresnelMetalBase = albedo;
             float3 F0 = mix(fresnelDielectricBase,fresnelMetalBase,metallic);
             float cosTheta = dot(-ray.direction,activeMicrofacetNormal);
@@ -641,7 +699,7 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                 float VdotM = dot(-ray.direction,activeMicrofacetNormal);
 
                 
-                if(NdotM <= 0.0f || NdotV <= 0.0f || VdotM <= 0.0f)
+                if(NdotM <= 0.00001f || NdotV <= 0.00001f || VdotM <= 0.00001f)
                 {
                     throughPut = (float3)(0,0,0);
                     break;
@@ -669,12 +727,15 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                         break;
                     }
                     
-
+                    /*
                     float smithGeometricCoefficient = CalculateSmithMaskingShadowingG1(NdotV,alpha) * 
                         CalculateSmithMaskingShadowingG1(NdotL,alpha); 
+                    */
+
+                    float G1L = CalculateSmithMaskingShadowingG1(NdotL,alpha);
                     
                     ray.direction = reflectedDirection;
-                    throughPut *= fresnel  * smithGeometricCoefficient * (VdotM) / (NdotV * NdotM) ;
+                    throughPut *= fresnel  * G1L ;
                     throughPut /= specularComp;
 
                     ray.origin = hitPoint + activeGeometricNormal* 0.00001f;
@@ -687,10 +748,16 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                     float NdotL = fabs(dot(refractDirection,activeGeometricNormal));
                     float G = CalculateSmithMaskingShadowingG1(NdotV,alpha) * CalculateSmithMaskingShadowingG1(NdotL,alpha);
 
+                    float G1L = CalculateSmithMaskingShadowingG1(NdotL,alpha);
+
+                    float LdotM = fabs(dot(refractDirection,activeMicrofacetNormal));
+
                     ray.direction = normalize(refractDirection);
 
+                    float denom = (VdotM + activeIoR * LdotM);
+                    float jacobian = fabs(LdotM) / (denom * denom);
                     
-                    throughPut *= (1.0f - fresnel) * activeIoR * activeIoR * G * (VdotM) / (NdotV * NdotM);
+                    throughPut *= (1.0f - fresnel) * G1L * jacobian * (4.0f * fabs(VdotM));
                     throughPut /= transmissionComp;
 
                     ray.origin = hitPoint + activeGeometricNormal * -0.00001f;
