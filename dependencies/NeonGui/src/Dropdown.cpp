@@ -34,6 +34,8 @@ Dropdown::Dropdown()
     _optionsPanel.SetInactive();
 
 	_optionsGroup.SetCallback(OptionButtonCallback);
+
+	SetPriority(1); // Dropdowns have a priority of one
 }
 
 void Dropdown::SetChosenOption(int index)

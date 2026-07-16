@@ -69,6 +69,11 @@ protected:
 
 	bool isHovered = false;
 	bool isClicked = false;
+
+	// This value can be only modified when the control is added to a container, for safety reasons
+	// Controls with higher priority will be drawn over the ones with lower priority
+	// Controls with higher priority will get events first, instead of the ones with lower.
+	int _priority = 0;
 	
 	Texture* _renderTexture = nullptr;
 
@@ -236,6 +241,8 @@ public:
 	void SetFocused();
 	void SetUnfocused();
 
+	void SetPriority(int newPriority){_priority = newPriority;}
+
 	
 
 	inline AABB GetBox() const {return this->_box;}
@@ -245,6 +252,7 @@ public:
 	inline ValueDefinition GetHeightDefinition() const {return this->_heightDefinition;}
 	inline bool GetIsActive() const {return isActive;}
 	inline bool GetIsFocused() const {return isFocused;}
+	inline int GetPriority() const {return _priority;}
 private:
 	//A control doesn't have any exclusive private methods, cuz why would it have..idk.
 protected:

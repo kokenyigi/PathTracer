@@ -29,7 +29,7 @@ void ContainerBase::ContainerBaseRender()
 	guiContext->renderer.RenderRectangle(ndcControlRenderRect,_baseBGColor);
 
 
-    for(int i=0; i < _children.size() ; ++i)
+    for(int i=_children.size()-1; i>=0 ; --i)
     {
         _children[i]->Render();
     }
@@ -97,7 +97,38 @@ void ContainerBase::ContainerBaseAddControl(Control *control)
     {
         control->SetGuiContext(this->guiContext); 
     }
-    
+
+    int controlPriority = control->GetPriority();
+
+    int newControlIndex = _children.size()-1;
+    int backwardsFirst = _children.size() - 2;
+    while(backwardsFirst >= 0 && _children[backwardsFirst]->GetPriority() < controlPriority)
+    {
+        int priorityOfFirst = _children[backwardsFirst]->GetPriority();
+        if(backwardsFirst >= 1)
+        {
+            int backwardSecond = backwardsFirst - 1;
+            int priorityOfSecond = _children[backwardSecond]->GetPriority();
+            
+            if(priorityOfFirst < priorityOfSecond)
+            {
+                // we are at a breakpoint in priority, we must swap our new control into the first slot
+                Control* tmp = _children[backwardsFirst];
+                _children[backwardsFirst] = _children[newControlIndex];
+                _children[newControlIndex] = tmp;
+                newControlIndex = backwardsFirst;
+            }
+        }
+        else // backwardsfirst == 0
+        {
+            Control* tmp = _children[backwardsFirst];
+            _children[backwardsFirst] = _children[newControlIndex];
+            _children[newControlIndex] = tmp;
+            newControlIndex = backwardsFirst;
+        }
+        
+        --backwardsFirst;
+    }
 }
 
 
