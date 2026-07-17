@@ -163,6 +163,8 @@ bool Refract(float3* v, float3* n, float eta,float3* outVec)
 	float cosAlpha = dot(-*v, *n);
 	float underSqr = 1.0f - (1 - cosAlpha * cosAlpha) / (eta * eta);
 
+   
+
 	if (underSqr < 0.0f)
 	{
 		return false; // NUmerical error -> Total internal reflection happend
@@ -663,6 +665,15 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             float transmissionComp = 0.0f; // same again, but transmission through material
             specularComp += fresnelComp;
 
+
+            float3 refractDirection;
+            bool canRefract = Refract(&ray.direction , &activeMicrofacetNormal, activeIoR, &refractDirection);
+            if(!canRefract)
+            {
+                specularComp += transmissionComp;
+                transmissionComp = 0.0f;
+            }
+
             // The energy left inside the light can now go in 2 directions.
             // Firstly, it can refract Into the material, or object, this is decide by how transmissive the material is.
             // Secondly, if the material isnt that transmissive, the rest of the energy goes into reflective energy.
@@ -679,13 +690,7 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             
             
             
-            float3 refractDirection;
-            bool canRefract = Refract(&ray.direction , &activeMicrofacetNormal, activeIoR, &refractDirection);
-            if(!canRefract)
-            {
-                specularComp += transmissionComp;
-                transmissionComp = 0.0f;
-            }
+           
             
             float randomNumber = GenerateRandomFloat(&scene->rngState);
             if(randomNumber <= diffuseComp)
@@ -695,7 +700,7 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                 ray.direction = normalize(geometricNormal + GenerateRandomVector(&scene->rngState)); 
                 throughPut *= albedo; // We only multiply it by the albedo, since the brdf and pdf cancel eachother out.
 
-                ray.origin = hitPoint + activeGeometricNormal* 0.00001f;
+                ray.origin = hitPoint + ray.direction* 0.00001f;
             }
             else
             {
@@ -725,13 +730,16 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                     float NdotL = dot(activeGeometricNormal,reflectedDirection);
 
                     
+                
                     if (NdotL <= 0.0f) 
                     {
                         // If we have degenerate microfacet normal reflection, we throw the ray away
                         // This isnt taht good... [TODO] fix
                         throughPut = (float3)(0.0f, 0.0f, 0.0f);
+                        //retval =  (float3)(0.8f, 0.0f, 0.3f);
                         break;
                     }
+                    
                     
                     
                     /*
@@ -745,7 +753,7 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                     throughPut *= fresnel  * G1L ;
                     throughPut /= specularComp;
 
-                    ray.origin = hitPoint + activeGeometricNormal* 0.00001f;
+                    ray.origin = hitPoint + ray.direction* 0.00001f;
                 }
                 else
                 {
@@ -767,7 +775,7 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                     throughPut *= (1.0f - fresnel) * G1L * jacobian * (4.0f * fabs(VdotM));
                     throughPut /= transmissionComp;
 
-                    ray.origin = hitPoint + activeGeometricNormal * -0.00001f;
+                    ray.origin = hitPoint + ray.direction * 0.00001f;
 
                 }
                 
@@ -779,6 +787,7 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
         }
         else
         {
+            //retval =  (float3)(0.8f, 0.0f, 0.3f);
             break;
         }
     }
