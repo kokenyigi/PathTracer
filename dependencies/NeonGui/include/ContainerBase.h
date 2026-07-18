@@ -28,13 +28,13 @@ public:
     {
         ContainerBaseResize();
     }
-    void VirtualMouseMove() override
+    bool VirtualMouseMove() override
     {
-        ContainerBaseMouseMove();
+        return ContainerBaseMouseMove();
     }
-    void VirtualClick(int button, int action) override
+    bool VirtualClick(int button, int action) override
     {
-        ContainerBaseClick(button,action);
+        return ContainerBaseClick(button,action);
     }
     void VirtualMouseWheel(float amount, int direction) override
     {
@@ -52,8 +52,8 @@ protected:
     void ContainerBaseUpdate();
     void ContainerBaseRender();
     void ContainerBaseResize();
-    void ContainerBaseMouseMove();
-    void ContainerBaseClick(int button, int action);
+    bool ContainerBaseMouseMove();
+    bool ContainerBaseClick(int button, int action);
     void ContainerBaseMouseWheel(float amount, int direction);
     
     void ContainerBaseAddControl(Control* control);

@@ -33,7 +33,7 @@ void RadioButton::SetToggledOff()
     }
 }
 
-void RadioButton::RadioButtonClick(int button, int action)
+bool RadioButton::RadioButtonClick(int button, int action)
 {
     //ControlClick(button, action);
 
@@ -44,8 +44,12 @@ void RadioButton::RadioButtonClick(int button, int action)
             SetToggledOn();
 
             _groupContext->_callBack(_callBackContext,_index);
+
+            return true;
         }
     }
+
+    return false;
 }
 
 void RadioButtonGroup::SetToggledOff()

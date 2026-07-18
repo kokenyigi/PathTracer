@@ -47,7 +47,7 @@ void ContainerBase::ContainerBaseResize()
     }
 }
 
-void ContainerBase::ContainerBaseMouseMove()
+bool ContainerBase::ContainerBaseMouseMove()
 {
     if( IsCursorOnControl(guiContext->currentMousePos) || IsCursorOnControl(guiContext->oldMousePos))
     {
@@ -59,23 +59,49 @@ void ContainerBase::ContainerBaseMouseMove()
         isHovered = false;
     }
 
-    for(int i=0;i<_children.size();++i)
+    bool hasAChildHandledMouseMove = false;
+    int priorityOfFirstChildThatHandledMouseMove = -1; // is only set when a child handles mousemove
+    int childIndex = 0;
+    while(childIndex < _children.size() && 
+        (!hasAChildHandledMouseMove || priorityOfFirstChildThatHandledMouseMove == _children[childIndex]->GetPriority()))
     {
-        _children[i]->MouseMove();
+        bool doesThisChildHandleMouseMove = _children[childIndex]->MouseMove();
+        if(doesThisChildHandleMouseMove && !hasAChildHandledMouseMove)
+        {
+            hasAChildHandledMouseMove = true;
+            priorityOfFirstChildThatHandledMouseMove = _children[childIndex]->GetPriority();
+        }
+        ++childIndex;
     }
+
+    return hasAChildHandledMouseMove;
 }
 
-void ContainerBase::ContainerBaseClick(int button, int action)
+bool ContainerBase::ContainerBaseClick(int button, int action)
 {
     bool isCurrentMousePosOnContainer = IsCursorOnControl(guiContext->currentMousePos);
 
     if(isCurrentMousePosOnContainer)
     {
-        for(int i = 0; i<_children.size();++i)
+        bool hasAChildHandledMouseClick = false;
+        int priorityOfFirstChildThatHandledMouseClick = -1;
+        int childIndex = 0;
+        while(childIndex < _children.size() && 
+            (!hasAChildHandledMouseClick || priorityOfFirstChildThatHandledMouseClick == _children[childIndex]->GetPriority()))
         {
-            _children[i]->Click(button,action);
+            bool doesThisChildHandleMouseClick = _children[childIndex]->Click(button,action);
+            if(doesThisChildHandleMouseClick && !hasAChildHandledMouseClick)
+            {
+                hasAChildHandledMouseClick = true;
+                priorityOfFirstChildThatHandledMouseClick = _children[childIndex]->GetPriority();
+            }
+            ++childIndex;
         }
+
+        return hasAChildHandledMouseClick;
     }
+
+    return false;
 }
 
 void ContainerBase::ContainerBaseMouseWheel(float amount, int direction)

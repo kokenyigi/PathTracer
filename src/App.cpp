@@ -707,6 +707,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	dropdownMesh.SetScrollBarSize(15.0f);
 	dropdownMesh.SetCallbackContext(this);
 	dropdownMesh.SetCallback(MeshIndexChosenDropdownCallback);
+	dropdownMesh.SetPriority(2);
 
 	containerModelData.AddControl(&dropdownMesh);
 

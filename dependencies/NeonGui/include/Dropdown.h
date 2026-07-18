@@ -83,13 +83,13 @@ public:
     {
         DropdownResize();
     }
-    void VirtualMouseMove() override
+    bool VirtualMouseMove() override
     {
-        DropdownMouseMove();
+        return DropdownMouseMove();
     }
-    void VirtualClick(int button, int action) override
+    bool VirtualClick(int button, int action) override
     {
-        DropdownMouseClick(button,action);
+        return DropdownMouseClick(button,action);
     }
     void VirtualMouseWheel(float amount, int direction) override
     {
@@ -111,8 +111,8 @@ protected:
     void DropdownResize();
     void DropdownRender();
     void DropdownUpdate(){}
-    void DropdownMouseClick(int button, int action);
-    void DropdownMouseMove();
+    bool DropdownMouseClick(int button, int action);
+    bool DropdownMouseMove();
     void DropdownKeyPressed(char key){}
     void DropdownMouseWheel(float amount, int direction);
 

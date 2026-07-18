@@ -19,15 +19,15 @@ public:
     ~Button();
 
     
-    void VirtualClick(int button, int action) override
+    bool VirtualClick(int button, int action) override
     {
-        ButtonClick(button, action);
+        return ButtonClick(button, action);
     }
 
     void SetCallback(void(*callBack)(void*));
 protected:
 
-    void ButtonClick(int button, int action);
+    bool ButtonClick(int button, int action);
 };
 
 

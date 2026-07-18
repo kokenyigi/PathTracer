@@ -225,7 +225,7 @@ void Dropdown::DropdownRender()
 	
 }
 
-void Dropdown::DropdownMouseMove()
+bool Dropdown::DropdownMouseMove()
 {
 
 	bool isCurrentMouseOnOwnRenderBox = false;
@@ -252,7 +252,9 @@ void Dropdown::DropdownMouseMove()
 		isHovered = false;
 	}
 
-	_optionsPanel.MouseMove();
+	bool isMouseOnOptionsPanel = _optionsPanel.MouseMove();
+
+	return (isMouseOnOptionsPanel || isCurrentMouseOnOwnRenderBox);
 }
 
 void Dropdown::DropdownMouseWheel(float amount, int direction)
@@ -269,7 +271,7 @@ void Dropdown::SubControlSetGuicontext(GuiContext *guiContext)
 	//std::cout<<"GuiContext set for dropdown\n";
 }
 
-void Dropdown::DropdownMouseClick(int button, int action)
+bool Dropdown::DropdownMouseClick(int button, int action)
 {
 	if(button == 0)
 	{
@@ -300,7 +302,9 @@ void Dropdown::DropdownMouseClick(int button, int action)
 		}
 	}
 
-	_optionsPanel.Click(button,action);
+	bool isOptionsPanelClicked = _optionsPanel.Click(button,action);
+
+	return (isOptionsPanelClicked || isClicked);
 }
 
 

@@ -585,6 +585,19 @@ TraceResult TraceRay(const Ray* ray, const Scene* scene)
     return retval;
 }
 
+float3 MissRayColor(float3 rayDirection)
+{
+    rayDirection = normalize(rayDirection);
+
+    // [-1,1] -> [0,1]
+    float t = 0.5f * (rayDirection.y + 1.0f);
+
+    float3 horizon = (float3)(1.0f, 1.0f, 1.0f);      // fehér horizont
+    float3 zenith  = (float3)(0.5f, 0.7f, 1.0f);      // világoskék ég
+
+    return mix(horizon, zenith, t);
+}
+
 #define MAX_BOUNCE_COUNT 5
 
 float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
@@ -665,32 +678,36 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             float transmissionComp = 0.0f; // same again, but transmission through material
             specularComp += fresnelComp;
 
-
-            float3 refractDirection;
-            bool canRefract = Refract(&ray.direction , &activeMicrofacetNormal, activeIoR, &refractDirection);
-            if(!canRefract)
-            {
-                specularComp += transmissionComp;
-                transmissionComp = 0.0f;
-            }
+            float remainingAfterFresnel = 1.0f - fresnelComp;
 
             // The energy left inside the light can now go in 2 directions.
             // Firstly, it can refract Into the material, or object, this is decide by how transmissive the material is.
             // Secondly, if the material isnt that transmissive, the rest of the energy goes into reflective energy.
-            float remainingAfterFresnel = 1.0f - fresnelComp;
-            float reflectiveAmount = remainingAfterFresnel * (1.0f - transmission);
-            float transmissiveAmount = remainingAfterFresnel * transmission;
-            transmissionComp += transmissiveAmount;
+            float reflectiveAmount;
 
-            // If, after both fresnel specular reflectional energy, and transmissive refracting energy
-            //   there is still energy inside the light, we have to decide what portion of that energy is going to be diffusive
-            //   and what portion will be specular. This is decided by how metallic the material is.
-            diffuseComp += reflectiveAmount * (1.0f-metallic);
-            specularComp += reflectiveAmount * metallic;
+            float3 refractDirection;
+            bool canRefract = Refract(&ray.direction , &activeMicrofacetNormal, activeIoR, &refractDirection);
+            if(canRefract)
+            {
+                reflectiveAmount = remainingAfterFresnel * (1.0f - transmission);
+                float transmissiveAmount = remainingAfterFresnel * transmission;
+                transmissionComp += transmissiveAmount;
+
+                // If, after both fresnel specular reflectional energy, and transmissive refracting energy
+                //   there is still energy inside the light, we have to decide what portion of that energy is going to be diffusive
+                //   and what portion will be specular. This is decided by how metallic the material is.
+                diffuseComp += reflectiveAmount * (1.0f-metallic);
+                specularComp += reflectiveAmount * metallic;
+            }
+            else
+            {
+                
+                fresnel = (float3)(1.0f, 1.0f, 1.0f);
+
+                specularComp += remainingAfterFresnel;
+            }
+
             
-            
-            
-           
             
             float randomNumber = GenerateRandomFloat(&scene->rngState);
             if(randomNumber <= diffuseComp)
@@ -760,8 +777,19 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                     // Refraction based on the microfacet normal, and ray direction, and Snell's law.
                     // Previously we already checked for total internal reflection, therefore if we are here
                     //   we are guaranteed that we can refract.
-                    float NdotL = fabs(dot(refractDirection,activeGeometricNormal));
-                    float G = CalculateSmithMaskingShadowingG1(NdotV,alpha) * CalculateSmithMaskingShadowingG1(NdotL,alpha);
+                    float NdotL = -dot(refractDirection,activeGeometricNormal);
+
+                    if (NdotL <= 0.0f) 
+                    {
+                        // If we have degenerate microfacet normal reflection, we throw the ray away
+                        // This isnt taht good... [TODO] fix
+                        throughPut = (float3)(0.0f, 0.0f, 0.0f);
+                        
+                        break;
+                    }
+
+
+                    //float G = CalculateSmithMaskingShadowingG1(NdotV,alpha) * CalculateSmithMaskingShadowingG1(NdotL,alpha);
 
                     float G1L = CalculateSmithMaskingShadowingG1(NdotL,alpha);
 
@@ -787,7 +815,8 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
         }
         else
         {
-            //retval =  (float3)(0.8f, 0.0f, 0.3f);
+            
+            retval += throughPut * MissRayColor(ray.direction);
             break;
         }
     }

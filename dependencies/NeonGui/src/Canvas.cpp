@@ -33,9 +33,9 @@ void Canvas::CanvasUpdate()
     }
 }
 
-void Canvas::CanvasMouseMove()
+bool Canvas::CanvasMouseMove()
 {
-    ControlMouseMove();
+    bool isMouseOnControl = ControlMouseMove();
 
     if(_mouseMoveCallback != nullptr && _callbackContext != nullptr)
     {
@@ -47,10 +47,14 @@ void Canvas::CanvasMouseMove()
         float newMouseY = newMouseRelativeToBox.y;
 
         _mouseMoveCallback(_callbackContext,newMouseX,newMouseY);
+
+        
     }
+
+    return isMouseOnControl;
 }
 
-void Canvas::CanvasMouseClick(int button, int action)
+bool Canvas::CanvasMouseClick(int button, int action)
 {
     //focus stuff
     bool isMouseOnControl = IsCursorOnControl(guiContext->currentMousePos);
@@ -77,6 +81,8 @@ void Canvas::CanvasMouseClick(int button, int action)
             }
         }
     }
+
+    return isMouseOnControl;
     
 
 }

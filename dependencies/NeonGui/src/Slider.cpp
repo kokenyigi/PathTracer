@@ -153,9 +153,9 @@ void Slider::SliderRender()
     guiContext->renderer.RenderRectangle(ndcSliderHeadRect,finalRenderColor);
 }
 
-void Slider::SliderClick(int button, int action)
+bool Slider::SliderClick(int button, int action)
 {
-    if(guiContext ==nullptr || button != 0) return;
+    if(guiContext ==nullptr || button != 0) return false;
 
     glm::vec2 mousePosRelative = guiContext->currentMousePos / glm::vec2(guiContext->windowWidth,guiContext->windowHeight);
 
@@ -165,6 +165,7 @@ void Slider::SliderClick(int button, int action)
         SetFocused();
         DetermineValueBasedOnMousePos(mousePosRelative);
         //std::cout<<"Got into press\n";
+        return true;
     }
     else
     {
@@ -174,9 +175,11 @@ void Slider::SliderClick(int button, int action)
             SetUnfocused();
         }
     }
+
+    return false;
 }
 
-void Slider::SliderMouseMove()
+bool Slider::SliderMouseMove()
 {
     glm::vec2 windowRes = glm::vec2(guiContext->windowWidth,guiContext->windowHeight);
     glm::vec2 mousePosRelative = guiContext->currentMousePos / windowRes;
@@ -188,6 +191,10 @@ void Slider::SliderMouseMove()
     else
     {
         
-        isHovered = IsPointInsideAABB(_sliderHeadRenderBox,mousePosRelative);        
+        isHovered = IsPointInsideAABB(_sliderHeadRenderBox,mousePosRelative);
+        
+        return true;
     }
+
+    return false;
 }

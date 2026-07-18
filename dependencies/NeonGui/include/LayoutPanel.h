@@ -96,18 +96,18 @@ public:
         LayoutPanelRender();
     }
 
-    void VirtualClick(int button, int action) override
+    bool VirtualClick(int button, int action) override
     {
-        LayoutPanelClick(button,action);
+       return LayoutPanelClick(button,action);
     }
 
     void VirtualMouseWheel(float amount, int direction) override 
     {
         LayoutPanelMouseWheel(amount,direction);
     }
-    void VirtualMouseMove()
+    bool VirtualMouseMove()
     {
-        LayoutPanelMouseMove();
+        return LayoutPanelMouseMove();
     }
 
     void AddControl(Control* control) override
@@ -191,9 +191,9 @@ protected:
     void LayoutPanelRender();
     void LayoutPanelResize();
     void LayoutPanelUpdate() {};
-    void LayoutPanelClick(int button, int action);
+    bool LayoutPanelClick(int button, int action);
     void LayoutPanelMouseWheel(float amount, int direction);
-    void LayoutPanelMouseMove();
+    bool LayoutPanelMouseMove();
 
     void LayoutPanelAddControl(Control* control);
 

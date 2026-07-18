@@ -763,14 +763,18 @@ void LayoutPanel::LayoutPanelResize()
     FullyRecalculateChildren();
 }
 
-void LayoutPanel::LayoutPanelClick(int button, int action)
+bool LayoutPanel::LayoutPanelClick(int button, int action)
 {
+
+    bool isContainerBaseClicked = false;
     if(!isLayoutObstructed)
     {
-        ContainerBaseClick(button,action);
+        isContainerBaseClicked = ContainerBaseClick(button,action);
     }
     
-    _scrollBar.Click(button,action);
+    bool isScrollbarClicked = _scrollBar.Click(button,action);
+
+    return (isScrollbarClicked || isContainerBaseClicked);
 }
 
 void LayoutPanel::LayoutPanelMouseWheel(float amount, int direction)
@@ -782,14 +786,17 @@ void LayoutPanel::LayoutPanelMouseWheel(float amount, int direction)
     }
 }
 
-void LayoutPanel::LayoutPanelMouseMove()
+bool LayoutPanel::LayoutPanelMouseMove()
 {
-    ContainerBaseMouseMove();
+    bool didContainerBaseHandleMouseMove = ContainerBaseMouseMove();
 
+    bool didScrollbarHandleMouseMove = false;
     if(!isLayoutObstructed && isScrollable)
     {
-        _scrollBar.MouseMove();
+        didScrollbarHandleMouseMove = _scrollBar.MouseMove();
     }
+
+    return (didScrollbarHandleMouseMove || didContainerBaseHandleMouseMove);
 }
 
 void LayoutPanel::LayoutPanelAddControl(Control *control)

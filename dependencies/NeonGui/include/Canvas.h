@@ -75,8 +75,8 @@ public:
     void VirtualResize() override {CanvasResize();}
     void VirtualRender() override {CanvasRender();}
     void VirtualUpdate() override {CanvasUpdate();}
-    void VirtualMouseMove() override {CanvasMouseMove();}
-    void VirtualClick(int button, int action) override {CanvasMouseClick(button,action);}
+    bool VirtualMouseMove() override {return CanvasMouseMove();}
+    bool VirtualClick(int button, int action) override {return CanvasMouseClick(button,action);}
     //void VirtualMouseWheel(float amount, int direction) override {CanvasMouseWheel(amount,direction);}
     void VirtualKeyInput(int key, int action, int mods) override {CanvasKeyInput(key,action,mods);}
 
@@ -91,8 +91,8 @@ protected:
     void CanvasResize();
     void CanvasRender();
     void CanvasUpdate();
-    void CanvasMouseMove();
-    void CanvasMouseClick(int button, int action);
+    bool CanvasMouseMove();
+    bool CanvasMouseClick(int button, int action);
     void CanvasMouseWheel(float amount, int direction);
     void CanvasKeyInput(int key,int action, int mods); // Needs more agrs like is key pressed/released
 };

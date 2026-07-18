@@ -572,7 +572,7 @@ void Control::ControlResize()
 	RecalculatePosition();
 }
 
-void Control::ControlClick(int button, int action)
+bool Control::ControlClick(int button, int action)
 {
 	if(button == 0)
 	{
@@ -581,6 +581,8 @@ void Control::ControlClick(int button, int action)
 			if(isHovered)
 			{
 				isClicked = true;
+
+				return true;
 			}
 			else
 			{
@@ -592,9 +594,11 @@ void Control::ControlClick(int button, int action)
 			isClicked = false;
 		}
 	}
+
+	return false;
 }
 
-void Control::ControlMouseMove()
+bool Control::ControlMouseMove()
 {
 	bool isCurrentCursorOnControl = IsCursorOnControl(guiContext->currentMousePos);
 
@@ -606,4 +610,6 @@ void Control::ControlMouseMove()
 	{
 		isHovered = false;
 	}
+
+	return isCurrentCursorOnControl;
 }

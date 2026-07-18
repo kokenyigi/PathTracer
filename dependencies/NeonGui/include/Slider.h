@@ -56,14 +56,14 @@ public:
         SliderRender();
     }
 
-    void VirtualClick(int button, int action) override
+    bool VirtualClick(int button, int action) override
     {
-        SliderClick(button, action);
+        return SliderClick(button, action);
     }
 
-    void VirtualMouseMove() override
+    bool VirtualMouseMove() override
     {
-        SliderMouseMove();
+        return SliderMouseMove();
     }
 
     void SetSliderDirection(SliderDirection direction);
@@ -86,8 +86,8 @@ protected:
     void SliderResize();
     void SliderRender();
     void SliderUpdate(){}
-    void SliderClick(int button, int action);
-    void SliderMouseMove();
+    bool SliderClick(int button, int action);
+    bool SliderMouseMove();
 
     
 

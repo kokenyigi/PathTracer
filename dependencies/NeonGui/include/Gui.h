@@ -118,12 +118,13 @@ public:
 		VirtualResize();
 	}
 
-	void MouseMove()
+	bool MouseMove()
 	{
 		if(!isFocused && isActive)
 		{
-			VirtualMouseMove();
+			return VirtualMouseMove();
 		}
+		return false;
 	}
 
 	/**
@@ -133,12 +134,14 @@ public:
 	 * action == 0 -> PRESS
 	 * action == 1 -> RELEASE
 	 */
-	void Click(int button, int action)
+	bool Click(int button, int action)
 	{
 		if(!isFocused && isActive)
 		{
-			VirtualClick(button,action);
+			return VirtualClick(button,action);
 		}
+
+		return false;
 	}
 
 	void MouseWheel(float amount, int direction)
@@ -177,14 +180,14 @@ public:
 		ControlResize();
 	}
 
-	virtual void VirtualMouseMove()
+	virtual bool VirtualMouseMove()
 	{
-		ControlMouseMove();
+		return ControlMouseMove();
 	}
 
-	virtual void VirtualClick(int button, int action)
+	virtual bool VirtualClick(int button, int action)
 	{
-		ControlClick(button,action);
+		return ControlClick(button,action);
 	}
 
 	virtual void VirtualMouseWheel(float amount, int direction)
@@ -267,8 +270,8 @@ protected:
 	void ControlUpdate();
 	void ControlRender();
 	void ControlResize();
-	void ControlClick(int button, int action);
-	void ControlMouseMove();
+	bool ControlClick(int button, int action);
+	bool ControlMouseMove();
 
 	
 

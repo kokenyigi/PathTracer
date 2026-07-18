@@ -15,9 +15,9 @@ void Button::SetCallback(void (*callBack)(void *))
     _callBack = callBack;
 }
 
-void Button::ButtonClick(int button, int action)
+bool Button::ButtonClick(int button, int action)
 {
-    ControlClick(button, action);
+    bool isControlClicked = ControlClick(button, action);
 
     if(isHovered && _callBack != nullptr)
     {
@@ -29,4 +29,6 @@ void Button::ButtonClick(int button, int action)
             
         }
     }
+
+    return isControlClicked;
 }

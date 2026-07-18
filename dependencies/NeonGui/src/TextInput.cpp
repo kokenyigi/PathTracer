@@ -58,7 +58,7 @@ void TextInput::TextInputRender()
     }
 }
 
-void TextInput::TextInputClick(int button, int action)
+bool TextInput::TextInputClick(int button, int action)
 {
     if(button == 0)
 	{
@@ -75,6 +75,8 @@ void TextInput::TextInputClick(int button, int action)
                     _toRollbackText = _textLabel.GetText();
                     SetEditHeadAt(_toRollbackText.length());
                 }
+
+                return true;
 			}
 			else
 			{
@@ -95,6 +97,8 @@ void TextInput::TextInputClick(int button, int action)
 			isClicked = false;
 		}
 	}
+
+    return false;
 }
 
 void TextInput::TextInputKeyInput(int key,int action, int mods)

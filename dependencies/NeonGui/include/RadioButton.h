@@ -31,14 +31,14 @@ public:
     void SetToggledOn();
     void SetToggledOff();
 
-    void VirtualClick(int button, int action) override
+    bool VirtualClick(int button, int action) override
     {
-        RadioButtonClick(button,action);
+        return RadioButtonClick(button,action);
     }
 
 protected:
         
-    void RadioButtonClick(int button, int action);
+    bool RadioButtonClick(int button, int action);
     //rest is the same as a buttonbase & control
 };
 

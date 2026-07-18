@@ -44,7 +44,7 @@ public:
 
     void VirtualResize() override {TextInputResize();}
     void VirtualRender() override {TextInputRender();}
-    void VirtualClick(int button, int action) override {TextInputClick(button,action);}
+    bool VirtualClick(int button, int action) override {return TextInputClick(button,action);}
     void VirtualKeyInput(int key, int action, int mods) override {TextInputKeyInput(key,action,mods);}
 
 
@@ -63,7 +63,7 @@ protected:
     void TextInputRender();
     void TextInputUpdate(){}
     void TextInputMouseMove(){}
-    void TextInputClick(int button, int action);
+    bool TextInputClick(int button, int action);
     void TextInputKeyInput(int key,int action, int mods);
     void TextInputMouseWheel(float amount, int direction){}
 
