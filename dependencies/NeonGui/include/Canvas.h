@@ -69,7 +69,7 @@ protected:
 
 
 public:
-    Canvas(){}
+    Canvas(){_baseBGColor = glm::vec3(1,1,1);}
     ~Canvas(){}
 
     void VirtualResize() override {CanvasResize();}

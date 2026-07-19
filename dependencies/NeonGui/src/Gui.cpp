@@ -558,7 +558,9 @@ void Control::ControlRender()
 
 		Rectangle srcRect = {srcBox.min.x,srcBox.min.y,srcBox.max.x - srcBox.min.x, srcBox.max.y-srcBox.min.y};
 
-		guiContext->renderer.RenderTexturedRectangle(ndcControlRenderRect,srcRect,*_renderTexture);
+		//guiContext->renderer.RenderTexturedRectangle(ndcControlRenderRect,srcRect,*_renderTexture);
+
+		guiContext->renderer.RenderColoredTexturedRectangle(ndcControlRenderRect,srcRect,_baseBGColor,*_renderTexture);
 
 		//std::cout<< "texture: " << _renderTexture->GetWidth() <<" " << _renderTexture->GetHeight() << "\n";
 	}

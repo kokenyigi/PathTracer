@@ -27,7 +27,7 @@ private:
 	float velocity = 2.5f;
 	float speedyVelocity = 10.0f;
 
-	float zNear = 0.1f;
+	float zNear = 0.001f;
 	float zFar = 1000.0f;
 
 	float aspect = 1.0f/2;

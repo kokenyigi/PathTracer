@@ -1252,7 +1252,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sceneCanvas.SetMargin(MARGIN_TOP,0.0f);
 	sceneCanvas.SetMargin(MARGIN_RIGHT,0.0f);
 	sceneCanvas.SetMargin(MARGIN_BOTTOM,0.0f);
-	sceneCanvas.SetBGColor(0,0,0);
+	sceneCanvas.SetBGColor(1,1,1);
 	sceneCanvas.SetTexture(_scene.GetTexture());
 	sceneCanvas.SetCallbackContext(this);
 	sceneCanvas.SetResizeCallback(CanvasResizeCallback);
