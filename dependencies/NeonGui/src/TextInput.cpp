@@ -20,6 +20,8 @@ void TextInput::TextInputResize()
     _textLabel.Resize();
 
     RecalculateEditHead();
+
+    
 }
 
 void TextInput::TextInputRender()

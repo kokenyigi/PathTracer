@@ -21,13 +21,14 @@ public:
     ImageLabelButton();
     ~ImageLabelButton(){}
 
-    void SetText(const std::string& text){_inputName.SetText(text);}
+    void SetInputText(const std::string& text){_inputName.SetText(text);}
     void SetTexure(Texture* texture){_renderTexture = texture;}
     void SetNameChangedCallback(void(*nameChangedCallback)(void*,int,const std::string&)){_nameChangedCallback = nameChangedCallback;}
 
-
-
-
+    void VirtualResize() override {ILBResize();}
+    void VirtualRender() override {ILBRender();}
+    bool VirtualMouseMove() override {return ILBMouseMove();}
+    bool VirtualClick(int button, int action) override {return ILBMouseClick(button,action);}
 
 
 

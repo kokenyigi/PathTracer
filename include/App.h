@@ -20,6 +20,8 @@
 
 #include "Scene.h"
 
+#include "ImageLabelButton.h"
+
 enum class AppViewState
 {
 	VIEWSTATE_MAINMENU,
@@ -174,6 +176,7 @@ public:
 	void Run();
 
 	static void WindowSizeCallback(GLFWwindow* window, int width, int height);
+	static void WindowMaximizationCallback(GLFWwindow* window, int maximized);
 	static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 	static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
@@ -189,6 +192,7 @@ public:
 
 	static void LoadMeshButtonCallback(void* context);
 	static void ChosenMeshButtonCallback(void* context, int meshIndex);
+	static void ChosenMeshNameChangedCallback(void * context, int meshIndex, const std::string& newText);
 
 	static void LoadTextureButtonCallback(void* context);
 	static void ChosenTextureButtonCallback(void * context, int textureIndex);

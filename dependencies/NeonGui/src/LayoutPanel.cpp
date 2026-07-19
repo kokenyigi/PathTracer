@@ -603,7 +603,7 @@ void LayoutPanel::CalculateChildrenPositions()
         _children[i]->SetRelativePlacement(currentChildMinPointer,currentChildMaxPointer);
 
         //Since we have changed the data of this child, we have to call a resize event on it.
-        _children[i]->Resize();
+        
 
         switch(_layoutType)
         {
@@ -628,6 +628,8 @@ void LayoutPanel::CalculateChildrenPositions()
                 }
                 break;
         }
+
+        _children[i]->Resize();
     }
 }
 
@@ -759,6 +761,8 @@ void LayoutPanel::LayoutPanelResize()
 {
     ControlResize();
     _scrollBar.Resize();
+
+    CalculateRenderBox();
 
     FullyRecalculateChildren();
 }

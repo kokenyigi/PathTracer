@@ -1072,8 +1072,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	meshPanel.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
 	meshPanel.SetHeight(250.0f,ValueType::FIXED);
 	meshPanel.SetBGColor(0.3,0.3,0.3);
-	meshPanel.SetChildrenHeight(100.0f);
-	meshPanel.SetChildrenWidth(200.0f);
+	meshPanel.SetChildrenHeight(150.0f);
+	meshPanel.SetChildrenWidth(300.0f);
 	meshPanel.SetLayoutType(LAYOUT_FLOW);
 	meshPanel.SetGapHeight(5.0f);
 	meshPanel.SetGapWidth(5.0f);
@@ -1541,6 +1541,7 @@ void App::GlfwInit(int windowWidth, int windowHeight, const char *windowTitle)
 	glfwSetKeyCallback(m_window, App::KeyCallback);
 	glfwSetMouseButtonCallback(m_window, App::MouseButtonCallback);
 	glfwSetScrollCallback(m_window, App::ScrollCallback);
+	glfwSetWindowMaximizeCallback(m_window,App::WindowMaximizationCallback);
 	/*
 	
 	glfwSetWindowIconifyCallback(m_window, App::WindowIconifiedCallback);
@@ -1852,14 +1853,16 @@ bool App::TryLoadMesh(const std::string& meshFileName)
 		storedMeshInfos.push_back(sceneLoadedMeshInfo);
 
 		int meshIndex = sceneLoadedMeshInfo.meshIndex;
-		RadioButton* newChosenMeshButton = new RadioButton();
-		newChosenMeshButton->SetText(std::to_string(meshIndex));
+		
+		ImageLabelButton* newChosenMeshButton = new ImageLabelButton();
+		newChosenMeshButton->SetInputText(meshFileName);
 		newChosenMeshButton->SetCallBackContext(this);
 		newChosenMeshButton->SetIndex(meshIndex);
+		newChosenMeshButton->SetNameChangedCallback(ChosenMeshNameChangedCallback);
 
 		chosenMeshGroup.AddToGroup(newChosenMeshButton);
 		meshPanel.AddControl(newChosenMeshButton);
-		dropdownMesh.AddOption(std::to_string(meshIndex),meshIndex);
+		dropdownMesh.AddOption(meshFileName,meshIndex);
 
 		_meshRelativeFilePaths.push_back(meshFileName);
 	}
@@ -1885,6 +1888,12 @@ void App::ChosenMeshButtonCallback(void *context, int meshIndex)
 	app->labelBVHDepthNumber.SetText(std::to_string(chosenMeshButtonsMeshInfo.bvhDepth));
 }
 
+void App::ChosenMeshNameChangedCallback(void *context, int meshIndex, const std::string &newText)
+{
+	App* app = (App*)context;
+
+	app->dropdownMesh.SetOptionName(meshIndex,newText);
+}
 
 bool App::TryLoadTexture(const std::string& textureFileName)
 {
@@ -2252,7 +2261,39 @@ void App::WindowSizeCallback(GLFWwindow* window, int width, int height)
 		app->Render();
 		//app->virtualWorld.Resize(width, height);
 		//app->camera.Resize(width, height);
+
+		//::cout<<"Window Resized Callback!\n";
 	}
+}
+
+void App::WindowMaximizationCallback(GLFWwindow *window, int maximized)
+{
+	App* app = (App*)glfwGetWindowUserPointer(window);
+
+	
+
+	int w,h;
+
+	app->m_windowWidth = w;
+	app->m_windowHeight = h;
+
+	glfwGetWindowSize(window,&w,&h);
+	if (maximized)
+    {
+        // The window was maximized
+		glViewport(0, 0, w, h);
+		app->m_GUI.Resize(w,h);
+
+    }
+    else
+    {
+        // The window was restored
+		glViewport(0, 0, w, h);
+		app->m_GUI.Resize(w,h);
+
+    }
+
+	//std::cout<<"Window Resized Callback!\n";
 }
 
 void App::CursorPosCallback(GLFWwindow* window, double xpos, double ypos)

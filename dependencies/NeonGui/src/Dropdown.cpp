@@ -94,6 +94,21 @@ void Dropdown::AddOption(const std::string &optionName, int optionIndex)
 	Resize();
 }
 
+void Dropdown::SetOptionName(int optionIndex, const std::string &newName)
+{
+	if(optionIndex >= 0 && optionIndex < _currentOptionCount)
+	{
+		RadioButton* radioButton = (RadioButton*)(this->_optionsPanel.GetChildren()[optionIndex]);
+		
+		radioButton->SetText(newName);
+
+		if(_optionsGroup._currentToggled == radioButton)
+		{
+			_chosenOptionLabel.SetText(newName);
+		}
+	}
+}
+
 void Dropdown::OptionButtonCallback(void *context, int index)
 {
 	Dropdown* dropdown = (Dropdown*)context;

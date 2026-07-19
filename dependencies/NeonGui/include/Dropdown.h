@@ -70,6 +70,7 @@ public:
     void ClearOptions();
 
     void AddOption(const std::string& optionName, int optionIndex);
+    void SetOptionName(int optionIndex,const std::string& newName);
 
     static void OptionButtonCallback(void* context, int index);
 
