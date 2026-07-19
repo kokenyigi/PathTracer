@@ -196,9 +196,11 @@ public:
 
 	static void LoadTextureButtonCallback(void* context);
 	static void ChosenTextureButtonCallback(void * context, int textureIndex);
+	static void ChosenTextureNameChangedCallback(void* context, int textureIndex, const std::string& newName);
 
 	static void AddMaterialButtonCallback(void * context);
 	static void ChosenMaterialButtonCallback(void * context, int materialIndex);
+	static void ChosenMaterialNameChangedCallback(void* context, int materialIndex, const std::string& newName);
 	static void AlbedoTextureChosenCallback(void*context, int optionTextureIndex);
 	static void AlbedoRedAlteredCallback(void*context,float redValue);
 	static void AlbedoGreenAlteredCallback(void*context,float greenValue);
@@ -216,11 +218,13 @@ public:
 
 	static void AddModelButtonCallback(void * context);
 	static void ChosenModelButtonCallback(void * context, int modelIndex);
+	static void ChosenModelNameChangedCallback(void* context , int modelIndex, const std::string& newName);
 	static void MeshIndexChosenDropdownCallback(void* context, int chosenOptionIndex);
 	static void MaterialIndexChosenDropdownCallback(void* context, int chosenOptionIndex);
 
 	static void AddObjectButtonCallback(void * context);
 	static void ChosenObjectButtonCallback(void * context, int objectIndex);
+	//static void ChosenModelNameChangedCallback(void* context , int modelIndex, const std::string& newName);
 	static void ModelIndexChosenDropdownCallback(void* context, int chosenOptionIndex);
 	template<int axis,int compType,bool isSlider = false> // axis: 0-x, 1-y, 2-z, compType: 0-Pos, 1-Scl, 2-Rot,isSlider self explenatory
 	static void CompTypeAlteredCallback(void* context , float newValueOnAxis);

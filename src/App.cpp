@@ -1105,8 +1105,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	texturePanel.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
 	texturePanel.SetHeight(250.0f,ValueType::FIXED);
 	texturePanel.SetBGColor(0.3,0.3,0.3);
-	texturePanel.SetChildrenHeight(100.0f);
-	texturePanel.SetChildrenWidth(200.0f);
+	texturePanel.SetChildrenHeight(150.0f);
+	texturePanel.SetChildrenWidth(300.0f);
 	texturePanel.SetLayoutType(LAYOUT_FLOW);
 	texturePanel.SetGapHeight(5.0f);
 	texturePanel.SetGapWidth(5.0f);
@@ -1140,8 +1140,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	materialPanel.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
 	materialPanel.SetHeight(250.0f,ValueType::FIXED);
 	materialPanel.SetBGColor(0.3,0.3,0.3);
-	materialPanel.SetChildrenHeight(100.0f);
-	materialPanel.SetChildrenWidth(200.0f);
+	materialPanel.SetChildrenHeight(150.0f);
+	materialPanel.SetChildrenWidth(300.0f);
 	materialPanel.SetLayoutType(LAYOUT_FLOW);
 	materialPanel.SetGapHeight(5.0f);
 	materialPanel.SetGapWidth(5.0f);
@@ -1176,8 +1176,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	modelPanel.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
 	modelPanel.SetHeight(250.0f,ValueType::FIXED);
 	modelPanel.SetBGColor(0.3,0.3,0.3);
-	modelPanel.SetChildrenHeight(100.0f);
-	modelPanel.SetChildrenWidth(200.0f);
+	modelPanel.SetChildrenHeight(150.0f);
+	modelPanel.SetChildrenWidth(300.0f);
 	modelPanel.SetLayoutType(LAYOUT_FLOW);
 	modelPanel.SetGapHeight(5.0f);
 	modelPanel.SetGapWidth(5.0f);
@@ -1211,8 +1211,8 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	objectPanel.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
 	objectPanel.SetHeight(250.0f,ValueType::FIXED);
 	objectPanel.SetBGColor(0.3,0.3,0.3);
-	objectPanel.SetChildrenHeight(100.0f);
-	objectPanel.SetChildrenWidth(200.0f);
+	objectPanel.SetChildrenHeight(150.0f);
+	objectPanel.SetChildrenWidth(300.0f);
 	objectPanel.SetLayoutType(LAYOUT_FLOW);
 	objectPanel.SetGapHeight(5.0f);
 	objectPanel.SetGapWidth(5.0f);
@@ -1909,14 +1909,15 @@ bool App::TryLoadTexture(const std::string& textureFileName)
 		storedTextureInfos.push_back(sceneLoadedTextureInfo);
 
 		int textureIndex = sceneLoadedTextureInfo.textureIndex;
-		RadioButton* newChosenTextureButton = new RadioButton();
-		newChosenTextureButton->SetText(std::to_string(textureIndex));
+		ImageLabelButton* newChosenTextureButton = new ImageLabelButton();
+		newChosenTextureButton->SetInputText(textureFileName);
 		newChosenTextureButton->SetCallBackContext(this);
 		newChosenTextureButton->SetIndex(textureIndex);
+		newChosenTextureButton->SetNameChangedCallback(ChosenTextureNameChangedCallback);
 
 		chosenTextureGroup.AddToGroup(newChosenTextureButton);
 		texturePanel.AddControl(newChosenTextureButton);
-		dropdownTexture.AddOption(std::to_string(textureIndex),textureIndex);
+		dropdownTexture.AddOption(textureFileName,textureIndex);
 
 		_textureRelativeFilePaths.push_back(textureFileName);
 	}
@@ -1934,10 +1935,11 @@ void App::AddMaterial(const MaterialData& newMaterialData)
 
 		_scene.TryAlterMaterial(newMaterialInfo.materialIndex,newMaterialData);
 		
-		RadioButton* newMaterialButton = new RadioButton();
-		newMaterialButton->SetText(std::to_string(newMaterialInfo.materialIndex));
+		ImageLabelButton* newMaterialButton = new ImageLabelButton();
+		newMaterialButton->SetInputText(std::to_string(newMaterialInfo.materialIndex));
 		newMaterialButton->SetCallBackContext(this);
 		newMaterialButton->SetIndex(newMaterialInfo.materialIndex);
+		newMaterialButton->SetNameChangedCallback(ChosenMaterialNameChangedCallback);
 
 		chosenMaterialGroup.AddToGroup(newMaterialButton);
 		materialPanel.AddControl(newMaterialButton);
@@ -1955,10 +1957,11 @@ bool App::TryAddModel(const ModelDataCpu &newModelData)
 
 		_scene.TryAlterModel(newModelInfo.modelIndex,newModelData);
 		
-		RadioButton* newModelButton = new RadioButton();
-		newModelButton->SetText(std::to_string(newModelInfo.modelIndex));
+		ImageLabelButton* newModelButton = new ImageLabelButton();
+		newModelButton->SetInputText(std::to_string(newModelInfo.modelIndex));
 		newModelButton->SetCallBackContext(this);
 		newModelButton->SetIndex(newModelInfo.modelIndex);
+		newModelButton->SetNameChangedCallback(ChosenModelNameChangedCallback);
 
 		chosenModelGroup.AddToGroup(newModelButton);
 		modelPanel.AddControl(newModelButton);
@@ -1977,10 +1980,11 @@ bool App::TryAddObject(const ObjectState &newObjectState)
 		storedObjectInfos.push_back(newObjectInfo);
 		_scene.TryAlterObject(newObjectInfo.objectIndex,newObjectState);
 
-		RadioButton* newObjectButton = new RadioButton();
-		newObjectButton->SetText(std::to_string(newObjectInfo.objectIndex));
+		ImageLabelButton* newObjectButton = new ImageLabelButton();
+		newObjectButton->SetInputText(std::to_string(newObjectInfo.objectIndex));
 		newObjectButton->SetCallBackContext(this);
 		newObjectButton->SetIndex(newObjectInfo.objectIndex);
+		//No need for name callback
 
 		chosenObjectGroup.AddToGroup(newObjectButton);
 		objectPanel.AddControl(newObjectButton);		
@@ -2171,6 +2175,7 @@ void App::Reset()
 
 	dropdownMesh.ClearOptions();
 	dropdownTexture.ClearOptions();
+	dropdownTexture.AddOption("none",-1);
 	dropdownMaterial.ClearOptions();
 	dropdownModel.ClearOptions();
 
@@ -2245,7 +2250,12 @@ void App::ChosenTextureButtonCallback(void *context, int textureIndex)
 	app->labelTextureHeightNumber.SetText(std::to_string(chosenTextureButtonTextureInfo.height));
 }
 
+void App::ChosenTextureNameChangedCallback(void *context, int textureIndex, const std::string &newName)
+{
+	App* app = (App*)context;
 
+	app->dropdownTexture.SetOptionName(textureIndex + 1,newName);
+}
 
 void App::WindowSizeCallback(GLFWwindow* window, int width, int height)
 {
@@ -2708,6 +2718,13 @@ void App::ChosenMaterialButtonCallback(void *context, int materialIndex)
 
 }
 
+void App::ChosenMaterialNameChangedCallback(void *context, int materialIndex, const std::string &newName)
+{
+	App* app = (App*)context;
+
+	app->dropdownMaterial.SetOptionName(materialIndex,newName);
+}
+
 void App::AlbedoTextureChosenCallback(void *context, int optionTextureIndex)
 {
 	App* app = (App*)context;
@@ -2949,6 +2966,13 @@ void App::ChosenModelButtonCallback(void *context, int modelIndex)
 
 	app->dropdownMesh.SetChosenOption(storedModelDataCpu.meshIndex);
 	app->dropdownMaterial.SetChosenOption(storedModelDataCpu.materialIndex);
+}
+
+void App::ChosenModelNameChangedCallback(void *context, int modelIndex, const std::string &newName)
+{
+	App* app = (App*)context;
+
+	app->dropdownModel.SetOptionName(modelIndex,newName);
 }
 
 void App::MeshIndexChosenDropdownCallback(void *context, int chosenOptionIndex)
