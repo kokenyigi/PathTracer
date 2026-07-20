@@ -22,6 +22,7 @@ public:
     ~ImageLabelButton(){}
 
     void SetInputText(const std::string& text){_inputName.SetText(text);}
+    std::string GetInputText() {return _inputName.GetText();} 
     void SetTexure(Texture* texture){_renderTexture = texture;}
     void SetNameChangedCallback(void(*nameChangedCallback)(void*,int,const std::string&)){_nameChangedCallback = nameChangedCallback;}
 

@@ -4,14 +4,14 @@ ImageLabelButton::ImageLabelButton()
 {
     _buttonImage.SetHeight(90);
     _buttonImage.SetMargin(MARGIN_TOP,10.0f);
-    _buttonImage.SetWidth(200.0f);
+    _buttonImage.SetWidth(180.0f);
     _buttonImage.SetParent(this);
     _buttonImage.SetBGColor(1,1,1);
 
     //_inputName.SetMargin(MARGIN_LEFT,10.0f);
     _inputName.SetMargin(MARGIN_BOTTOM,10.0f);
     _inputName.SetHeight(30.0f);
-    _inputName.SetWidth(230.0f);
+    _inputName.SetWidth(180.0f);
     
     _inputName.SetCallbackContext(this);
     _inputName.SetTextChangedCallback(InjectiveTextChangedCallback);

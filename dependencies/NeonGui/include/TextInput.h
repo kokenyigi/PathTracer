@@ -57,6 +57,8 @@ public:
     void SetCallbackContext(void* callbackContext) {_callbackContext = callbackContext;}
     void SetTextChangedCallback(void(*callback)(void*,const std::string&)) {_callback = callback;}
 
+    std::string GetText() {return _textLabel.GetText();}
+
 protected:
 
     void TextInputResize();

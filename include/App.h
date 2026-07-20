@@ -261,11 +261,11 @@ private:
 	void SwapToFileSelectionMenu();
 	void SwapBackToMainMenu();
 
-	bool TryLoadMesh(const std::string& meshFileName);
-	bool TryLoadTexture(const std::string& textureFileName);
-	void AddMaterial(const MaterialData& newMaterialData);
-	bool TryAddModel(const ModelDataCpu& newModelData);
-	bool TryAddObject(const ObjectState& newObjectState);
+	bool TryLoadMesh(const std::string& meshFileName,const std::string& newMeshName = "");
+	bool TryLoadTexture(const std::string& textureFileName,const std::string& newTextureName = "");
+	void AddMaterial(const MaterialData& newMaterialData,const std::string& newMaterialName = "");
+	bool TryAddModel(const ModelDataCpu& newModelData,const std::string& newModelName = "");
+	bool TryAddObject(const ObjectState& newObjectState,const std::string& newObjectName = "");
 
 	void SaveScene(const std::string& sceneSavingFileNameRelative);
 	bool TryLoadScene(const std::string& sceneFilePathRelative);

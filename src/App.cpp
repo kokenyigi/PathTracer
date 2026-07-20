@@ -1073,7 +1073,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	meshPanel.SetHeight(250.0f,ValueType::FIXED);
 	meshPanel.SetBGColor(0.3,0.3,0.3);
 	meshPanel.SetChildrenHeight(150.0f);
-	meshPanel.SetChildrenWidth(300.0f);
+	meshPanel.SetChildrenWidth(200.0f);
 	meshPanel.SetLayoutType(LAYOUT_FLOW);
 	meshPanel.SetGapHeight(5.0f);
 	meshPanel.SetGapWidth(5.0f);
@@ -1106,7 +1106,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	texturePanel.SetHeight(250.0f,ValueType::FIXED);
 	texturePanel.SetBGColor(0.3,0.3,0.3);
 	texturePanel.SetChildrenHeight(150.0f);
-	texturePanel.SetChildrenWidth(300.0f);
+	texturePanel.SetChildrenWidth(200.0f);
 	texturePanel.SetLayoutType(LAYOUT_FLOW);
 	texturePanel.SetGapHeight(5.0f);
 	texturePanel.SetGapWidth(5.0f);
@@ -1141,7 +1141,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	materialPanel.SetHeight(250.0f,ValueType::FIXED);
 	materialPanel.SetBGColor(0.3,0.3,0.3);
 	materialPanel.SetChildrenHeight(150.0f);
-	materialPanel.SetChildrenWidth(300.0f);
+	materialPanel.SetChildrenWidth(200.0f);
 	materialPanel.SetLayoutType(LAYOUT_FLOW);
 	materialPanel.SetGapHeight(5.0f);
 	materialPanel.SetGapWidth(5.0f);
@@ -1177,7 +1177,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	modelPanel.SetHeight(250.0f,ValueType::FIXED);
 	modelPanel.SetBGColor(0.3,0.3,0.3);
 	modelPanel.SetChildrenHeight(150.0f);
-	modelPanel.SetChildrenWidth(300.0f);
+	modelPanel.SetChildrenWidth(200.0f);
 	modelPanel.SetLayoutType(LAYOUT_FLOW);
 	modelPanel.SetGapHeight(5.0f);
 	modelPanel.SetGapWidth(5.0f);
@@ -1212,7 +1212,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	objectPanel.SetHeight(250.0f,ValueType::FIXED);
 	objectPanel.SetBGColor(0.3,0.3,0.3);
 	objectPanel.SetChildrenHeight(150.0f);
-	objectPanel.SetChildrenWidth(300.0f);
+	objectPanel.SetChildrenWidth(200.0f);
 	objectPanel.SetLayoutType(LAYOUT_FLOW);
 	objectPanel.SetGapHeight(5.0f);
 	objectPanel.SetGapWidth(5.0f);
@@ -1838,7 +1838,7 @@ void App::SwapBackToMainMenu()
 	//... TODO
 }
 
-bool App::TryLoadMesh(const std::string& meshFileName)
+bool App::TryLoadMesh(const std::string& meshFileName,const std::string& newMeshName)
 {
 	std::string meshFilePathRelative = "assets/models/" + meshFileName;
 
@@ -1853,16 +1853,18 @@ bool App::TryLoadMesh(const std::string& meshFileName)
 		storedMeshInfos.push_back(sceneLoadedMeshInfo);
 
 		int meshIndex = sceneLoadedMeshInfo.meshIndex;
+
+		std::string newName = newMeshName.length() == 0 ? meshFileName : newMeshName;
 		
 		ImageLabelButton* newChosenMeshButton = new ImageLabelButton();
-		newChosenMeshButton->SetInputText(meshFileName);
+		newChosenMeshButton->SetInputText(newName);
 		newChosenMeshButton->SetCallBackContext(this);
 		newChosenMeshButton->SetIndex(meshIndex);
 		newChosenMeshButton->SetNameChangedCallback(ChosenMeshNameChangedCallback);
 
 		chosenMeshGroup.AddToGroup(newChosenMeshButton);
 		meshPanel.AddControl(newChosenMeshButton);
-		dropdownMesh.AddOption(meshFileName,meshIndex);
+		dropdownMesh.AddOption(newName,meshIndex);
 
 		_meshRelativeFilePaths.push_back(meshFileName);
 	}
@@ -1895,7 +1897,7 @@ void App::ChosenMeshNameChangedCallback(void *context, int meshIndex, const std:
 	app->dropdownMesh.SetOptionName(meshIndex,newText);
 }
 
-bool App::TryLoadTexture(const std::string& textureFileName)
+bool App::TryLoadTexture(const std::string& textureFileName,const std::string& newTextureName)
 {
 	std::string textureFilePathRelative = "assets/textures/" + textureFileName;
 
@@ -1908,16 +1910,18 @@ bool App::TryLoadTexture(const std::string& textureFileName)
 		//First, we save the loaded mesh's info into a vector, but we might wanna do this differently later
 		storedTextureInfos.push_back(sceneLoadedTextureInfo);
 
+		std::string newName = newTextureName.length() == 0 ? textureFileName : newTextureName;
+
 		int textureIndex = sceneLoadedTextureInfo.textureIndex;
 		ImageLabelButton* newChosenTextureButton = new ImageLabelButton();
-		newChosenTextureButton->SetInputText(textureFileName);
+		newChosenTextureButton->SetInputText(newName);
 		newChosenTextureButton->SetCallBackContext(this);
 		newChosenTextureButton->SetIndex(textureIndex);
 		newChosenTextureButton->SetNameChangedCallback(ChosenTextureNameChangedCallback);
 
 		chosenTextureGroup.AddToGroup(newChosenTextureButton);
 		texturePanel.AddControl(newChosenTextureButton);
-		dropdownTexture.AddOption(textureFileName,textureIndex);
+		dropdownTexture.AddOption(newName,textureIndex);
 
 		_textureRelativeFilePaths.push_back(textureFileName);
 	}
@@ -1925,7 +1929,7 @@ bool App::TryLoadTexture(const std::string& textureFileName)
 	return wasTextureLoadingSuccessful;
 }
 
-void App::AddMaterial(const MaterialData& newMaterialData)
+void App::AddMaterial(const MaterialData& newMaterialData, const std::string& newMaterialName)
 {
 	MaterialInfo newMaterialInfo;
 	bool wasAddingMaterialSuccessful = _scene.TryAddMaterial(&newMaterialInfo);
@@ -1934,20 +1938,22 @@ void App::AddMaterial(const MaterialData& newMaterialData)
 		storedMaterialInfos.push_back(newMaterialInfo);
 
 		_scene.TryAlterMaterial(newMaterialInfo.materialIndex,newMaterialData);
+
+		std::string newName = newMaterialName.length() == 0 ? std::to_string(newMaterialInfo.materialIndex) : newMaterialName;
 		
 		ImageLabelButton* newMaterialButton = new ImageLabelButton();
-		newMaterialButton->SetInputText(std::to_string(newMaterialInfo.materialIndex));
+		newMaterialButton->SetInputText(newName);
 		newMaterialButton->SetCallBackContext(this);
 		newMaterialButton->SetIndex(newMaterialInfo.materialIndex);
 		newMaterialButton->SetNameChangedCallback(ChosenMaterialNameChangedCallback);
 
 		chosenMaterialGroup.AddToGroup(newMaterialButton);
 		materialPanel.AddControl(newMaterialButton);
-		dropdownMaterial.AddOption(std::to_string(newMaterialInfo.materialIndex),newMaterialInfo.materialIndex);
+		dropdownMaterial.AddOption(newName,newMaterialInfo.materialIndex);
 	}
 }
 
-bool App::TryAddModel(const ModelDataCpu &newModelData)
+bool App::TryAddModel(const ModelDataCpu &newModelData, const std::string& newModelName)
 {
     ModelInfo newModelInfo;
 	bool wasAddingModelSuccessful = _scene.TryAddModel(&newModelInfo);
@@ -1956,22 +1962,24 @@ bool App::TryAddModel(const ModelDataCpu &newModelData)
 		storedModelInfos.push_back(newModelInfo);
 
 		_scene.TryAlterModel(newModelInfo.modelIndex,newModelData);
+
+		std::string newName = newModelName.length() == 0 ? std::to_string(newModelInfo.modelIndex) : newModelName;
 		
 		ImageLabelButton* newModelButton = new ImageLabelButton();
-		newModelButton->SetInputText(std::to_string(newModelInfo.modelIndex));
+		newModelButton->SetInputText(newName);
 		newModelButton->SetCallBackContext(this);
 		newModelButton->SetIndex(newModelInfo.modelIndex);
 		newModelButton->SetNameChangedCallback(ChosenModelNameChangedCallback);
 
 		chosenModelGroup.AddToGroup(newModelButton);
 		modelPanel.AddControl(newModelButton);
-		dropdownModel.AddOption(std::to_string(newModelInfo.modelIndex),newModelInfo.modelIndex);
+		dropdownModel.AddOption(newName,newModelInfo.modelIndex);
 	}
 
 	return wasAddingModelSuccessful;
 }
 
-bool App::TryAddObject(const ObjectState &newObjectState)
+bool App::TryAddObject(const ObjectState &newObjectState, const std::string& newObjectName)
 {
     ObjectInfo newObjectInfo;
 	bool wasAddingObjectSuccessful = _scene.TryAddObject(&newObjectInfo);
@@ -1980,8 +1988,10 @@ bool App::TryAddObject(const ObjectState &newObjectState)
 		storedObjectInfos.push_back(newObjectInfo);
 		_scene.TryAlterObject(newObjectInfo.objectIndex,newObjectState);
 
+		std::string newName = newObjectName.length() == 0 ? std::to_string(newObjectInfo.objectIndex) : newObjectName;
+
 		ImageLabelButton* newObjectButton = new ImageLabelButton();
-		newObjectButton->SetInputText(std::to_string(newObjectInfo.objectIndex));
+		newObjectButton->SetInputText(newName);
 		newObjectButton->SetCallBackContext(this);
 		newObjectButton->SetIndex(newObjectInfo.objectIndex);
 		//No need for name callback
@@ -2012,17 +2022,20 @@ void App::SaveScene(const std::string &sceneSavingFileNameRelative)
 	// Lets start saving otherwise
 	for(int i = 0; i<meshCount; ++i)
 	{
-		saveFile << "mesh " << _meshRelativeFilePaths[i] << "\n";
+		ImageLabelButton* button = (ImageLabelButton*)meshPanel.GetChildren()[i + 1];
+		saveFile << "mesh " << _meshRelativeFilePaths[i] <<" " << button->GetInputText() <<"\n";
 	}
 	for(int i=0;i<textureCount;++i)
 	{
-		saveFile << "tex " << _textureRelativeFilePaths[i] << "\n";
+		ImageLabelButton* button = (ImageLabelButton*)texturePanel.GetChildren()[i + 1];
+		saveFile << "tex " << _textureRelativeFilePaths[i] << " "<< button->GetInputText() <<"\n";
 	}
 	for(int i=0;i<materialCount;++i)
 	{
 		int materialIndex = storedMaterialInfos[i].materialIndex;
 		MaterialData material;
 		bool doesMaterialExist = _scene.GetMaterialData(materialIndex,&material);
+		ImageLabelButton* button = (ImageLabelButton*)materialPanel.GetChildren()[i + 1];
 		if(doesMaterialExist)
 		{
 			saveFile << "mat ";
@@ -2030,7 +2043,8 @@ void App::SaveScene(const std::string &sceneSavingFileNameRelative)
 			saveFile << material.albedoTextureIndex << " ";
 			saveFile << material.emissionStrength << " ";
 			saveFile << material.emissionColor.x << " " << material.emissionColor.y << " " << material.emissionColor.z << " ";
-			saveFile << material.transmission << " "<<material.metallic << " " << material.roughness << " " << material.ior << "\n";
+			saveFile << material.transmission << " "<<material.metallic << " " << material.roughness << " " << material.ior << " ";
+			saveFile << button->GetInputText() << "\n";
 		}
 	}
 	for(int i=0;i<modelCount;++i)
@@ -2038,11 +2052,13 @@ void App::SaveScene(const std::string &sceneSavingFileNameRelative)
 		int modelIndex = storedModelInfos[i].modelIndex;
 		ModelDataCpu model;
 		bool doesModelExist = _scene.GetModelData(modelIndex,&model);
+		ImageLabelButton* button = (ImageLabelButton*)modelPanel.GetChildren()[i + 1];
 		if(doesModelExist)
 		{
 			saveFile << "mod ";
 			saveFile << model.meshIndex << " ";
-			saveFile << model.materialIndex << "\n";
+			saveFile << model.materialIndex << " ";
+			saveFile << button->GetInputText() << "\n";
 		}
 	}
 	for(int i=0;i<objectCount;++i)
@@ -2050,13 +2066,15 @@ void App::SaveScene(const std::string &sceneSavingFileNameRelative)
 		int objectIndex = storedObjectInfos[i].objectIndex;
 		ObjectState object;
 		bool doesObjectExist = _scene.GetObjectState(objectIndex,&object);
+		ImageLabelButton* button = (ImageLabelButton*)objectPanel.GetChildren()[i + 1];
 		if(doesObjectExist)
 		{
 			saveFile << "obj ";
 			saveFile << object.modelIndex << " ";
 			saveFile << object.transform.position.x << " " << object.transform.position.y << " " << object.transform.position.z << " ";
 			saveFile << object.transform.scale.x << " " << object.transform.scale.y << " " << object.transform.scale.z << " ";
-			saveFile << object.transform.rotation.x << " " << object.transform.rotation.y << " " << object.transform.rotation.z << "\n";
+			saveFile << object.transform.rotation.x << " " << object.transform.rotation.y << " " << object.transform.rotation.z << " ";
+			saveFile << button->GetInputText() << "\n";
 		}
 	}
 
