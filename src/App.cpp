@@ -2106,21 +2106,21 @@ bool App::TryLoadScene(const std::string &sceneLoadingFileName)
 
 		if(lineWords[0] == "mesh")
 		{
-			if(lineWords.size() < 2) return false;
+			if(lineWords.size() < 3) return false;
 			// We have found a mesh entry, lets try and load it.
-			bool wasLoadingMeshSuccesful = TryLoadMesh(lineWords[1]);
+			bool wasLoadingMeshSuccesful = TryLoadMesh(lineWords[1],lineWords[2]);
 			if(!wasLoadingMeshSuccesful) return false;
 		}
 		else if(lineWords[0] == "tex")
 		{
-			if(lineWords.size() < 2) return false;
+			if(lineWords.size() < 3) return false;
 
-			bool wasLoadingTextureSuccessful = TryLoadTexture(lineWords[1]);
+			bool wasLoadingTextureSuccessful = TryLoadTexture(lineWords[1],lineWords[2]);
 			if(!wasLoadingTextureSuccessful) return false;
 		}
 		else if(lineWords[0] == "mat")
 		{
-			if(lineWords.size() < 13) return false;
+			if(lineWords.size() < 14) return false;
 
 			MaterialData newMaterialData;
 			newMaterialData.albedoColor.x = std::stof(lineWords[1]);
@@ -2136,22 +2136,22 @@ bool App::TryLoadScene(const std::string &sceneLoadingFileName)
 			newMaterialData.roughness = std::stof(lineWords[11]);
 			newMaterialData.ior = std::stof(lineWords[12]);
 
-			AddMaterial(newMaterialData);
+			AddMaterial(newMaterialData,lineWords[13]);
 		}
 		else if(lineWords[0] == "mod")
 		{
-			if(lineWords.size() < 3) return false;
+			if(lineWords.size() < 4) return false;
 
 			ModelDataCpu newModelData;
 			newModelData.meshIndex = std::stod(lineWords[1]);
 			newModelData.materialIndex = std::stod(lineWords[2]);
 
-			bool wasAddingModelSuccseful = TryAddModel(newModelData);
+			bool wasAddingModelSuccseful = TryAddModel(newModelData,lineWords[3]);
 			if(!wasAddingModelSuccseful) return false;
 		}
 		else if(lineWords[0] == "obj")
 		{
-			if(lineWords.size() < 11) return false;
+			if(lineWords.size() < 12) return false;
 
 			ObjectState newObjectState;
 			newObjectState.modelIndex = std::stod(lineWords[1]);
@@ -2165,7 +2165,7 @@ bool App::TryLoadScene(const std::string &sceneLoadingFileName)
 			newObjectState.transform.rotation.y = std::stof(lineWords[9]);
 			newObjectState.transform.rotation.z = std::stof(lineWords[10]);
 
-			bool wasAddingObjectSuccesful = TryAddObject(newObjectState);
+			bool wasAddingObjectSuccesful = TryAddObject(newObjectState,lineWords[11]);
 			if(!wasAddingObjectSuccesful) return false;
 		}
 	}
