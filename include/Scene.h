@@ -330,10 +330,10 @@ private:
     RenderBuffer _renderBuffer;
     FrameBuffer _renderFrameBuffer;
 
-    Mesh<VertexP3N3T2> testMesh;
-    Shader testShader;
-    
+    std::vector<Mesh<VertexP3N3T2,Triangles>> _rasterizedMeshes;
 
+    std::vector<Texture> _rasterizedTextures;
+    
     //OpenCL related variables
     cl_platform_id clPlatform;
     cl_device_id clDevice;
@@ -367,6 +367,8 @@ public:
      *  bvh depth, vertex count, triag count
      */
     bool TryLoadMesh(const std::string& filePathRelative, MeshInfo* meshInfo = nullptr);
+    inline Mesh<VertexP3N3T2>* GetRasterMeshPointer(int meshIndex){return &_rasterizedMeshes[meshIndex];}
+
 
     /**
      * This function can be called by outside, and it tries to load a .png, .jpg picture, into both
@@ -374,7 +376,7 @@ public:
      * Otherwise loads similiarly as a mesh.
      */
     bool TryLoadTexture(const std::string& filePathRelative, TextureInfo* textureInfo = nullptr);
-
+    inline Texture* GetRasterTexturePointer(int textureIndex){return &_rasterizedTextures[textureIndex];}
 
     /**
      * This function just simply append a new materialData struct to the end of the already existing ones, 

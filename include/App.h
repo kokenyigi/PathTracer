@@ -170,6 +170,16 @@ private:
 	std::vector<std::string> _meshRelativeFilePaths;
 	std::vector<std::string> _textureRelativeFilePaths;
 
+	//Rendering variables for the little item boxes(like meshButtons)
+	FrameBuffer _pupperFrameBuffer; // The main buffer connection point we will be rendering into
+
+	RenderBuffer _pupperRenderBuffer; // We need this stuff for depth testing
+
+	Camera _puppetCamera; // we will render with this fake camera
+
+	Shader _pupperShader;
+
+
 public:
 	App(int windowWidth = 1000, int windowHeight = 800, const char* windowTitle = "_debugTitle");
 	~App();

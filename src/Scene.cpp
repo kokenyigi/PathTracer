@@ -221,8 +221,7 @@ void Scene::Init()
     _renderFrameBuffer.AttachTexture(_renderTexture);
     _renderFrameBuffer.AttachRenderBuffer(_renderBuffer);
 
-    testMesh.Load("assets/models/Suzanne.obj");
-    testShader.Init("assets/shaders/testVertex.vert","assets/shaders/testFragment.frag");
+   
 
     InitCL();
 }
@@ -275,13 +274,7 @@ void Scene::RasterizeRender()
     glClearColor(0,0,0,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    testShader.Bind();
-
-    testShader.SetUniform<glm::mat4>("uViewProjectionTransform",_camera.GetPerspectiveMatrix()*_camera.GetViewMatrix());
-
-    testMesh.Draw();
-
-    testShader.Unbind();
+    
 
     _renderFrameBuffer.Unbind();
 }
@@ -893,7 +886,10 @@ bool Scene::TryLoadMesh(const std::string &filePathRelative, MeshInfo * meshInfo
     AppendToClBuffer(clContext,clCommandQueue,&_bottomLevelBvhNodeDatasBuffer,sizeof(BvhNodeData),alreadyExistingBottomLevelBvhNodeCount,
         newMeshBvhNodes.size(),newMeshBvhNodes.data());
 
-    
+    // We also load a rasterized verrsion of the mesh..i know kinda memory bad, but itizwhaditis
+    Mesh<VertexP3N3T2> newRasterMesh;
+    newRasterMesh.Load(filePathRelative);
+    _rasterizedMeshes.push_back(newRasterMesh);
 
     return true;
 }
@@ -933,6 +929,15 @@ bool Scene::TryLoadPathTracedTexture(const std::string &filePathRelative, std::v
     }
 
     stbi_image_free(pngByteStream);
+
+    /**
+     * HOLY GUACKAMOLE PLEASE WATCH OUT HERE
+     * Since we store POINTERS to these textures inside the App(View) layer, we have to be REALLLLLYY careful,
+     *  because those stored pointers will be invalidated once we push into the vector, therefore we must reset all of those pointers.
+     */
+    Texture newRasterTexture;
+    newRasterTexture.Init(filePathRelative);
+    _rasterizedTextures.push_back(newRasterTexture);
 
     return true;
 }

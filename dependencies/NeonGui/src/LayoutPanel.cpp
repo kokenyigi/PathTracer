@@ -785,7 +785,7 @@ void LayoutPanel::LayoutPanelMouseWheel(float amount, int direction)
 {
     if(isHovered)
     {
-        MoveChildrenBox(2.0f * direction);
+        MoveChildrenBox(2.0f * direction*20.0f);
         CalculateChildrenPositions();
     }
 }
