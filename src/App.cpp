@@ -22,6 +22,12 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	_scene.Init();
 
+	_puppetFrameBuffer.Init();
+	_puppetRenderBuffer.Init(_puppetRenderingWidth,_puppetRenderingHeight);
+	_puppetFrameBuffer.AttachRenderBuffer(_puppetRenderBuffer);
+	_puppetCamera.Init(glm::vec3(0,0,5),glm::vec3(0,0,0),glm::vec3(0,1,0),_puppetRenderingWidth,_puppetRenderingHeight);
+	_puppetShader.Init("assets/shaders/pos_norm_tex.vert","assets/shaders/pos_norm_tex.frag");
+
 	std::cout<<"Initialization of Gui\n";
 	m_GUI.Init(windowWidth,windowHeight);
 
@@ -1862,9 +1868,20 @@ bool App::TryLoadMesh(const std::string& meshFileName,const std::string& newMesh
 		newChosenMeshButton->SetIndex(meshIndex);
 		newChosenMeshButton->SetNameChangedCallback(ChosenMeshNameChangedCallback);
 
+		Texture puppetImageOfNewMesh = RenderPuppetPicture(meshIndex,nullptr,glm::vec3(1,1,1));
+		_storedMeshPuppetTextures.push_back(puppetImageOfNewMesh);
+		
+
 		chosenMeshGroup.AddToGroup(newChosenMeshButton);
 		meshPanel.AddControl(newChosenMeshButton);
 		dropdownMesh.AddOption(newName,meshIndex);
+
+		//Lets fix those invalid pointers.
+		for(int i=1;i<meshPanel.GetChildren().size();++i)
+		{
+			ImageLabelButton* ilb = (ImageLabelButton*)meshPanel.GetChildren()[i];
+			ilb->SetButtonTexure(&_storedMeshPuppetTextures[i-1]);
+		}
 
 		_meshRelativeFilePaths.push_back(meshFileName);
 	}
@@ -2001,6 +2018,56 @@ bool App::TryAddObject(const ObjectState &newObjectState, const std::string& new
 	}
 
 	return wasAddingObjectSuccessful;
+}
+
+Texture App::RenderPuppetPicture(int meshIndex, Texture* texture, const glm::vec3 &color)
+{
+	Texture newPuppetImage;
+
+	newPuppetImage.Init(_puppetRenderingWidth,_puppetRenderingHeight);
+
+	
+	_puppetShader.Bind();
+	
+	_puppetFrameBuffer.AttachTexture(newPuppetImage);
+
+	_puppetFrameBuffer.Bind();
+
+	glViewport(0,0,_puppetRenderingWidth,_puppetRenderingHeight);
+	glClearColor(0.3,0.3,0.3,1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glDisable(GL_DEPTH_TEST);
+	_puppetShader.SetUniform<glm::vec3>("uCameraPosition",_puppetCamera.GetPosition());
+	
+
+	_puppetShader.SetUniform<glm::mat4>("projectionTransform",_puppetCamera.GetPerspectiveMatrix());
+	_puppetShader.SetUniform<glm::mat4>("viewTransform",_puppetCamera.GetViewMatrix());
+	_puppetShader.SetUniform<int>("uDoWeHaveTexture",texture == nullptr ? 0 : 1);
+	_puppetShader.SetUniform<glm::vec3>("uColor",color);
+	if(texture != nullptr)
+	{
+		texture->Bind(0);
+		_puppetShader.SetUniform<int>("uTexture",0);
+	}
+	
+	_scene.GetRasterMeshPointer(meshIndex)->Draw();
+	
+
+	if(texture != nullptr)
+	{
+		texture->Unbind();
+	}
+
+	_puppetFrameBuffer.Unbind();
+
+	_puppetShader.Unbind();
+	
+
+    glViewport(0,0,m_windowWidth,m_windowHeight);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	return newPuppetImage;
 }
 
 void App::SaveScene(const std::string &sceneSavingFileNameRelative)

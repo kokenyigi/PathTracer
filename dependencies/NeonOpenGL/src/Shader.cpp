@@ -99,10 +99,21 @@ void Shader::LinkShaderProgram(const std::string& vertexShaderSource, const std:
 	GLCall(glAttachShader(m_programId, vertex_shader));
 	GLCall(glAttachShader(m_programId, fragment_shader));
 	GLCall(glLinkProgram(m_programId));
+
+		GLint logLength;
+glGetProgramiv(m_programId, GL_INFO_LOG_LENGTH, &logLength);
+
+std::string log(logLength, '\0');
+glGetProgramInfoLog(m_programId, logLength, nullptr, log.data());
 	GLCall(glValidateProgram(m_programId));
+
+
+
+std::cout << log << std::endl;
 
 	GLCall(glDeleteShader(vertex_shader));
 	GLCall(glDeleteShader(fragment_shader));
+
 }
 
 int Shader::GetUniformLocation(const std::string& name) const

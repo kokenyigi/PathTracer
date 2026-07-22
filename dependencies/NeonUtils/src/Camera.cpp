@@ -18,7 +18,7 @@ void Camera::Init(const glm::vec3& position, const glm::vec3& at, const glm::vec
 
 	aspect = (float)windowWidth / (float)windowHeight;
 
-	CalculateFront();
+	CalculateUVW();
 }
 
 void Camera::Update(float deltatime)

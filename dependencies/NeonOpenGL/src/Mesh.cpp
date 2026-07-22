@@ -15,7 +15,7 @@ void Mesh<VertexP3N3T2,RenderType::Triangles>::Load(const std::string& filePath)
 	std::vector<VertexP3N3T2> vertices;
 
 	bool wasLoadingSuccesful = TryLoadObjFile(filePath,positions,normals,texCoords,triangleIndices);
-
+	
 	if(wasLoadingSuccesful)
 	{
 		vertices.resize(positions.size());	

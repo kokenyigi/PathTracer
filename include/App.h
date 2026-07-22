@@ -171,13 +171,15 @@ private:
 	std::vector<std::string> _textureRelativeFilePaths;
 
 	//Rendering variables for the little item boxes(like meshButtons)
-	FrameBuffer _pupperFrameBuffer; // The main buffer connection point we will be rendering into
-
-	RenderBuffer _pupperRenderBuffer; // We need this stuff for depth testing
-
+	const int _puppetRenderingWidth = 180;
+	const int _puppetRenderingHeight = 90;
+	FrameBuffer _puppetFrameBuffer; // The main buffer connection point we will be rendering into
+	RenderBuffer _puppetRenderBuffer; // We need this stuff for depth testing
 	Camera _puppetCamera; // we will render with this fake camera
+	Shader _puppetShader;
 
-	Shader _pupperShader;
+	std::vector<Texture> _storedMeshPuppetTextures;
+	std::vector<Texture> _storedModelPuppetTextures;
 
 
 public:
@@ -276,6 +278,15 @@ private:
 	void AddMaterial(const MaterialData& newMaterialData,const std::string& newMaterialName = "");
 	bool TryAddModel(const ModelDataCpu& newModelData,const std::string& newModelName = "");
 	bool TryAddObject(const ObjectState& newObjectState,const std::string& newObjectName = "");
+
+	/**
+	 * This function will render a miniature image of the given mesh, to be stored inside the App layer, and be rendered flat on the
+	 * 	ILbs. Note, that if you pass negative values as texindex, it render the mesh without texture.
+	 * Returns with the rendered texture, to be stored inside a vector of the App layer.
+	 * CAUTION!!!!!!! cant stress this enough: once you push into a vector pointers to the Texture objects inside it will be as invalid
+	 * 	as a 12yr old riding an electric scooter
+	 */
+	Texture RenderPuppetPicture(int meshIndex, Texture* texture, const glm::vec3& color);
 
 	void SaveScene(const std::string& sceneSavingFileNameRelative);
 	bool TryLoadScene(const std::string& sceneFilePathRelative);

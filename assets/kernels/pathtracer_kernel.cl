@@ -598,7 +598,7 @@ float3 MissRayColor(float3 rayDirection)
     return mix(horizon, zenith, t);
 }
 
-#define MAX_BOUNCE_COUNT 5
+#define MAX_BOUNCE_COUNT 6
 
 float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
 {
