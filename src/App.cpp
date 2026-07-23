@@ -3317,19 +3317,25 @@ void App::DeleteObjectButtonCallback(void *context)
 
 			std::vector<Control *>& children = app->objectPanel.GetChildren();
 			int objectButtonDeletionIndex = objectIndex + 1;
-			int objectButtonsEndIndex = children.size() -1;
-			RadioButton* deletionButton = (RadioButton*)children[objectButtonDeletionIndex];
-			RadioButton* endButton = (RadioButton*)children[objectButtonsEndIndex];
+			int objectButtonsEndIndex = children.size() - 1;
+			ImageLabelButton* deletionButton = (ImageLabelButton*)children[objectButtonDeletionIndex];
+			ImageLabelButton* endButton = (ImageLabelButton*)children[objectButtonsEndIndex];
+			
 			if(objectButtonDeletionIndex != objectButtonsEndIndex)
+
 			{
 				//we do a copying
-				deletionButton->SetText(endButton->GetText());
+				children[objectButtonDeletionIndex] = endButton;
+				endButton->SetIndex(objectIndex);
+				//app->storedObjectInfos[objectIndex] = ;
 			}
 
-			delete endButton;
+			delete deletionButton;
 			children.pop_back();
 
 			app->storedObjectInfos.pop_back();
+
+			app->objectPanel.Resize();
 		}
 	}
 }
