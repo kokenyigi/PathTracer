@@ -2376,6 +2376,18 @@ void App::Reset()
 
 	_meshRelativeFilePaths.clear();
 	_textureRelativeFilePaths.clear();
+
+	for(int i=0;i<_storedMeshPuppetTextures.size();++i)
+	{
+		_storedMeshPuppetTextures[i].Delete();
+	}
+	_storedMeshPuppetTextures.clear();
+
+	for(int i=0;i<_storedModelPuppetTextures.size();++i)
+	{
+		_storedModelPuppetTextures[i].Delete();
+	}
+	_storedModelPuppetTextures.clear();
 }
 
 void App::ChosenTextureButtonCallback(void *context, int textureIndex)

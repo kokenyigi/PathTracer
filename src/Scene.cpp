@@ -56,6 +56,12 @@ void Scene::Reset()
     if(_meshBvhRootIndexData.size()>0)
     {
         _meshBvhRootIndexData.clear();
+
+        for(int i=0;i<_rasterizedMeshes.size();++i)
+        {
+            _rasterizedMeshes[i].Delete();
+        }
+        _rasterizedMeshes.clear();
     }
     if(_textureDatas.size()>0)
     {
@@ -66,6 +72,12 @@ void Scene::Reset()
         clError = clReleaseMemObject(_textureDatasBuffer);CHECK_ERROR(clError);
         _rgbaDatasBuffer = nullptr;
         _textureDatasBuffer = nullptr;
+
+        for(int i=0;i<_rasterizedTextures.size();++i)
+        {
+            _rasterizedTextures[i].Delete();
+        }
+        _rasterizedTextures.clear();
     }
     if(_materialDatas.size()>0)
     {
