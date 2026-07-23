@@ -1935,10 +1935,17 @@ bool App::TryLoadTexture(const std::string& textureFileName,const std::string& n
 		newChosenTextureButton->SetCallBackContext(this);
 		newChosenTextureButton->SetIndex(textureIndex);
 		newChosenTextureButton->SetNameChangedCallback(ChosenTextureNameChangedCallback);
+		newChosenTextureButton->SetButtonBgColor(glm::vec3(1,1,1));
 
 		chosenTextureGroup.AddToGroup(newChosenTextureButton);
 		texturePanel.AddControl(newChosenTextureButton);
 		dropdownTexture.AddOption(newName,textureIndex);
+
+		for(int i=1;i<texturePanel.GetChildren().size();++i)
+		{
+			ImageLabelButton* ilb = (ImageLabelButton*)texturePanel.GetChildren()[i];
+			ilb->SetButtonTexure(_scene.GetRasterTexturePointer(i-1));
+		}
 
 		_textureRelativeFilePaths.push_back(textureFileName);
 	}
@@ -1963,10 +1970,14 @@ void App::AddMaterial(const MaterialData& newMaterialData, const std::string& ne
 		newMaterialButton->SetCallBackContext(this);
 		newMaterialButton->SetIndex(newMaterialInfo.materialIndex);
 		newMaterialButton->SetNameChangedCallback(ChosenMaterialNameChangedCallback);
+		newMaterialButton->SetButtonBgColor(glm::vec3(0,0,0));
 
 		chosenMaterialGroup.AddToGroup(newMaterialButton);
 		materialPanel.AddControl(newMaterialButton);
 		dropdownMaterial.AddOption(newName,newMaterialInfo.materialIndex);
+
+		ImageLabelButton* ilb = ((ImageLabelButton*)(materialPanel.GetChildren()[newMaterialInfo.materialIndex + 1]));
+		ilb->SetButtonBgColor(glm::vec3(newMaterialData.albedoColor.x,newMaterialData.albedoColor.y, newMaterialData.albedoColor.z));
 	}
 }
 
@@ -1991,6 +2002,26 @@ bool App::TryAddModel(const ModelDataCpu &newModelData, const std::string& newMo
 		chosenModelGroup.AddToGroup(newModelButton);
 		modelPanel.AddControl(newModelButton);
 		dropdownModel.AddOption(newName,newModelInfo.modelIndex);
+
+		MaterialData modelMaterialData;
+		_scene.GetMaterialData(newModelData.materialIndex,&modelMaterialData);
+
+		
+		Texture* materialTexture = nullptr;
+		if(modelMaterialData.albedoTextureIndex >= 0)
+		{
+			materialTexture = _scene.GetRasterTexturePointer(modelMaterialData.albedoTextureIndex);
+		}
+		glm::vec3 modelMaterialColor = glm::vec3(modelMaterialData.albedoColor.x,modelMaterialData.albedoColor.y,modelMaterialData.albedoColor.z);
+		Texture puppetImageModel = RenderPuppetPicture(newModelData.meshIndex,materialTexture,modelMaterialColor);
+		_storedModelPuppetTextures.push_back(puppetImageModel);
+
+		//Lets fix those invalid pointers.
+		for(int i=1;i<modelPanel.GetChildren().size();++i)
+		{
+			ImageLabelButton* ilb = (ImageLabelButton*)modelPanel.GetChildren()[i];
+			ilb->SetButtonTexure(&_storedModelPuppetTextures[i-1]);
+		}
 	}
 
 	return wasAddingModelSuccessful;
@@ -2014,7 +2045,9 @@ bool App::TryAddObject(const ObjectState &newObjectState, const std::string& new
 		//No need for name callback
 
 		chosenObjectGroup.AddToGroup(newObjectButton);
-		objectPanel.AddControl(newObjectButton);		
+		objectPanel.AddControl(newObjectButton);
+		
+		newObjectButton->SetButtonTexure(&_storedModelPuppetTextures[newObjectState.modelIndex]);
 	}
 
 	return wasAddingObjectSuccessful;
@@ -2026,6 +2059,9 @@ Texture App::RenderPuppetPicture(int meshIndex, Texture* texture, const glm::vec
 
 	newPuppetImage.Init(_puppetRenderingWidth,_puppetRenderingHeight);
 
+	//Set camera to a proper location
+	float maximumRadius = storedMeshInfos[meshIndex].absMaxRadius;
+	_puppetCamera.SetPosition(glm::vec3(0,0,maximumRadius*4.0f));
 	
 	_puppetShader.Bind();
 	
@@ -2068,6 +2104,25 @@ Texture App::RenderPuppetPicture(int meshIndex, Texture* texture, const glm::vec
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	return newPuppetImage;
+}
+
+void App::ReRenderModelPuppetPicture(int modelIndex)
+{
+	ModelDataCpu modelData;
+	_scene.GetModelData(modelIndex,&modelData);
+
+	MaterialData modelMaterialData;
+	_scene.GetMaterialData(modelData.materialIndex,&modelMaterialData);
+	Texture* materialTexture = nullptr;
+	if(modelMaterialData.albedoTextureIndex >= 0)
+	{
+		materialTexture = _scene.GetRasterTexturePointer(modelMaterialData.albedoTextureIndex);
+	}
+	glm::vec3 modelMaterialColor = glm::vec3(modelMaterialData.albedoColor.x,modelMaterialData.albedoColor.y,
+		modelMaterialData.albedoColor.z);
+	Texture newPuppetImageModel = RenderPuppetPicture(modelData.meshIndex,materialTexture,modelMaterialColor);
+	_storedModelPuppetTextures[modelIndex].Delete();
+	_storedModelPuppetTextures[modelIndex] = newPuppetImageModel;
 }
 
 void App::SaveScene(const std::string &sceneSavingFileNameRelative)
@@ -2820,6 +2875,28 @@ void App::AlbedoTextureChosenCallback(void *context, int optionTextureIndex)
 		app->_scene.GetMaterialData(materialIndex,&oldData);
 		oldData.albedoTextureIndex = optionTextureIndex;
 		app->_scene.TryAlterMaterial(materialIndex,oldData);
+
+		if(optionTextureIndex >= 0)
+		{
+			Texture* materialtexture = app->_scene.GetRasterTexturePointer(optionTextureIndex);
+			((ImageLabelButton*)(app->materialPanel.GetChildren()[app->chosenMaterialIndex + 1]))->SetButtonTexure(materialtexture);
+		}
+		else
+		{
+			((ImageLabelButton*)(app->materialPanel.GetChildren()[app->chosenMaterialIndex + 1]))->SetButtonTexure(nullptr);
+		}
+
+		int modelCount = app->storedModelInfos.size();
+		for(int i=0;i<modelCount;++i)
+		{
+			ModelDataCpu currentModelData;
+			app->_scene.GetModelData(i,&currentModelData);
+
+			if(currentModelData.materialIndex == materialIndex)
+			{
+				app->ReRenderModelPuppetPicture(i);
+			}
+		}
 	}
 }
 
@@ -2836,6 +2913,21 @@ void App::AlbedoRedAlteredCallback(void *context, float redValue)
 
 		app->inputRed.SetFloat(redValue);
 		app->sliderRed.SetSliderValue(redValue);
+
+		ImageLabelButton* ilb = ((ImageLabelButton*)(app->materialPanel.GetChildren()[app->chosenMaterialIndex + 1]));
+		ilb->SetButtonBgColor(glm::vec3(oldData.albedoColor.x,oldData.albedoColor.y, oldData.albedoColor.z));
+
+		int modelCount = app->storedModelInfos.size();
+		for(int i=0;i<modelCount;++i)
+		{
+			ModelDataCpu currentModelData;
+			app->_scene.GetModelData(i,&currentModelData);
+
+			if(currentModelData.materialIndex == materialIndex)
+			{
+				app->ReRenderModelPuppetPicture(i);
+			}
+		}
 	}
 }
 
@@ -2852,6 +2944,21 @@ void App::AlbedoGreenAlteredCallback(void *context, float greenVlaue)
 
 		app->inputGreen.SetFloat(greenVlaue);
 		app->sliderGreen.SetSliderValue(greenVlaue);
+
+		ImageLabelButton* ilb = ((ImageLabelButton*)(app->materialPanel.GetChildren()[app->chosenMaterialIndex + 1]));
+		ilb->SetButtonBgColor(glm::vec3(oldData.albedoColor.x,oldData.albedoColor.y, oldData.albedoColor.z));
+
+		int modelCount = app->storedModelInfos.size();
+		for(int i=0;i<modelCount;++i)
+		{
+			ModelDataCpu currentModelData;
+			app->_scene.GetModelData(i,&currentModelData);
+
+			if(currentModelData.materialIndex == materialIndex)
+			{
+				app->ReRenderModelPuppetPicture(i);
+			}
+		}
 	}
 }
 
@@ -2868,6 +2975,21 @@ void App::AlbedoBlueAlteredCallback(void *context, float blueValue)
 
 		app->inputBlue.SetFloat(blueValue);
 		app->sliderBlue.SetSliderValue(blueValue);
+
+		ImageLabelButton* ilb = ((ImageLabelButton*)(app->materialPanel.GetChildren()[app->chosenMaterialIndex + 1]));
+		ilb->SetButtonBgColor(glm::vec3(oldData.albedoColor.x,oldData.albedoColor.y, oldData.albedoColor.z));
+
+		int modelCount = app->storedModelInfos.size();
+		for(int i=0;i<modelCount;++i)
+		{
+			ModelDataCpu currentModelData;
+			app->_scene.GetModelData(i,&currentModelData);
+
+			if(currentModelData.materialIndex == materialIndex)
+			{
+				app->ReRenderModelPuppetPicture(i);
+			}
+		}
 	}
 }
 
@@ -3070,6 +3192,8 @@ void App::MeshIndexChosenDropdownCallback(void *context, int chosenOptionIndex)
 		app->_scene.GetModelData(modelIndex,&oldData);
 		oldData.meshIndex = chosenOptionIndex;
 		app->_scene.TryAlterModel(modelIndex,oldData);
+
+		app->ReRenderModelPuppetPicture(modelIndex);
 	}
 }
 
@@ -3083,6 +3207,8 @@ void App::MaterialIndexChosenDropdownCallback(void *context, int chosenOptionInd
 		app->_scene.GetModelData(modelIndex,&oldData);
 		oldData.materialIndex = chosenOptionIndex;
 		app->_scene.TryAlterModel(modelIndex,oldData);
+
+		app->ReRenderModelPuppetPicture(modelIndex);
 	}
 }
 

@@ -214,6 +214,7 @@ struct MeshInfo
     int triangleCount = -1;
     int bvhNodeCount = -1;
     int bvhDepth = -1;
+    float absMaxRadius;
     int meshIndex = -1;
 };
 

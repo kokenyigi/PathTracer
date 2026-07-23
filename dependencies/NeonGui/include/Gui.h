@@ -256,6 +256,8 @@ public:
 	inline bool GetIsActive() const {return isActive;}
 	inline bool GetIsFocused() const {return isFocused;}
 	inline int GetPriority() const {return _priority;}
+	inline glm::vec3 GetBgColor() const {return _baseBGColor;}
+
 private:
 	//A control doesn't have any exclusive private methods, cuz why would it have..idk.
 protected:

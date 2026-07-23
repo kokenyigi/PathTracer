@@ -287,6 +287,7 @@ private:
 	 * 	as a 12yr old riding an electric scooter
 	 */
 	Texture RenderPuppetPicture(int meshIndex, Texture* texture, const glm::vec3& color);
+	void ReRenderModelPuppetPicture(int modelIndex);
 
 	void SaveScene(const std::string& sceneSavingFileNameRelative);
 	bool TryLoadScene(const std::string& sceneFilePathRelative);

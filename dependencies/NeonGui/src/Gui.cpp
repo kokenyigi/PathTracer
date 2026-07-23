@@ -554,7 +554,7 @@ void Control::ControlRender()
 	{
 		//Textured rendering
 		AABB srcBox = {glm::vec2(0,0),glm::vec2(1,1)};
-		//TransformBasedOnTwoRelativeAABB(_box,_renderBox,srcBox);
+		TransformBasedOnTwoRelativeAABB(_box,_renderBox,srcBox);
 
 		Rectangle srcRect = {srcBox.min.x,srcBox.min.y,srcBox.max.x - srcBox.min.x, srcBox.max.y-srcBox.min.y};
 

@@ -60,6 +60,8 @@ public:
 	void SetFovx(float fovx);
 	float GetFovx() const { return m_fovx; }
 
+	void SetPosition(const glm::vec3& pos) {this->position = pos;}
+
 	void Resize(int windowWidth, int windowHeight);
 	float GetAspect() const { return aspect; }
 

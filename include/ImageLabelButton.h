@@ -24,6 +24,8 @@ public:
     void SetInputText(const std::string& text){_inputName.SetText(text);}
     std::string GetInputText() {return _inputName.GetText();} 
     void SetButtonTexure(Texture* texture){_buttonImage.SetTexture(texture);}
+    void SetButtonBgColor(const glm::vec3& color){_buttonImage.SetBGColor(color.x,color.y,color.z);}
+    glm::vec3 SetButtonColor() {return _buttonImage.GetBgColor();}
     void SetNameChangedCallback(void(*nameChangedCallback)(void*,int,const std::string&)){_nameChangedCallback = nameChangedCallback;}
 
     void VirtualResize() override {ILBResize();}

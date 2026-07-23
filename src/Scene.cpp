@@ -746,6 +746,14 @@ bool Scene::TryLoadPathTracedMesh(const std::string &filePathRelative,
     meshRootNode.maxChild = -1;
     meshRootNode.box = CalculateAABB4BasedOnTriangles(0,outOfBoundsEndIndex,newVertexPositions,newTriangleVertexIndices);
 
+    if(meshInfo != nullptr)
+    {
+        AABB4 box = meshRootNode.box;
+        float lengthMax = glm::length(box.max);
+        float lengthMin = glm::length(box.min);
+        meshInfo->absMaxRadius = fmax(lengthMax,lengthMin);
+    }
+
     // We push the root to the bvhNodeStorage, then recursively try to split it.
     newMeshBvhNodes.push_back(meshRootNode); meshInfo->bvhDepth = 0;
     SplitBvhNodeRecursive(0,0,newVertexPositions,newMeshBvhNodes,newTriangleVertexIndices,meshInfo);
