@@ -3278,6 +3278,9 @@ void App::ModelIndexChosenDropdownCallback(void *context, int chosenOptionIndex)
 		app->_scene.GetObjectState(objectIndex,&oldObjectState);
 		oldObjectState.modelIndex = chosenOptionIndex;
 		app->_scene.TryAlterObject(objectIndex,oldObjectState);
+
+		ImageLabelButton* objectIlb = (ImageLabelButton*)app->objectPanel.GetChildren()[objectIndex + 1];
+		objectIlb->SetButtonTexure(&app->_storedModelPuppetTextures[chosenOptionIndex]);
 	}
 }
 
