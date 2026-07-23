@@ -42,7 +42,7 @@ void main()
     vec4 shadedColor = vec4(ambientLight + diffuseLight ,1.0);
 
 
-    if(uDoWeHaveTexture)
+    if(uDoWeHaveTexture && vTexCoords.x >= 0 && vTexCoords.y >= 0)
     {
         shadedColor *= texture(uTexture,vTexCoords);
     }

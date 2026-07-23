@@ -175,6 +175,8 @@ bool Refract(float3* v, float3* n, float eta,float3* outVec)
 	return true;
 }
 
+
+
 typedef struct
 {
     float4 col[4];
@@ -452,6 +454,34 @@ typedef struct
 
 } TraceResult;
 
+float3 SampleTexture(float2 texCoords,int texIndex,const Scene* scene)
+{
+    TextureData textureData = scene->textureData[texIndex];
+    int startIndex = textureData.startIndex;
+    int width = textureData.width;
+    int height = textureData.height;
+
+    float2 pixelCoords = texCoords * (float2)(width-1, height -1);
+
+    int2 pixelCoordLeftUp = (int2)(texCoords.x * (width - 1),texCoords.y * (height - 1));
+    int2 pixelCoordRightDown = (int2)(min(pixelCoordLeftUp.x + 1,width-1),min(pixelCoordLeftUp.y + 1,height-1));
+
+    float tx = pixelCoords.x - (float)(pixelCoordLeftUp.x);
+    float ty = pixelCoords.y - (float)(pixelCoordLeftUp.y);
+
+    float4 c00 = scene->rgbaData[startIndex + pixelCoordLeftUp.y * width + pixelCoordLeftUp.x];
+    float4 c01 = scene->rgbaData[startIndex + pixelCoordRightDown.y * width + pixelCoordLeftUp.x];
+    float4 c10 = scene->rgbaData[startIndex + pixelCoordLeftUp.y * width + pixelCoordRightDown.x];
+    float4 c11 = scene->rgbaData[startIndex + pixelCoordRightDown.y * width + pixelCoordRightDown.x];
+
+    float4 a = c00 *(1.0f - tx) + c10 * tx;
+    float4 b = c01 *(1.0f - tx) + c11 * tx;
+
+    float4 sample = a * (1.0f - ty) + b * ty;
+
+    return sample.xyz;
+}
+
 #define MAX_BOTTOM_LEVEL_BVH_DEPTH 32
 
 TraceResult IntersectObject(const Ray* ray, int objectIndex,const Scene* scene)
@@ -624,7 +654,17 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
 
             // Easier to dereference variables
             int materialIndex = traceResult.materialIndex;
-            float3 albedo = scene->materialData[materialIndex].albedoColor.xyz;
+            float3 textureColor = (float3)(1,1,1);
+            int materialTextureIndex = scene->materialData[materialIndex].albedoTextureIndex;
+            if(materialTextureIndex >= 0)
+            {
+                if(traceResult.texCoords.x >= 0 && traceResult.texCoords.y >= 0)
+                {
+                    textureColor = SampleTexture(traceResult.texCoords,materialTextureIndex,scene);
+                }
+            }
+
+            float3 albedo = scene->materialData[materialIndex].albedoColor.xyz * textureColor;
             float3 emission = scene->materialData[materialIndex].emissionStrength*scene->materialData[materialIndex].emissionColor.xyz;
             float ior = scene->materialData[materialIndex].ioR;
             float metallic = scene->materialData[materialIndex].metallic;

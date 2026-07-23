@@ -2014,6 +2014,7 @@ bool App::TryAddModel(const ModelDataCpu &newModelData, const std::string& newMo
 		}
 		glm::vec3 modelMaterialColor = glm::vec3(modelMaterialData.albedoColor.x,modelMaterialData.albedoColor.y,modelMaterialData.albedoColor.z);
 		Texture puppetImageModel = RenderPuppetPicture(newModelData.meshIndex,materialTexture,modelMaterialColor);
+
 		_storedModelPuppetTextures.push_back(puppetImageModel);
 
 		//Lets fix those invalid pointers.
@@ -2021,6 +2022,17 @@ bool App::TryAddModel(const ModelDataCpu &newModelData, const std::string& newMo
 		{
 			ImageLabelButton* ilb = (ImageLabelButton*)modelPanel.GetChildren()[i];
 			ilb->SetButtonTexure(&_storedModelPuppetTextures[i-1]);
+		}
+		//And for the objects also
+		for(int i=1;i<objectPanel.GetChildren().size();++i)
+		{
+			ObjectState objectState;
+			_scene.GetObjectState(i-1,&objectState);
+			int modelIndex = objectState.modelIndex;
+
+			ImageLabelButton* ilb = (ImageLabelButton*)objectPanel.GetChildren()[i];
+
+			ilb->SetButtonTexure(&_storedModelPuppetTextures[modelIndex]);
 		}
 	}
 
