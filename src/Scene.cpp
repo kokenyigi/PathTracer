@@ -764,6 +764,7 @@ bool Scene::TryLoadPathTracedMesh(const std::string &filePathRelative,
         float lengthMax = glm::length(box.max);
         float lengthMin = glm::length(box.min);
         meshInfo->absMaxRadius = fmax(lengthMax,lengthMin);
+        meshInfo->bvhRootMidYLevel = (box.max.y + box.min.y)/2;
     }
 
     // We push the root to the bvhNodeStorage, then recursively try to split it.

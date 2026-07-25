@@ -215,6 +215,7 @@ struct MeshInfo
     int bvhNodeCount = -1;
     int bvhDepth = -1;
     float absMaxRadius;
+    float bvhRootMidYLevel;
     int meshIndex = -1;
 };
 

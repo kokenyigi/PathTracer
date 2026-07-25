@@ -425,11 +425,15 @@ bool TryLoadObjFile(const std::string &filePathRelative,
 				}
 
 
+				if(doesMeshHaveNormals)
+				{
+					
+				}
 				//Now that we have parsed the read index set of p - t - n , then now we check if these combinations of vertices
 				//Already exists inside the hasmap, if yes we just simply use the index stored inside there.
 				auto mapIt = threeIndexComponentToVertexIndex.find(indexKey);
 				
-				if (mapIt != threeIndexComponentToVertexIndex.end())
+				if (mapIt != threeIndexComponentToVertexIndex.end() && doesMeshHaveNormals)
 				{
 					//we found the key, therefore we already have a vertex specified with these indices
 					unsigned int vertexIndex = mapIt->second;

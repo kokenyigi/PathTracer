@@ -1947,6 +1947,18 @@ bool App::TryLoadTexture(const std::string& textureFileName,const std::string& n
 			ilb->SetButtonTexure(_scene.GetRasterTexturePointer(i-1));
 		}
 
+		for(int i=1;i<materialPanel.GetChildren().size();++i)
+		{
+			ImageLabelButton* ilb = (ImageLabelButton*)materialPanel.GetChildren()[i];
+			MaterialData materialData;
+			_scene.GetMaterialData(ilb->GetIndex(),&materialData);
+			if(materialData.albedoTextureIndex >= 0)
+			{
+				ilb->SetButtonTexure(_scene.GetRasterTexturePointer(materialData.albedoTextureIndex));
+			}
+			
+		}
+
 		_textureRelativeFilePaths.push_back(textureFileName);
 	}
 
@@ -1978,6 +1990,11 @@ void App::AddMaterial(const MaterialData& newMaterialData, const std::string& ne
 
 		ImageLabelButton* ilb = ((ImageLabelButton*)(materialPanel.GetChildren()[newMaterialInfo.materialIndex + 1]));
 		ilb->SetButtonBgColor(glm::vec3(newMaterialData.albedoColor.x,newMaterialData.albedoColor.y, newMaterialData.albedoColor.z));
+		if(newMaterialData.albedoTextureIndex >= 0)
+		{
+			ilb->SetButtonTexure(_scene.GetRasterTexturePointer(newMaterialData.albedoTextureIndex));
+		}
+		
 	}
 }
 
@@ -2073,7 +2090,8 @@ Texture App::RenderPuppetPicture(int meshIndex, Texture* texture, const glm::vec
 
 	//Set camera to a proper location
 	float maximumRadius = storedMeshInfos[meshIndex].absMaxRadius;
-	_puppetCamera.SetPosition(glm::vec3(0,0,maximumRadius*4.0f));
+	float goodYLevel = storedMeshInfos[meshIndex].bvhRootMidYLevel;
+	_puppetCamera.SetPosition(glm::vec3(0,goodYLevel,maximumRadius*4.0f));
 	
 	_puppetShader.Bind();
 	
@@ -3322,12 +3340,11 @@ void App::DeleteObjectButtonCallback(void *context)
 			ImageLabelButton* endButton = (ImageLabelButton*)children[objectButtonsEndIndex];
 			
 			if(objectButtonDeletionIndex != objectButtonsEndIndex)
-
 			{
-				//we do a copying
+				
 				children[objectButtonDeletionIndex] = endButton;
 				endButton->SetIndex(objectIndex);
-				//app->storedObjectInfos[objectIndex] = ;
+				
 			}
 
 			delete deletionButton;
