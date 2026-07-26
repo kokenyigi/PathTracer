@@ -259,6 +259,7 @@ public:
 	static void CanvasUpdateCallback(void* context, float deltaTime);
 	static void CanvasKeyCallback(void* context, int key, int action, int mods);
 	static void CanvasMouseMoveCallback(void * context , float newX, float newY);
+	static void CanvasMouseClickCallback(void * context , int button, int action);
 	
 
 private:

@@ -36,6 +36,8 @@ public:
         return RadioButtonClick(button,action);
     }
 
+    void ImitateToggle();
+
 protected:
         
     bool RadioButtonClick(int button, int action);

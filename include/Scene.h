@@ -191,6 +191,8 @@ struct Transform
     glm::vec3 position = glm::vec3(0);
     glm::vec3 scale = glm::vec3(1);
     glm::vec3 rotation = glm::vec3(0);
+
+    glm::quat internalRotation;
 };
 
 
@@ -260,6 +262,40 @@ struct ObjectState
 {
     int modelIndex = 0;
     Transform transform;
+};
+
+struct Ray
+{
+    float tMin = 0.1f;
+    float tMax = 1000.0f;
+    glm::vec3 origin;
+    glm::vec3 direction;
+    glm::vec3 invDirection;
+};
+
+enum class GizmoType
+{
+    GIZMO_NONE = 0,
+    GIZMO_TRANSLATION = 1,
+    GIZMO_SCALE = 2,
+    GIZMO_ROTATION = 3
+};
+
+enum class PickResultType
+{
+    NONE,
+    OBJECT,
+    GIZMO
+};
+
+/**
+ * This structure is used when the scene is picked for an object.
+ * It can store many things, but for now we put the picked object's index into it, or -1 if the picking failed.
+ */
+struct PickResult
+{
+    PickResultType type = PickResultType::NONE;
+    int pickedObjectIndex = -1;
 };
 
 /**
@@ -358,7 +394,7 @@ public:
     void Render();
     void Update(float deltaTime);
     void MouseMove(float newX, float newY);
-    void MouseClick(int button, int action);
+    void MouseClick(int button, int action, PickResult* pickResult);
     void MouseWheel(float amount, int direction);
     void KeyInput(int key, int action, int mods);
 
@@ -477,6 +513,22 @@ private:
 
 
     void ResetPathTracedFrameIndex() {_frameIndex = 1;}
+
+    float IntersectTriangle(const Ray& ray,const glm::vec3& p0,const glm::vec3& p1,const glm::vec3& p2);
+    float IntersectBox(const Ray& ray, const AABB4& box);
+    float IntersectBvhNodeRecursive(Ray& ray, 
+        const std::vector<VertexPositionData>& vertexPositions,
+        const std::vector<TriangleIndicesData>& triangleVertexIndices,
+        const std::vector<BvhNodeData>& bvhNodeDatas,
+        const int meshBvhRootIndex);
+    float IntersectObject(const Ray& ray, 
+        const std::vector<VertexPositionData>& vertexPositions,
+        const std::vector<TriangleIndicesData>& triangleVertexIndices,
+        const std::vector<BvhNodeData>& bvhNodeDatas,
+        const int meshBvhRootIndex,
+        const glm::mat4& inverseWorldTransform);
+
+    void PickScene( int x, int y, PickResult* pickResult);
 };
 
 

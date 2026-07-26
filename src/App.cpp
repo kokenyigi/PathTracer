@@ -1266,6 +1266,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	sceneCanvas.SetUpdateCallback(CanvasUpdateCallback);
 	sceneCanvas.SetKeyInputCallback(CanvasKeyCallback);
 	sceneCanvas.SetMouseMoveCallback(CanvasMouseMoveCallback);
+	sceneCanvas.SetMouseClickCallback(CanvasMouseClickCallback);
 
 	containerCanvas.AddControl(&sceneCanvas);
 
@@ -2726,6 +2727,15 @@ void App::CanvasMouseMoveCallback(void *context, float newX, float newY)
 	app->_scene.MouseMove(newX,newY);
 }
 
+void App::CanvasMouseClickCallback(void *context, int button, int action)
+{
+	App* app = (App*)context;
+
+	PickResult scenePickResult;
+	app->_scene.MouseClick(button,action,&scenePickResult);
+
+
+}
 
 void App::LoadMeshButtonCallback(void *context)
 {

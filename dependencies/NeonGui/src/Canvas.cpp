@@ -61,6 +61,13 @@ bool Canvas::CanvasMouseClick(int button, int action)
 
     if(button == 0 && action == 0)
     {
+
+        if(_mouseClickCallback != nullptr && _callbackContext  != nullptr)
+        {
+            _mouseClickCallback(_callbackContext,button,action);
+        }
+
+
         if(isMouseOnControl)
         {
             if(!isFocused)
@@ -68,10 +75,7 @@ bool Canvas::CanvasMouseClick(int button, int action)
                 SetFocused();
             }
 
-            if(_mouseClickCallback != nullptr && _callbackContext  != nullptr)
-            {
-                _mouseClickCallback(_callbackContext,button,action);
-            }
+            
         }
         else 
         {

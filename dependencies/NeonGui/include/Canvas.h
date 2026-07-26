@@ -86,6 +86,7 @@ public:
     void SetKeyInputCallback(void(*keyCallback)(void*,int,int,int)){_keyCallback = keyCallback;}
     void SetUpdateCallback(void(*updateCallback)(void*,float)){_updateCallback = updateCallback;}
     void SetMouseMoveCallback(void(*mouseMoveCallback)(void*,float,float)){_mouseMoveCallback = mouseMoveCallback;}
+    void SetMouseClickCallback(void(*mouseClickCallback)(void*,int,int)){_mouseClickCallback = mouseClickCallback;}
 
 protected:
     void CanvasResize();

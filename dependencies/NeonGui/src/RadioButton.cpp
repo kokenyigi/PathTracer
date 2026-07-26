@@ -33,6 +33,17 @@ void RadioButton::SetToggledOff()
     }
 }
 
+void RadioButton::ImitateToggle()
+{
+    if(_groupContext != nullptr && _groupContext->_currentToggled != this &&
+         _callBackContext != nullptr && _groupContext->_callBack != nullptr)
+    {
+        SetToggledOn();
+
+        _groupContext->_callBack(_callBackContext,_index);
+    }   
+}
+
 bool RadioButton::RadioButtonClick(int button, int action)
 {
     //ControlClick(button, action);

@@ -233,8 +233,65 @@ void Scene::Init()
     _renderFrameBuffer.AttachTexture(_renderTexture);
     _renderFrameBuffer.AttachRenderBuffer(_renderBuffer);
 
-   
+    //quickly print an .obj file
+    /*
+    std::ofstream ringObj("assets/models/ring.obj");
 
+    float height = 1.0f/32.0f;
+    float width = 1.0f/8.0f;
+    int detailLevel = 5;
+
+    
+
+    float pi = CL_M_PI;
+    int circleSegmentCount = 4 << (detailLevel);
+    float radiusOuter = 1.0f;
+    float radiusInner = 1.0f - height;
+
+    float unitSegmentRadian = pi * 2.0f / circleSegmentCount;
+    for(int i=0;i<circleSegmentCount;++i)
+    {
+        float currentSegmentRadian = unitSegmentRadian * i;
+
+        float yOuter = sin(currentSegmentRadian) * radiusOuter;
+        float yInner = sin(currentSegmentRadian) * radiusInner;
+
+        float zOuter = cos(currentSegmentRadian) * radiusOuter;
+        float zInner = cos(currentSegmentRadian) * radiusInner;
+
+        //Pushing first vert
+        ringObj << "v " << width * 0.5f << " " << yOuter << " " << zOuter<<"\n";
+        ringObj << "v " << -width * 0.5f << " " << yOuter << " " << zOuter<<"\n";
+        ringObj << "v " << -width * 0.5f << " " << yInner << " " << zInner<<"\n";
+        ringObj << "v " << width * 0.5f << " " << yInner << " " << zInner<<"\n";
+    }
+
+    for(int i=0;i<circleSegmentCount;++i)
+    {
+        int currentFirst = i*4 + 1;
+        int currentSecond = i*4 + 2;
+        int currentThird = i* 4 + 3;
+        int currentFourth = i*4 + 4;
+
+        int nextSegment = (i + 1) % circleSegmentCount;
+
+        int currentFifth = nextSegment * 4 + 1;
+        int currentSixth= nextSegment * 4 + 2;
+        int currentSeventh= nextSegment * 4 + 3;
+        int currentEighth= nextSegment * 4 + 4;
+
+        ringObj << "f " << currentFirst << "// " << currentFifth << "// " << currentSixth<<"// " << currentSecond<<"//\n";
+        ringObj << "f " << currentFirst << "// " << currentFourth << "// " << currentEighth<<"// " << currentFifth<<"//\n";
+        ringObj << "f " << currentFourth << "// " << currentThird << "// " << currentSeventh<<"// " << currentEighth<<"//\n";
+        ringObj << "f " << currentThird << "// " << currentSecond << "// " << currentSixth<<"// " << currentSeventh<<"//\n";
+    }
+
+
+
+
+
+    ringObj.close();
+    */
     InitCL();
 }
 
@@ -381,6 +438,26 @@ void Scene::MouseMove(float newX, float newY)
 
             _camera.Rotate(dx,dy);
             ResetPathTracedFrameIndex();
+        }
+    }
+}
+
+void Scene::MouseClick(int button, int action, PickResult* pickResult)
+{
+    if(button == 0 && action == 0) // if left click
+    {
+        int x = _currentMousePos.x;
+        int y = _currentMousePos.y;
+
+        if(x >= 0 && x < _viewportWidth && y >= 0 && y < _viewportHeight)
+        {
+            //std::cout<< "Picking starts at x: " << x << " and y: "<<y<<"\n";
+            
+            PickScene(x,y,pickResult);
+            if(pickResult->type == PickResultType::OBJECT)
+            {
+                std::cout<<"Picked object with id: " << pickResult->pickedObjectIndex<<"\n";
+            }
         }
     }
 }
@@ -1116,15 +1193,17 @@ void Scene::RecalculateWorldTransformOfObject(int objectIndex)
     glm::vec3 scale = _objectTransforms[objectIndex].scale;
     glm::vec3 rotation = _objectTransforms[objectIndex].rotation;
 
-    glm::mat4 rotationTransform = glm::rotate(glm::mat4(1.0f),glm::radians(rotation.x),glm::vec3(1,0,0)) * 
-        glm::rotate(glm::mat4(1.0f),glm::radians(rotation.y),glm::vec3(0,1,0)) * 
-        glm::rotate(glm::mat4(1.0f),glm::radians(rotation.z),glm::vec3(0,0,1));
+    _objectTransforms[objectIndex].internalRotation = glm::quat(glm::radians(rotation));
+
+    glm::mat4 rotationTransform = glm::mat4_cast( _objectTransforms[objectIndex].internalRotation);
 
     glm::mat4 worldTransform = glm::translate(glm::mat4(1.0f),position) * rotationTransform * glm::scale(glm::mat4(1.0f),scale);
 
     _objectDatas[objectIndex].worldTransform = worldTransform;
     _objectDatas[objectIndex].invWorldTransform = glm::inverse(worldTransform);
 }
+
+
 
 bool Scene::TryAddObject(ObjectInfo *objectInfo)
 {
@@ -1214,4 +1293,223 @@ bool Scene::TryDeleteObject(int objectIndex)
     }
 
     return false;
+}
+
+float Scene::IntersectTriangle(const Ray &ray, const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2)
+{
+    float retval;
+	retval = ray.tMax + 0.000001f;
+
+	glm::vec3 v01 = p1 - p0;
+	glm::vec3 v02 = p2 - p0;
+
+	//Firstly we calculate our main denominator determinant
+	glm::vec3 dirXv02 = glm::cross(ray.direction, v02);
+	float baseDeterminant = glm::dot(v01, dirXv02);
+
+	//Early exit if this determinant is pretty small -> means v01, v02, D are linearly codependent
+	//This mainly happens when D is paralell to the triangle's plane
+	if (fabs(baseDeterminant) < 1e-8f) return retval;
+	float invBaseDeterminant = 1.0f / baseDeterminant;
+
+	glm::vec3 b = ray.origin - p0;
+	float u = glm::dot(b, dirXv02) * invBaseDeterminant;
+	if (u < 0.0f || u>1.0f) return retval;
+
+	//This is important, we have this exact order here because we got rid of the minus sign in front of t
+	glm::vec3  bXv01= glm::cross(b, v01);
+	float v = glm::dot(ray.direction,bXv01) * invBaseDeterminant;
+	if (v < 0.0f || u + v > 1.0f) return retval;
+
+	float t = glm::dot(v02,bXv01)*invBaseDeterminant;
+
+	retval = t;	
+
+	return retval;
+}
+
+float Scene::IntersectBox(const Ray &ray, const AABB4 &box)
+{
+    float retval;
+    retval = FLT_MAX;
+
+    float tFar = FLT_MAX;
+    float tNear = -FLT_MAX;
+
+    for(int axis = 0; axis < 3; ++axis)
+    {
+        float tLowOnAxis;
+        float tHighOnAxis;
+        tLowOnAxis = (box.min[axis] - ray.origin[axis])*ray.invDirection[axis];
+        tHighOnAxis = (box.max[axis] - ray.origin[axis])*ray.invDirection[axis];
+
+        float tNearOnAxis = fmin(tLowOnAxis,tHighOnAxis);
+        float tFarOnAxis = fmax(tLowOnAxis,tHighOnAxis);
+
+        tNear = fmax(tNear,tNearOnAxis);
+        tFar = fmin(tFar,tFarOnAxis);
+
+        if(tNear > tFar)
+        {
+            return retval;
+        }
+    }
+
+    if(tFar < 0)
+    {
+        return retval; //nohit
+    }
+    else
+    {
+        retval = fmax(tNear,0.0f);
+        return retval;
+    }
+}
+
+float Scene::IntersectBvhNodeRecursive(Ray &ray, 
+    const std::vector<VertexPositionData> &vertexPositions, 
+    const std::vector<TriangleIndicesData> &triangleVertexIndices, 
+    const std::vector<BvhNodeData> &bvhNodeDatas, const int meshBvhRootIndex)
+{
+    float retval;
+    retval = ray.tMax;
+    
+    BvhNodeData bvhNode = bvhNodeDatas[meshBvhRootIndex];
+    float boxResult = IntersectBox(ray, bvhNode.box);
+
+    if (boxResult > ray.tMin && boxResult < ray.tMax)
+    {
+        //We hit the box
+        if (bvhNode.minChild == -1 && bvhNode.maxChild == -1)
+        {
+            //If the node is a child
+            for (int i = bvhNode.startIndex;i < bvhNode.endIndex;++i)
+            {
+                glm::ivec3 triagIndices = glm::ivec3(triangleVertexIndices[i].x, triangleVertexIndices[i].y, triangleVertexIndices[i].z);
+
+                glm::vec3 triagP0 = glm::vec3(vertexPositions[triagIndices.x].x,
+                    vertexPositions[triagIndices.x].y,
+                    vertexPositions[triagIndices.x].z);
+
+                glm::vec3 triagP1 = glm::vec3(vertexPositions[triagIndices.y].x,
+                    vertexPositions[triagIndices.y].y,
+                    vertexPositions[triagIndices.y].z);
+
+                glm::vec3 triagP2 = glm::vec3(vertexPositions[triagIndices.z].x,
+                    vertexPositions[triagIndices.z].y,
+                    vertexPositions[triagIndices.z].z);
+
+                float triagResult = IntersectTriangle(ray, triagP0, triagP1, triagP2);
+                if (triagResult > ray.tMin && triagResult < ray.tMax && retval > triagResult)
+                {
+                    retval = triagResult;
+                    ray.tMax = triagResult;
+                }
+            }
+        }
+        else
+        {
+            //if the node is an inner node
+            //we go further down the recursion
+            float minChildBoxResult = IntersectBox(ray, bvhNodeDatas[bvhNode.minChild].box);
+            float maxChildBoxResult = IntersectBox(ray, bvhNodeDatas[bvhNode.maxChild].box);
+
+            float minResult = ray.tMax;
+            float maxResult = ray.tMax;
+            if(minChildBoxResult < ray.tMax && maxChildBoxResult < ray.tMax)
+            {
+                if(minChildBoxResult < maxChildBoxResult)
+                {
+                    minResult = IntersectBvhNodeRecursive(ray,vertexPositions,triangleVertexIndices,bvhNodeDatas,bvhNode.minChild);
+                    maxResult = IntersectBvhNodeRecursive(ray,vertexPositions,triangleVertexIndices,bvhNodeDatas,bvhNode.maxChild);
+                }
+                else
+                {
+                    maxResult = IntersectBvhNodeRecursive(ray,vertexPositions,triangleVertexIndices,bvhNodeDatas,bvhNode.maxChild);
+                    minResult = IntersectBvhNodeRecursive(ray,vertexPositions,triangleVertexIndices,bvhNodeDatas,bvhNode.minChild);
+                }
+                
+            }
+            else if(minChildBoxResult < ray.tMax)
+            {
+                minResult = IntersectBvhNodeRecursive(ray,vertexPositions,triangleVertexIndices,bvhNodeDatas,bvhNode.minChild);
+            }
+            else if(maxChildBoxResult < ray.tMax)
+            {
+                maxResult = IntersectBvhNodeRecursive(ray,vertexPositions,triangleVertexIndices,bvhNodeDatas,bvhNode.maxChild);
+            }
+
+            retval = fmin(minResult,maxResult);
+        }
+    }
+
+    return retval;
+}
+
+float Scene::IntersectObject(const Ray &ray, 
+    const std::vector<VertexPositionData> &vertexPositions, 
+    const std::vector<TriangleIndicesData> &triangleVertexIndices, 
+    const std::vector<BvhNodeData> &bvhNodeDatas, const int meshBvhRootIndex, 
+    const glm::mat4 &inverseWorldTransform)
+{
+    Ray transformedRay;
+    transformedRay.tMin = ray.tMin;
+    transformedRay.tMax = ray.tMax;
+    transformedRay.origin = glm::vec3(inverseWorldTransform * glm::vec4(ray.origin, 1.0f));
+    transformedRay.direction = glm::vec3(inverseWorldTransform * glm::vec4(ray.direction, 0.0f));
+    transformedRay.invDirection = 1.0f / transformedRay.direction;
+
+    float retval = ray.tMax;
+
+    float meshResult = IntersectBvhNodeRecursive(transformedRay, vertexPositions,triangleVertexIndices,bvhNodeDatas,meshBvhRootIndex);
+    if (meshResult > ray.tMin && meshResult < ray.tMax)
+    {
+        retval = meshResult;
+    }
+
+    return retval;
+}
+
+void Scene::PickScene(int x, int y, PickResult *pickResult)
+{
+    //calculating with ndc-like coordiantes is really easy, currently our origo is in the left upper corner, 
+    //   so we have to get it to the left bottom corner.
+    glm::vec2 pixelCoordInLeftBottomSystem = glm::vec2(x,_viewportHeight - y);
+
+    float halfWorldViewPortWidth =  tan(glm::radians(_camera.GetFovx()) * 0.5f );
+    float halfWorldViewPortHeight = halfWorldViewPortWidth / _camera.GetAspect();
+
+    glm::vec2 pixelMidCoordsNdc;
+    pixelMidCoordsNdc.x = (((float)pixelCoordInLeftBottomSystem.x + 0.5f) / _viewportWidth) * 2.0f - 1.0f;
+    pixelMidCoordsNdc.y = (((float)pixelCoordInLeftBottomSystem.y + 0.5f) / _viewportHeight) * 2.0f - 1.0f;
+
+    glm::vec3 rayDirection = _camera.GetFront() - 
+        pixelMidCoordsNdc.x * halfWorldViewPortWidth * _camera.GetRight() +
+        pixelMidCoordsNdc.y * halfWorldViewPortHeight * _camera.GetUp();
+
+    Ray pickRay;
+    pickRay.origin = _camera.GetPosition();
+    pickRay.direction = glm::normalize(rayDirection);
+    pickRay.tMin = _camera.GetZNear();
+    pickRay.tMax = _camera.GetZFar();
+    pickRay.invDirection = 1.0f / pickRay.direction;
+
+    float retval = pickRay.tMax;
+    int pickedObjectIndex = -1;
+    for(int i=0;i<_objectDatas.size();++i)
+    {
+        float currentObjectResult = IntersectObject(pickRay,_vertexPositionData,_triangleIndicesData,_bottomLevelBvhNodeDatas,
+            _meshBvhRootIndexData[_modelDatas[_objectDatas[i].modelIndex].meshIndex],_objectDatas[i].invWorldTransform);
+        if(currentObjectResult > pickRay.tMin && currentObjectResult < pickRay.tMax && currentObjectResult < retval)
+        {
+            retval = currentObjectResult;
+            pickedObjectIndex = i;
+        }
+    }
+
+    if(pickedObjectIndex >= 0)
+    {
+        pickResult->type = PickResultType::OBJECT;
+        pickResult->pickedObjectIndex = pickedObjectIndex;
+    }
 }

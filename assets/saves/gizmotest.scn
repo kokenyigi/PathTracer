@@ -1,0 +1,24 @@
+mesh arrowhead.obj arrowhead.obj
+mesh cubehead.obj cubehead.obj
+mesh ring.obj ring.obj
+mat 1 0 0 -1 0 0 0 0 0 0 0 1 red
+mat 0 1 0 -1 0 0 0 0 0 0 0 1 green
+mat 0 0 1 -1 0 0 0 0 0 0 0 1 blue
+mod 0 0 redArrow
+mod 0 1 greenArrow
+mod 0 2 blueArrow
+mod 1 0 redCube
+mod 1 1 greenCube
+mod 1 2 blueCube
+mod 2 0 redRing
+mod 2 1 greenRing
+mod 2 2 blueRing
+obj 0 0 0 0 1 1 1 0 0 0 0
+obj 1 0 0 0 1 1 1 90 0 90 1
+obj 2 0 0 0 1 1 1 0 270 270 2
+obj 3 -2 0 0 1 1 1 0 0 0 3
+obj 4 -2 0 0 1 1 1 90 0 90 4
+obj 5 -2 0 0 1 1 1 270 270 0 5
+obj 6 2 0 0 1 1 0.997 0 0 0 6
+obj 7 2 0 0 1 1 1 0 0 90 7
+obj 8 2 0 0 1 0.997 0.997 0 90 0 8
