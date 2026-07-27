@@ -2646,6 +2646,8 @@ void App::MainButtonsNeonGUICallback(void *context, int index)
 	app->chosenMaterialGroup.SetToggledOff();
 	app->chosenModelGroup.SetToggledOff();
 	app->chosenObjectGroup.SetToggledOff();
+	app->_scene.ChooseObject(-1);
+	app->chosenObjectIndex = -1;
 
 	if(index == 0)
 	{
@@ -3314,6 +3316,8 @@ void App::ChosenObjectButtonCallback(void *context, int objectIndex)
 	app->sliderYRot.SetSliderValue(storedObjectState.transform.rotation.y / 360.0f);
 	app->inputZRot.SetFloat(storedObjectState.transform.rotation.z);
 	app->sliderZRot.SetSliderValue(storedObjectState.transform.rotation.z / 360.0f);
+
+	app->_scene.ChooseObject(objectIndex);
 }
 
 void App::ModelIndexChosenDropdownCallback(void *context, int chosenOptionIndex)

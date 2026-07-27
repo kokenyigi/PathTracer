@@ -330,12 +330,14 @@ private:
 
     bool _isRenderingPathTraced = true;
 
+
     // Gizmo-related informations
     bool _isGizmoVisible = false;
     int _objectWithGizmoIndex = -1;
     GizmoType _currentGizmoType = GizmoType::GIZMO_TRANSLATION;
     bool _isMouseDown = false;
 
+    const float sizeK = 0.08f;
     Shader _gizmoShader;
     Mesh<VertexP3N3T2> _arrowGizmoMesh;
     glm::mat4 _arrowGizmoModelTransforms[3];
@@ -343,6 +345,12 @@ private:
     glm::mat4 _cubeGizmoModelTransforms[3];
     Mesh<VertexP3N3T2> _ringGizmoMesh;
     glm::mat4 _ringGizmoModelTransforms[3];
+
+    std::vector<VertexPositionData> _gizmoVertexPositionDatas;
+    std::vector<TriangleIndicesData> _gizmoTriangleVertexIndices;
+    std::vector<BvhNodeData> _gizmoBvhNodeDatas;
+    std::vector<int> _gizmoMeshBvhRoots;
+    int _currentlyHighlightedGizmoAxis = -1;
 
     /**
      * Here lie the variables which are necessary for the Pathtraced rendering.

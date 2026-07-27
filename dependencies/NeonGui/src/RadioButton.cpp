@@ -27,7 +27,7 @@ void RadioButton::SetToggledOn()
 void RadioButton::SetToggledOff()
 {
     isClicked = false;
-    if(_groupContext != nullptr)
+    if(_groupContext != nullptr && _groupContext->_currentToggled == this)
     {
         _groupContext->_currentToggled = nullptr;
     }

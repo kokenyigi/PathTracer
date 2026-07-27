@@ -251,12 +251,71 @@ void Scene::Init()
         glm::rotate(glm::mat4(1.0f),glm::radians(270.0f),glm::vec3(1,0,0));
 
     _ringGizmoMesh.Load("assets/models/ring.obj");
-    _cubeGizmoModelTransforms[0] = glm::mat4(1.0f);
-    _cubeGizmoModelTransforms[1] = glm::scale(glm::mat4(1.0f),glm::vec3(1,1,0.997)) *
+    _ringGizmoModelTransforms[0] = glm::mat4(1.0f);
+    _ringGizmoModelTransforms[1] = glm::scale(glm::mat4(1.0f),glm::vec3(1,1,0.997)) *
         glm::rotate(glm::mat4(1.0f),glm::radians(90.0f),glm::vec3(0,0,1));
-    _cubeGizmoModelTransforms[2] = glm::scale(glm::mat4(1.0f),glm::vec3(1,0.997,0.997)) * 
+    _ringGizmoModelTransforms[2] = glm::scale(glm::mat4(1.0f),glm::vec3(1,0.997,0.997)) * 
         glm::rotate(glm::mat4(1.0f),glm::radians(90.0f),glm::vec3(0,1,0));
 
+    std::vector<VertexAttributeData> dummyAttrVec;
+    std::vector<VertexPositionData> tempPositionalData;
+    std::vector<TriangleIndicesData> tempTriangleIndices;
+    std::vector<BvhNodeData> tempBvhNodeData;
+
+    
+    TryLoadPathTracedMesh("assets/models/arrowhead.obj",tempPositionalData,tempTriangleIndices,dummyAttrVec,tempBvhNodeData,nullptr);
+
+    _gizmoVertexPositionDatas.insert(_gizmoVertexPositionDatas.end(),tempPositionalData.begin(),tempPositionalData.end());
+    _gizmoTriangleVertexIndices.insert(_gizmoTriangleVertexIndices.end(),tempTriangleIndices.begin(),tempTriangleIndices.end());
+    _gizmoMeshBvhRoots.push_back(_gizmoBvhNodeDatas.size());
+    _gizmoBvhNodeDatas.insert(_gizmoBvhNodeDatas.end(),tempBvhNodeData.begin(),tempBvhNodeData.end());
+
+    
+    
+    TryLoadPathTracedMesh("assets/models/cubehead.obj",tempPositionalData,tempTriangleIndices,dummyAttrVec,tempBvhNodeData,nullptr);
+    for(int i=0;i<tempTriangleIndices.size();++i)
+    {
+        tempTriangleIndices[i].x += _gizmoVertexPositionDatas.size();
+        tempTriangleIndices[i].y += _gizmoVertexPositionDatas.size();
+        tempTriangleIndices[i].z += _gizmoVertexPositionDatas.size();
+    }
+    for(int i=0;i<tempBvhNodeData.size();++i)
+    {
+        tempBvhNodeData[i].startIndex += _gizmoTriangleVertexIndices.size();
+        tempBvhNodeData[i].endIndex += _gizmoTriangleVertexIndices.size();
+        if(tempBvhNodeData[i].minChild >= 0)
+        {
+            tempBvhNodeData[i].minChild += _gizmoBvhNodeDatas.size();
+            tempBvhNodeData[i].maxChild += _gizmoBvhNodeDatas.size();
+        }
+        
+    }
+    _gizmoVertexPositionDatas.insert(_gizmoVertexPositionDatas.end(),tempPositionalData.begin(),tempPositionalData.end());
+    _gizmoTriangleVertexIndices.insert(_gizmoTriangleVertexIndices.end(),tempTriangleIndices.begin(),tempTriangleIndices.end());
+    _gizmoMeshBvhRoots.push_back(_gizmoBvhNodeDatas.size());
+    _gizmoBvhNodeDatas.insert(_gizmoBvhNodeDatas.end(),tempBvhNodeData.begin(),tempBvhNodeData.end());
+
+    TryLoadPathTracedMesh("assets/models/ring.obj",tempPositionalData,tempTriangleIndices,dummyAttrVec,tempBvhNodeData,nullptr);
+    for(int i=0;i<tempTriangleIndices.size();++i)
+    {
+        tempTriangleIndices[i].x += _gizmoVertexPositionDatas.size();
+        tempTriangleIndices[i].y += _gizmoVertexPositionDatas.size();
+        tempTriangleIndices[i].z += _gizmoVertexPositionDatas.size();
+    }
+    for(int i=0;i<tempBvhNodeData.size();++i)
+    {
+        tempBvhNodeData[i].startIndex += _gizmoTriangleVertexIndices.size();
+        tempBvhNodeData[i].endIndex += _gizmoTriangleVertexIndices.size();
+        if(tempBvhNodeData[i].minChild >= 0)
+        {
+            tempBvhNodeData[i].minChild += _gizmoBvhNodeDatas.size();
+            tempBvhNodeData[i].maxChild += _gizmoBvhNodeDatas.size();
+        }
+    }
+    _gizmoVertexPositionDatas.insert(_gizmoVertexPositionDatas.end(),tempPositionalData.begin(),tempPositionalData.end());
+    _gizmoTriangleVertexIndices.insert(_gizmoTriangleVertexIndices.end(),tempTriangleIndices.begin(),tempTriangleIndices.end());
+    _gizmoMeshBvhRoots.push_back(_gizmoBvhNodeDatas.size());
+    _gizmoBvhNodeDatas.insert(_gizmoBvhNodeDatas.end(),tempBvhNodeData.begin(),tempBvhNodeData.end());
     
 
     //quickly print an .obj file
@@ -456,16 +515,39 @@ void Scene::RenderGizmo()
     for(int i=0;i<3;++i)
     {
         glm::vec3 color = glm::vec3(0);
+        
         color[i] = 0.9;
+        if(i == _currentlyHighlightedGizmoAxis)color[i] = 0;
         _gizmoShader.SetUniform<glm::vec3>("uColor",color);
 
         int objectIndex = _objectWithGizmoIndex;
+        Mesh<VertexP3N3T2>* meshPointer = nullptr;
+        glm::mat4 gizmoTypeTransform;
+        if(_currentGizmoType == GizmoType::GIZMO_TRANSLATION)
+        {
+            meshPointer = &_arrowGizmoMesh;
+            gizmoTypeTransform = _arrowGizmoModelTransforms[i];
+        }
+        else if(_currentGizmoType == GizmoType::GIZMO_SCALE)
+        {
+            meshPointer = &_cubeGizmoMesh;
+            gizmoTypeTransform = _cubeGizmoModelTransforms[i];
+        }
+        else
+        {
+            meshPointer = &_ringGizmoMesh;
+            gizmoTypeTransform = glm::mat4_cast(_objectTransforms[objectIndex].internalRotation) * _ringGizmoModelTransforms[i];
+        }
+
+        float objectDistanceFromCamera = glm::length( _camera.GetPosition() -  _objectTransforms[objectIndex].position);
+
         glm::mat4 finalWorldTransform = glm::translate(glm::mat4(1.0f),_objectTransforms[objectIndex].position) *
-            glm::mat4_cast(_objectTransforms[objectIndex].internalRotation) * 
-            _arrowGizmoModelTransforms[i];
+            glm::scale(glm::mat4(1.0f),glm::vec3(objectDistanceFromCamera * sizeK)) *
+            gizmoTypeTransform;
+
         _gizmoShader.SetUniform<glm::mat4>("uWorldTransform",finalWorldTransform);
 
-        _arrowGizmoMesh.Draw();
+        meshPointer->Draw();
     }
 	
 
@@ -489,6 +571,7 @@ void Scene::Update(float deltaTime)
 void Scene::MouseMove(float newX, float newY)
 {
     _currentMousePos = glm::vec2(newX,newY);
+    _currentlyHighlightedGizmoAxis = -1;
 
     if(_isFreeCam)
     {
@@ -506,6 +589,16 @@ void Scene::MouseMove(float newX, float newY)
 
             _camera.Rotate(dx,dy);
             ResetPathTracedFrameIndex();
+        }
+    }
+    else
+    {
+        PickResult currentGizmoPickResult;
+        PickCurrentGizmo(newX,newY,&currentGizmoPickResult);
+        if(currentGizmoPickResult.type == PickResultType::GIZMO && currentGizmoPickResult.pickedIndex >= 0)
+        {
+            _currentlyHighlightedGizmoAxis = currentGizmoPickResult.pickedIndex;
+            //std::cout<< "Currently Highlighted axis: " << _currentlyHighlightedGizmoAxis << "\n";
         }
     }
 }
@@ -586,6 +679,22 @@ void Scene::KeyInput(int key, int action, int mods)
         {
             _isFreeCam = true;
             _isMouseFirstPos = true;
+        }
+    }
+
+    if(action == 1)
+    {
+        if(key == 49) // pressed 1
+        {
+            _currentGizmoType = GizmoType::GIZMO_TRANSLATION;
+        }
+        else if(key == 50) // pressed 2
+        {
+            _currentGizmoType = GizmoType::GIZMO_SCALE;
+        }
+        else if(key == 51) // pressed 3
+        {
+            _currentGizmoType = GizmoType::GIZMO_ROTATION;
         }
     }
 }
@@ -920,7 +1029,7 @@ bool Scene::TryLoadPathTracedMesh(const std::string &filePathRelative,
     }
 
     // We push the root to the bvhNodeStorage, then recursively try to split it.
-    newMeshBvhNodes.push_back(meshRootNode); meshInfo->bvhDepth = 0;
+    newMeshBvhNodes.push_back(meshRootNode);if(meshInfo != nullptr) meshInfo->bvhDepth = 0;
     SplitBvhNodeRecursive(0,0,newVertexPositions,newMeshBvhNodes,newTriangleVertexIndices,meshInfo);
 
     //Now that our triangle indices are finalized, we can copy them into the proper arrays.
@@ -1363,6 +1472,7 @@ bool Scene::TryDeleteObject(int objectIndex)
         _objectTransforms.pop_back();
 
         ResetPathTracedFrameIndex();
+        ChooseObject(-1);
         
         return true;
     }
@@ -1608,5 +1718,68 @@ void Scene::PickScene(int x, int y, PickResult *pickResult)
     {
         pickResult->type = PickResultType::OBJECT;
         pickResult->pickedIndex = pickedObjectIndex;
+    }
+}
+
+void Scene::PickCurrentGizmo(int x, int y, PickResult *pickResult)
+{
+    if(!_isGizmoVisible || _objectWithGizmoIndex < 0 || _objectWithGizmoIndex >= _objectDatas.size()) return;
+
+    if(!(x >= 0 && x < _viewportWidth && y >= 0 && y < _viewportHeight)) return;
+
+    Ray pickRay;
+    pickRay.origin = _camera.GetPosition();
+    pickRay.direction = CalculateRayDirection(x,y);
+    pickRay.tMin = 0;
+    pickRay.tMax = _camera.GetZFar();
+    pickRay.invDirection = 1.0f / pickRay.direction;
+
+    float bestResult = pickRay.tMax;
+    int pickedAxisIndex = -1;
+
+    int objectIndex = _objectWithGizmoIndex;
+    int gizmoMeshBvhRootIndex = _gizmoMeshBvhRoots[(int)_currentGizmoType];
+    
+    glm::mat4 gizmoTypeTransform(1.0f);
+    for(int axis = 0;axis<3;++axis)
+    {
+        if(_currentGizmoType == GizmoType::GIZMO_TRANSLATION)
+        {
+            gizmoTypeTransform = _arrowGizmoModelTransforms[axis];
+        }
+        else if(_currentGizmoType == GizmoType::GIZMO_SCALE)
+        {
+            gizmoTypeTransform = _cubeGizmoModelTransforms[axis];
+        }
+        else
+        {
+            gizmoTypeTransform =  glm::mat4_cast(_objectTransforms[objectIndex].internalRotation) * _ringGizmoModelTransforms[axis];
+            //std::cout<<"Picking ring\n";
+        }
+
+        
+        float objectDistanceFromCamera = glm::length( _camera.GetPosition() -  _objectTransforms[objectIndex].position);
+
+        glm::mat4 finalWorldTransform = glm::translate(glm::mat4(1.0f),_objectTransforms[objectIndex].position) *
+            glm::scale(glm::mat4(1.0f),glm::vec3(objectDistanceFromCamera * sizeK)) *
+            gizmoTypeTransform;
+
+        glm::mat4 inverseFinalWorldTransform = glm::inverse(finalWorldTransform);
+
+        float rayIntersectAxisResult = IntersectObject(pickRay,_gizmoVertexPositionDatas,_gizmoTriangleVertexIndices,_gizmoBvhNodeDatas,
+            gizmoMeshBvhRootIndex,inverseFinalWorldTransform);
+        
+        if(rayIntersectAxisResult > pickRay.tMin && rayIntersectAxisResult < pickRay.tMax && rayIntersectAxisResult < bestResult)
+        {
+            bestResult = rayIntersectAxisResult;
+            pickedAxisIndex = axis;
+        }
+    }
+    
+
+    if(pickedAxisIndex >= 0)
+    {
+        pickResult->type = PickResultType::GIZMO;
+        pickResult->pickedIndex = pickedAxisIndex;
     }
 }
