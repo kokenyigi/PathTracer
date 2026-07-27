@@ -2731,10 +2731,19 @@ void App::CanvasMouseClickCallback(void *context, int button, int action)
 {
 	App* app = (App*)context;
 
-	PickResult scenePickResult;
-	app->_scene.MouseClick(button,action,&scenePickResult);
+	ObjectPickInfo scenePickInfo;
+	app->_scene.MouseClick(button,action,&scenePickInfo);
 
-
+	if(scenePickInfo.pickedObjectIndex != -1)
+	{
+		int objInd = scenePickInfo.pickedObjectIndex;
+		if(app->chosenObjectIndex != objInd)
+		{
+			app->objectButton.ImitateToggle();
+			RadioButton* objectRadioButton = (RadioButton*)app->objectPanel.GetChildren()[1 + objInd];
+			objectRadioButton->ImitateToggle();
+		}
+	}
 }
 
 void App::LoadMeshButtonCallback(void *context)

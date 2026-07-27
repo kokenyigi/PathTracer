@@ -233,6 +233,32 @@ void Scene::Init()
     _renderFrameBuffer.AttachTexture(_renderTexture);
     _renderFrameBuffer.AttachRenderBuffer(_renderBuffer);
 
+
+    _gizmoShader.Init("assets/shaders/gizmo_pos_norm_tex.vert","assets/shaders/gizmo_pos_norm_tex.frag");
+
+    _arrowGizmoMesh.Load("assets/models/arrowhead.obj");
+    _arrowGizmoModelTransforms[0] = glm::mat4(1.0f);
+    _arrowGizmoModelTransforms[1] = glm::rotate(glm::mat4(1.0f),glm::radians(90.0f),glm::vec3(0,0,1)) * 
+        glm::rotate(glm::mat4(1.0f),glm::radians(90.0f),glm::vec3(1,0,0));
+    _arrowGizmoModelTransforms[2] = glm::rotate(glm::mat4(1.0f),glm::radians(270.0f),glm::vec3(0,1,0)) * 
+        glm::rotate(glm::mat4(1.0f),glm::radians(270.0f),glm::vec3(1,0,0));
+
+    _cubeGizmoMesh.Load("assets/models/cubehead.obj");
+    _cubeGizmoModelTransforms[0] = glm::mat4(1.0f);
+    _cubeGizmoModelTransforms[1] = glm::rotate(glm::mat4(1.0f),glm::radians(90.0f),glm::vec3(0,0,1)) * 
+        glm::rotate(glm::mat4(1.0f),glm::radians(90.0f),glm::vec3(1,0,0));
+    _cubeGizmoModelTransforms[2] = glm::rotate(glm::mat4(1.0f),glm::radians(270.0f),glm::vec3(0,1,0)) * 
+        glm::rotate(glm::mat4(1.0f),glm::radians(270.0f),glm::vec3(1,0,0));
+
+    _ringGizmoMesh.Load("assets/models/ring.obj");
+    _cubeGizmoModelTransforms[0] = glm::mat4(1.0f);
+    _cubeGizmoModelTransforms[1] = glm::scale(glm::mat4(1.0f),glm::vec3(1,1,0.997)) *
+        glm::rotate(glm::mat4(1.0f),glm::radians(90.0f),glm::vec3(0,0,1));
+    _cubeGizmoModelTransforms[2] = glm::scale(glm::mat4(1.0f),glm::vec3(1,0.997,0.997)) * 
+        glm::rotate(glm::mat4(1.0f),glm::radians(90.0f),glm::vec3(0,1,0));
+
+    
+
     //quickly print an .obj file
     /*
     std::ofstream ringObj("assets/models/ring.obj");
@@ -307,6 +333,9 @@ void Scene::Resize(int newWidth, int newHeight)
     _renderTexture.Resize(newWidth,newHeight);
     _renderBuffer.Resize(newWidth,newHeight);
 
+    _renderFrameBuffer.AttachTexture(_renderTexture);
+    _renderFrameBuffer.AttachRenderBuffer(_renderBuffer);
+
     _camera.Resize(newWidth,newHeight);
 
     _viewportWidth = newWidth;
@@ -332,6 +361,8 @@ void Scene::Render()
     {
         RasterizeRender();
     }
+
+    RenderGizmo();
 }
 
 void Scene::RasterizeRender()
@@ -406,7 +437,44 @@ void Scene::PathTracedRender()
     }
 }
 
+void Scene::RenderGizmo()
+{
+    if(!_isGizmoVisible || _objectWithGizmoIndex < 0 || _objectWithGizmoIndex >= _objectDatas.size()) return;
 
+    glViewport(0,0,_viewportWidth,_viewportHeight);
+    glEnable(GL_DEPTH_TEST);
+
+    _gizmoShader.Bind();
+
+    _renderFrameBuffer.Bind();
+
+    glClear( GL_DEPTH_BUFFER_BIT);
+
+    _gizmoShader.SetUniform<glm::mat4>("projectionTransform",_camera.GetPerspectiveMatrix());
+	_gizmoShader.SetUniform<glm::mat4>("viewTransform",_camera.GetViewMatrix());
+
+    for(int i=0;i<3;++i)
+    {
+        glm::vec3 color = glm::vec3(0);
+        color[i] = 0.9;
+        _gizmoShader.SetUniform<glm::vec3>("uColor",color);
+
+        int objectIndex = _objectWithGizmoIndex;
+        glm::mat4 finalWorldTransform = glm::translate(glm::mat4(1.0f),_objectTransforms[objectIndex].position) *
+            glm::mat4_cast(_objectTransforms[objectIndex].internalRotation) * 
+            _arrowGizmoModelTransforms[i];
+        _gizmoShader.SetUniform<glm::mat4>("uWorldTransform",finalWorldTransform);
+
+        _arrowGizmoMesh.Draw();
+    }
+	
+
+    _renderFrameBuffer.Unbind();
+
+    _gizmoShader.Unbind();
+
+    glDisable(GL_DEPTH_TEST);
+}
 
 void Scene::Update(float deltaTime)
 {
@@ -442,7 +510,7 @@ void Scene::MouseMove(float newX, float newY)
     }
 }
 
-void Scene::MouseClick(int button, int action, PickResult* pickResult)
+void Scene::MouseClick(int button, int action, ObjectPickInfo* objectPickInfo)
 {
     if(button == 0 && action == 0) // if left click
     {
@@ -452,11 +520,18 @@ void Scene::MouseClick(int button, int action, PickResult* pickResult)
         if(x >= 0 && x < _viewportWidth && y >= 0 && y < _viewportHeight)
         {
             //std::cout<< "Picking starts at x: " << x << " and y: "<<y<<"\n";
-            
-            PickScene(x,y,pickResult);
-            if(pickResult->type == PickResultType::OBJECT)
+            PickResult pickResult;
+            PickScene(x,y,&pickResult);
+            if(pickResult.type == PickResultType::OBJECT)
             {
-                std::cout<<"Picked object with id: " << pickResult->pickedObjectIndex<<"\n";
+                //std::cout<<"Picked object with id: " << pickResult->pickedObjectIndex<<"\n";
+                ChooseObject(pickResult.pickedIndex);
+
+                objectPickInfo->pickedObjectIndex = pickResult.pickedIndex;
+            }
+            else if(pickResult.type == PickResultType::NONE)
+            {
+                ChooseObject(-1);
             }
         }
     }
@@ -1295,6 +1370,23 @@ bool Scene::TryDeleteObject(int objectIndex)
     return false;
 }
 
+void Scene::ChooseObject(int objectIndex)
+{
+    if(objectIndex >= 0 && _objectDatas.size() > objectIndex)
+    {
+        // Set the gizmo and state to a specific object   
+        _isGizmoVisible = true; // set the gizmo to be visible
+        _objectWithGizmoIndex = objectIndex;
+    }
+    else
+    {
+        // Disable the gizmo, since nothing was chosen.
+        // But we keep the gizmo type
+        _isGizmoVisible = false;
+        _objectWithGizmoIndex = -1;
+    }
+}
+
 float Scene::IntersectTriangle(const Ray &ray, const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2)
 {
     float retval;
@@ -1470,7 +1562,7 @@ float Scene::IntersectObject(const Ray &ray,
     return retval;
 }
 
-void Scene::PickScene(int x, int y, PickResult *pickResult)
+glm::vec3 Scene::CalculateRayDirection(int x, int y)
 {
     //calculating with ndc-like coordiantes is really easy, currently our origo is in the left upper corner, 
     //   so we have to get it to the left bottom corner.
@@ -1487,9 +1579,14 @@ void Scene::PickScene(int x, int y, PickResult *pickResult)
         pixelMidCoordsNdc.x * halfWorldViewPortWidth * _camera.GetRight() +
         pixelMidCoordsNdc.y * halfWorldViewPortHeight * _camera.GetUp();
 
+    return glm::normalize(rayDirection);
+}
+
+void Scene::PickScene(int x, int y, PickResult *pickResult)
+{
     Ray pickRay;
     pickRay.origin = _camera.GetPosition();
-    pickRay.direction = glm::normalize(rayDirection);
+    pickRay.direction = CalculateRayDirection(x,y);
     pickRay.tMin = _camera.GetZNear();
     pickRay.tMax = _camera.GetZFar();
     pickRay.invDirection = 1.0f / pickRay.direction;
@@ -1510,6 +1607,6 @@ void Scene::PickScene(int x, int y, PickResult *pickResult)
     if(pickedObjectIndex >= 0)
     {
         pickResult->type = PickResultType::OBJECT;
-        pickResult->pickedObjectIndex = pickedObjectIndex;
+        pickResult->pickedIndex = pickedObjectIndex;
     }
 }

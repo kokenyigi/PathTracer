@@ -275,10 +275,9 @@ struct Ray
 
 enum class GizmoType
 {
-    GIZMO_NONE = 0,
-    GIZMO_TRANSLATION = 1,
-    GIZMO_SCALE = 2,
-    GIZMO_ROTATION = 3
+    GIZMO_TRANSLATION = 0,
+    GIZMO_SCALE = 1,
+    GIZMO_ROTATION = 2
 };
 
 enum class PickResultType
@@ -295,7 +294,17 @@ enum class PickResultType
 struct PickResult
 {
     PickResultType type = PickResultType::NONE;
+    int pickedIndex = -1;
+};
+
+struct ObjectPickInfo
+{
     int pickedObjectIndex = -1;
+};
+
+struct GizmoPickInfo
+{
+    int pickedGizmoIndex = -1;
 };
 
 /**
@@ -320,6 +329,20 @@ private:
     int _viewportHeight = 100;
 
     bool _isRenderingPathTraced = true;
+
+    // Gizmo-related informations
+    bool _isGizmoVisible = false;
+    int _objectWithGizmoIndex = -1;
+    GizmoType _currentGizmoType = GizmoType::GIZMO_TRANSLATION;
+    bool _isMouseDown = false;
+
+    Shader _gizmoShader;
+    Mesh<VertexP3N3T2> _arrowGizmoMesh;
+    glm::mat4 _arrowGizmoModelTransforms[3];
+    Mesh<VertexP3N3T2> _cubeGizmoMesh;
+    glm::mat4 _cubeGizmoModelTransforms[3];
+    Mesh<VertexP3N3T2> _ringGizmoMesh;
+    glm::mat4 _ringGizmoModelTransforms[3];
 
     /**
      * Here lie the variables which are necessary for the Pathtraced rendering.
@@ -369,8 +392,9 @@ private:
     FrameBuffer _renderFrameBuffer;
 
     std::vector<Mesh<VertexP3N3T2,Triangles>> _rasterizedMeshes;
-
     std::vector<Texture> _rasterizedTextures;
+
+    
     
     //OpenCL related variables
     cl_platform_id clPlatform;
@@ -394,7 +418,7 @@ public:
     void Render();
     void Update(float deltaTime);
     void MouseMove(float newX, float newY);
-    void MouseClick(int button, int action, PickResult* pickResult);
+    void MouseClick(int button, int action, ObjectPickInfo* pickInfo);
     void MouseWheel(float amount, int direction);
     void KeyInput(int key, int action, int mods);
 
@@ -443,7 +467,7 @@ public:
     bool GetObjectState(int objectIndex, ObjectState* objectState); // getter for objectState
     bool TryAlterObject(int objectIndex, const ObjectState& alteredObjectState); //also writes data to GPU
     bool TryDeleteObject(int objectIndex); // Back-swaps object, and erases end element
-
+    void ChooseObject(int objectIndex);
 
     /**
      * This functions resets all buffers and vectors, and every single memory 
@@ -461,6 +485,8 @@ private:
 
     void RasterizeRender();
     void PathTracedRender();
+
+    void RenderGizmo();
 
     /**
      * This helper function basically tries to load, and preprocess the necessary data for a pathtraced mesh
@@ -528,7 +554,11 @@ private:
         const int meshBvhRootIndex,
         const glm::mat4& inverseWorldTransform);
 
+    // Based on camera and the properties of the window, it calculates the ray direction
+    glm::vec3 CalculateRayDirection(int x, int y);
+
     void PickScene( int x, int y, PickResult* pickResult);
+    void PickCurrentGizmo(int x, int y,PickResult* pickResult);
 };
 
 
