@@ -1546,7 +1546,7 @@ float Scene::IntersectPlane(const Ray &ray, const glm::vec3 &planePoint, const g
     float retval = ray.tMax;
 
     float dirDotNormal=dot(ray.direction, planeNormal);
-    if(dirDotNormal < 0.00001f)
+    if(fabsf(dirDotNormal) < 0.00001f)
     {
         return retval;
     }
@@ -1839,6 +1839,7 @@ void Scene::PickCurrentGizmo(int x, int y, PickResult *pickResult)
     {
         pickResult->type = PickResultType::GIZMO;
         pickResult->pickedIndex = pickedAxisIndex;
+        //std::cout<<"Chosen GizmoAxis: " << pickedAxisIndex << "\n";
     }
 }
 
@@ -1880,6 +1881,8 @@ void Scene::EnterGizmoInteractionMode()
             glm::mat4_cast(this->_objectTransforms[this->_objectWithGizmoIndex].internalRotation) * 
             glm::vec4(interactionAxisLocal,0)
         );
+
+        
     }
     else // 
     {
@@ -1904,7 +1907,8 @@ void Scene::EnterGizmoInteractionMode()
     // Lets calculate the REAL gizmo start interaction position
     if(_currentGizmoType == GizmoType::GIZMO_ROTATION)
     {
-        this->_gizmoInteractionState.startInteractionPoint = glm::normalize(dirtyStartIntersectionPoint);
+        this->_gizmoInteractionState.startInteractionPoint = 
+            glm::normalize(dirtyStartIntersectionPoint - _gizmoInteractionState.interactionPlanePoint);
     }
     else
     {
@@ -1919,6 +1923,8 @@ void Scene::EnterGizmoInteractionMode()
 
 void Scene::CalculateGizmoInteraction(int newX, int newY)
 {
+
+    
     if(!_isCurrentGizmoInteractedWith) return;
 
     if(newX < 0 || newX > _viewportWidth || newY < 0 || newY > _viewportHeight) return;
@@ -1937,12 +1943,36 @@ void Scene::CalculateGizmoInteraction(int newX, int newY)
         return; // Invalid intersection.
     }
 
+    
+
+    
     glm::vec3 dirtyInteractionPoint = currentInteractionRay.origin + interactionPointDistance * currentInteractionRay.direction;
+
+    ObjectState newobjectState;
+    this->GetObjectState(_objectWithGizmoIndex,&newobjectState);
 
     if(_currentGizmoType == GizmoType::GIZMO_ROTATION)
     {
-        this->_gizmoInteractionState.currentInteractionPoint = glm::normalize(dirtyInteractionPoint);
 
+        
+
+
+        this->_gizmoInteractionState.currentInteractionPoint =
+            glm::normalize(dirtyInteractionPoint - _gizmoInteractionState.interactionPlanePoint);
+
+        float angle = atan2(glm::dot(_gizmoInteractionState.interactionPlaneNormal,
+                                glm::cross(_gizmoInteractionState.startInteractionPoint, _gizmoInteractionState.currentInteractionPoint)), 
+                            glm::dot(_gizmoInteractionState.startInteractionPoint, _gizmoInteractionState.currentInteractionPoint));
+
+        glm::quat deltaQuaternion = glm::angleAxis(angle,_gizmoInteractionState.interactionPlaneNormal);
+
+        newobjectState.transform.internalRotation = deltaQuaternion * _gizmoInteractionState.startObjectWorldTransform.internalRotation;
+
+        glm::vec3 eulerDegrees = glm::degrees(glm::eulerAngles(newobjectState.transform.internalRotation));
+
+        newobjectState.transform.rotation = eulerDegrees;
+
+        
 
     }
     else
@@ -1960,8 +1990,6 @@ void Scene::CalculateGizmoInteraction(int newX, int newY)
         
         glm::vec3 deltaPositionVector = _gizmoInteractionState.currentInteractionPoint - _gizmoInteractionState.startInteractionPoint;
 
-        ObjectState newobjectState;
-        this->GetObjectState(_objectWithGizmoIndex,&newobjectState);
         if(_currentGizmoType == GizmoType::GIZMO_TRANSLATION)
         {
             
@@ -1979,8 +2007,10 @@ void Scene::CalculateGizmoInteraction(int newX, int newY)
             
         }
 
-        this->TryAlterObject(_objectWithGizmoIndex,newobjectState);
+        
     }
+
+    this->TryAlterObject(_objectWithGizmoIndex,newobjectState);
 
 }
 
