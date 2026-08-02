@@ -2328,6 +2328,30 @@ bool App::TryLoadScene(const std::string &sceneLoadingFileName)
     return true;
 }
 
+void App::RefreshObjectDataPanel()
+{
+	ObjectState storedObjectState;
+	_scene.GetObjectState(chosenObjectIndex,&storedObjectState);
+
+	dropdownModel.SetChosenOption(storedObjectState.modelIndex);
+
+	inputXPos.SetFloat(storedObjectState.transform.position.x);
+	inputYPos.SetFloat(storedObjectState.transform.position.y);
+	inputZPos.SetFloat(storedObjectState.transform.position.z);
+
+	inputXScale.SetFloat(storedObjectState.transform.scale.x);
+	inputYScale.SetFloat(storedObjectState.transform.scale.y);
+	inputZScale.SetFloat(storedObjectState.transform.scale.z);
+
+
+	inputXRot.SetFloat(storedObjectState.transform.rotation.x);
+	sliderXRot.SetSliderValue(storedObjectState.transform.rotation.x / 360.0f);
+	inputYRot.SetFloat(storedObjectState.transform.rotation.y);
+	sliderYRot.SetSliderValue(storedObjectState.transform.rotation.y / 360.0f);
+	inputZRot.SetFloat(storedObjectState.transform.rotation.z);
+	sliderZRot.SetSliderValue(storedObjectState.transform.rotation.z / 360.0f);
+}
+
 void App::Reset()
 {
 	_scene.Reset();
@@ -2726,7 +2750,13 @@ void App::CanvasMouseMoveCallback(void *context, float newX, float newY)
 {
 	App* app = (App*)context;
 
-	app->_scene.MouseMove(newX,newY);
+	GizmoInteractionInfo gizmoInteractionInfo;
+	app->_scene.MouseMove(newX,newY,&gizmoInteractionInfo);
+	if(gizmoInteractionInfo.hasInteractionHappend && gizmoInteractionInfo.objectIndexWithGizmo == app->chosenObjectIndex)
+	{
+		// We have changed the currently analyzed object's worldtransform, lets update the metadata of the object inside the editor.
+		app->RefreshObjectDataPanel();
+	}
 }
 
 void App::CanvasMouseClickCallback(void *context, int button, int action)
@@ -3296,26 +3326,7 @@ void App::ChosenObjectButtonCallback(void *context, int objectIndex)
 
 	app->chosenObjectIndex = objectIndex;
 
-	ObjectState storedObjectState;
-	app->_scene.GetObjectState(objectIndex,&storedObjectState);
-
-	app->dropdownModel.SetChosenOption(storedObjectState.modelIndex);
-
-	app->inputXPos.SetFloat(storedObjectState.transform.position.x);
-	app->inputYPos.SetFloat(storedObjectState.transform.position.y);
-	app->inputZPos.SetFloat(storedObjectState.transform.position.z);
-
-	app->inputXScale.SetFloat(storedObjectState.transform.scale.x);
-	app->inputYScale.SetFloat(storedObjectState.transform.scale.y);
-	app->inputZScale.SetFloat(storedObjectState.transform.scale.z);
-
-
-	app->inputXRot.SetFloat(storedObjectState.transform.rotation.x);
-	app->sliderXRot.SetSliderValue(storedObjectState.transform.rotation.x / 360.0f);
-	app->inputYRot.SetFloat(storedObjectState.transform.rotation.y);
-	app->sliderYRot.SetSliderValue(storedObjectState.transform.rotation.y / 360.0f);
-	app->inputZRot.SetFloat(storedObjectState.transform.rotation.z);
-	app->sliderZRot.SetSliderValue(storedObjectState.transform.rotation.z / 360.0f);
+	app->RefreshObjectDataPanel();	
 
 	app->_scene.ChooseObject(objectIndex);
 }

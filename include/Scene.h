@@ -319,6 +319,12 @@ struct GizmoInteractionState
     Transform startObjectWorldTransform;
 };
 
+struct GizmoInteractionInfo
+{
+    bool hasInteractionHappend = false;
+    int objectIndexWithGizmo = -1;
+};
+
 /**
  * This class is basically a renderer, it handles IO, and renders the given scene into a texture.
  * In our application it is used to render the scene inside a canvas control.
@@ -440,7 +446,7 @@ public:
     void Resize(int newWidth, int newHeight);
     void Render();
     void Update(float deltaTime);
-    void MouseMove(float newX, float newY);
+    void MouseMove(float newX, float newY,GizmoInteractionInfo* gizmoInteractionInfo);
     void MouseClick(int button, int action, ObjectPickInfo* pickInfo);
     void MouseWheel(float amount, int direction);
     void KeyInput(int key, int action, int mods);
@@ -599,6 +605,12 @@ private:
      */
     void CalculateGizmoInteraction(int newX, int newY);
     void LeaveGizmoInteractionMode();
+
+    /**
+     * This procedure is just providing a quick way to check if the current mouse cursor position is above the currently visible gizmo
+     * If it is, then it toggles highlighting index for that axis, if not, sets it to -1
+     */
+    void CheckForHighlightedAxis();
 };
 
 

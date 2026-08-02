@@ -568,7 +568,7 @@ void Scene::Update(float deltaTime)
     }
 }
 
-void Scene::MouseMove(float newX, float newY)
+void Scene::MouseMove(float newX, float newY,GizmoInteractionInfo* gizmoInteractionInfo)
 {
     _currentMousePos = glm::vec2(newX,newY);
     
@@ -601,6 +601,8 @@ void Scene::MouseMove(float newX, float newY)
         if(_isCurrentGizmoInteractedWith)
         {
             CalculateGizmoInteraction(newX,newY);
+            gizmoInteractionInfo->hasInteractionHappend = true;
+            gizmoInteractionInfo->objectIndexWithGizmo = _objectWithGizmoIndex;
         }
         else
         {
@@ -706,11 +708,15 @@ void Scene::KeyInput(int key, int action, int mods)
             if(_isFreeCam)
             {
                 _isFreeCam = false;
+
+                CheckForHighlightedAxis();
             }
             else
             {
                 _isFreeCam = true;
                 _isMouseFirstPos = true;
+
+                _currentlyHighlightedGizmoAxis = -1;
             }
         }
     }
@@ -731,6 +737,8 @@ void Scene::KeyInput(int key, int action, int mods)
             {
                 _currentGizmoType = GizmoType::GIZMO_ROTATION;
             }
+
+            CheckForHighlightedAxis();
         }
     }
 }
@@ -1960,7 +1968,7 @@ void Scene::CalculateGizmoInteraction(int newX, int newY)
 
             newobjectState.transform.position = _gizmoInteractionState.startObjectWorldTransform.position + deltaPositionVector;
 
-            this->TryAlterObject(_objectWithGizmoIndex,newobjectState);
+            
         }
         else // Scaling
         {
@@ -1968,7 +1976,10 @@ void Scene::CalculateGizmoInteraction(int newX, int newY)
             const float scalingSensitivity = 1.0f;
 
             newobjectState.transform.scale = _gizmoInteractionState.startObjectWorldTransform.scale + deltaPositionVector*scalingSensitivity;
+            
         }
+
+        this->TryAlterObject(_objectWithGizmoIndex,newobjectState);
     }
 
 }
@@ -1977,5 +1988,20 @@ void Scene::LeaveGizmoInteractionMode()
 {
     if(!_isCurrentGizmoInteractedWith) return; // called in invalid state
 
+    //We should also calculate whether or not the mouse cursor is still on top of the gizmo.
+    CheckForHighlightedAxis();
+
     _isCurrentGizmoInteractedWith = false;
+}
+
+void Scene::CheckForHighlightedAxis()
+{
+    _currentlyHighlightedGizmoAxis = -1;
+
+    PickResult currentGizmoPickResult;
+    PickCurrentGizmo(_currentMousePos.x,_currentMousePos.y,&currentGizmoPickResult);
+    if(currentGizmoPickResult.type == PickResultType::GIZMO && currentGizmoPickResult.pickedIndex >= 0)
+    {
+        _currentlyHighlightedGizmoAxis = currentGizmoPickResult.pickedIndex;
+    }
 }

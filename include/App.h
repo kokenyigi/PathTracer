@@ -292,6 +292,8 @@ private:
 
 	void SaveScene(const std::string& sceneSavingFileNameRelative);
 	bool TryLoadScene(const std::string& sceneFilePathRelative);
+
+	void RefreshObjectDataPanel();
 	
 
 	/**
