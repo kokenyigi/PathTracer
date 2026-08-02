@@ -571,10 +571,12 @@ void Scene::Update(float deltaTime)
 void Scene::MouseMove(float newX, float newY)
 {
     _currentMousePos = glm::vec2(newX,newY);
-    _currentlyHighlightedGizmoAxis = -1;
+    
 
     if(_isFreeCam)
     {
+        _currentlyHighlightedGizmoAxis = -1;
+
         if(_isMouseFirstPos)
         {
             _isMouseFirstPos = false;
@@ -587,19 +589,32 @@ void Scene::MouseMove(float newX, float newY)
 
             _previousMousePos = glm::vec2(newX,newY);
 
-            _camera.Rotate(dx,dy);
-            ResetPathTracedFrameIndex();
+            if(!_isCurrentGizmoInteractedWith)
+            {
+                _camera.Rotate(dx,dy);
+                ResetPathTracedFrameIndex();
+            }
         }
     }
     else
     {
-        PickResult currentGizmoPickResult;
-        PickCurrentGizmo(newX,newY,&currentGizmoPickResult);
-        if(currentGizmoPickResult.type == PickResultType::GIZMO && currentGizmoPickResult.pickedIndex >= 0)
+        if(_isCurrentGizmoInteractedWith)
         {
-            _currentlyHighlightedGizmoAxis = currentGizmoPickResult.pickedIndex;
-            //std::cout<< "Currently Highlighted axis: " << _currentlyHighlightedGizmoAxis << "\n";
+            CalculateGizmoInteraction(newX,newY);
         }
+        else
+        {
+            _currentlyHighlightedGizmoAxis = -1;
+
+            PickResult currentGizmoPickResult;
+            PickCurrentGizmo(newX,newY,&currentGizmoPickResult);
+            if(currentGizmoPickResult.type == PickResultType::GIZMO && currentGizmoPickResult.pickedIndex >= 0)
+            {
+                _currentlyHighlightedGizmoAxis = currentGizmoPickResult.pickedIndex;
+                //std::cout<< "Currently Highlighted axis: " << _currentlyHighlightedGizmoAxis << "\n";
+            }
+        }
+        
     }
 }
 
@@ -612,21 +627,33 @@ void Scene::MouseClick(int button, int action, ObjectPickInfo* objectPickInfo)
 
         if(x >= 0 && x < _viewportWidth && y >= 0 && y < _viewportHeight)
         {
-            //std::cout<< "Picking starts at x: " << x << " and y: "<<y<<"\n";
-            PickResult pickResult;
-            PickScene(x,y,&pickResult);
-            if(pickResult.type == PickResultType::OBJECT)
+            if(_currentlyHighlightedGizmoAxis >= 0) // If we are hovering above a gizmo axis
             {
-                //std::cout<<"Picked object with id: " << pickResult->pickedObjectIndex<<"\n";
-                ChooseObject(pickResult.pickedIndex);
+                EnterGizmoInteractionMode();
+            }
+            else
+            {
+                //std::cout<< "Picking starts at x: " << x << " and y: "<<y<<"\n";
+                PickResult pickResult;
+                PickScene(x,y,&pickResult);
+                if(pickResult.type == PickResultType::OBJECT)
+                {
+                    //std::cout<<"Picked object with id: " << pickResult->pickedObjectIndex<<"\n";
+                    ChooseObject(pickResult.pickedIndex);
 
-                objectPickInfo->pickedObjectIndex = pickResult.pickedIndex;
+                    objectPickInfo->pickedObjectIndex = pickResult.pickedIndex;
+                }
+                else if(pickResult.type == PickResultType::NONE)
+                {
+                    ChooseObject(-1);
+                }
             }
-            else if(pickResult.type == PickResultType::NONE)
-            {
-                ChooseObject(-1);
-            }
+            
         }
+    }
+    else if(button == 0 && action == 1) // left release
+    {
+        LeaveGizmoInteractionMode(); // handles proper state
     }
 }
 
@@ -666,35 +693,44 @@ void Scene::KeyInput(int key, int action, int mods)
                 break;
         }
 
-        _camera.TryInfluenceMovement(axis,direction,influence);
+        if(!_isCurrentGizmoInteractedWith)
+        {
+            _camera.TryInfluenceMovement(axis,direction,influence);
+        }
     }
 
     if(key == 70 && action == 1) // If F was pressed
     {
-        if(_isFreeCam)
+        if(!_isCurrentGizmoInteractedWith)
         {
-            _isFreeCam = false;
-        }
-        else
-        {
-            _isFreeCam = true;
-            _isMouseFirstPos = true;
+            if(_isFreeCam)
+            {
+                _isFreeCam = false;
+            }
+            else
+            {
+                _isFreeCam = true;
+                _isMouseFirstPos = true;
+            }
         }
     }
 
     if(action == 1)
     {
-        if(key == 49) // pressed 1
+        if(!_isCurrentGizmoInteractedWith)
         {
-            _currentGizmoType = GizmoType::GIZMO_TRANSLATION;
-        }
-        else if(key == 50) // pressed 2
-        {
-            _currentGizmoType = GizmoType::GIZMO_SCALE;
-        }
-        else if(key == 51) // pressed 3
-        {
-            _currentGizmoType = GizmoType::GIZMO_ROTATION;
+            if(key == 49) // pressed 1
+            {
+                _currentGizmoType = GizmoType::GIZMO_TRANSLATION;
+            }
+            else if(key == 50) // pressed 2
+            {
+                _currentGizmoType = GizmoType::GIZMO_SCALE;
+            }
+            else if(key == 51) // pressed 3
+            {
+                _currentGizmoType = GizmoType::GIZMO_ROTATION;
+            }
         }
     }
 }
@@ -1497,6 +1533,20 @@ void Scene::ChooseObject(int objectIndex)
     }
 }
 
+float Scene::IntersectPlane(const Ray &ray, const glm::vec3 &planePoint, const glm::vec3 &planeNormal)
+{
+    float retval = ray.tMax;
+
+    float dirDotNormal=dot(ray.direction, planeNormal);
+    if(dirDotNormal < 0.00001f)
+    {
+        return retval;
+    }
+
+    retval = dot(planePoint - ray.origin,planeNormal) / dirDotNormal;
+    return retval;
+}
+
 float Scene::IntersectTriangle(const Ray &ray, const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2)
 {
     float retval;
@@ -1782,4 +1832,150 @@ void Scene::PickCurrentGizmo(int x, int y, PickResult *pickResult)
         pickResult->type = PickResultType::GIZMO;
         pickResult->pickedIndex = pickedAxisIndex;
     }
+}
+
+void Scene::EnterGizmoInteractionMode()
+{
+    // Only if we arent already interacting with a gizmo(technically impossible)
+    if(_isCurrentGizmoInteractedWith) return;
+
+    if(this->_currentMousePos.x < 0 || this->_currentMousePos.y < 0 || 
+        this->_currentMousePos.x > this->_viewportWidth || this->_currentMousePos.y > this->_viewportHeight)
+    {
+        // if, when we want to enter interaction mode the cursor is somewhere in Narnia
+        return;
+    }
+
+    // can only enter gizmo mode if the current gizmo is highlighted and shit
+    // if the gizmo isnt visible why bother turning this on?
+    if(!this->_isGizmoVisible || this->_currentlyHighlightedGizmoAxis < 0 || this->_objectWithGizmoIndex < 0) return;
+
+    // Now we can be sure that we are doing the right thing, so lets calculate the state the interaction process will work with.
+    this->_gizmoInteractionState.startObjectWorldTransform = this->_objectTransforms[this->_objectWithGizmoIndex];
+    this->_gizmoInteractionState.interactionPlanePoint = this->_objectTransforms[this->_objectWithGizmoIndex].position;
+    
+    // For helpful thinking lets declare the current gizmo interaction axis we are working on.
+    //std::cout<<"Axis: " << _currentlyHighlightedGizmoAxis << "\n";
+    glm::vec3 interactionAxisLocal = glm::vec3(0);
+    interactionAxisLocal[this->_currentlyHighlightedGizmoAxis] = 1;
+
+    Ray startInteractionRay;
+    startInteractionRay.tMin = 0.0f;
+    startInteractionRay.tMax = _camera.GetZFar();
+    startInteractionRay.origin = _camera.GetPosition();
+    startInteractionRay.direction = CalculateRayDirection(this->_currentMousePos.x,this->_currentMousePos.y);
+
+    // we calculate the normal of the interaction plane differently
+    if(_currentGizmoType == GizmoType::GIZMO_ROTATION)
+    {
+        this->_gizmoInteractionState.interactionPlaneNormal = glm::vec3(
+            glm::mat4_cast(this->_objectTransforms[this->_objectWithGizmoIndex].internalRotation) * 
+            glm::vec4(interactionAxisLocal,0)
+        );
+    }
+    else // 
+    {
+        glm::vec3 translateScalePlaneNormal = glm::normalize(
+            glm::cross(interactionAxisLocal,glm::cross(startInteractionRay.direction,interactionAxisLocal))
+        );
+
+        this->_gizmoInteractionState.interactionPlaneNormal = translateScalePlaneNormal;
+    }
+
+    if(fabsf(glm::dot(startInteractionRay.direction,_gizmoInteractionState.interactionPlaneNormal))< 0.00001f) return;
+
+
+    // now, we toggle the interaction for real, these previous check were fundamental, trust me.
+    _isCurrentGizmoInteractedWith = true;
+
+    // Here we just calculate basic ray-plane intersection point.
+    float traceResult = IntersectPlane(startInteractionRay,
+        this->_gizmoInteractionState.interactionPlanePoint,this->_gizmoInteractionState.interactionPlaneNormal);
+    glm::vec3 dirtyStartIntersectionPoint = startInteractionRay.origin + traceResult * startInteractionRay.direction;
+
+    // Lets calculate the REAL gizmo start interaction position
+    if(_currentGizmoType == GizmoType::GIZMO_ROTATION)
+    {
+        this->_gizmoInteractionState.startInteractionPoint = glm::normalize(dirtyStartIntersectionPoint);
+    }
+    else
+    {
+        //Project plane intersection point onto axis;[TODO] - dont wanna now :P
+        glm::vec3 objectMid = this->_objectTransforms[this->_objectWithGizmoIndex].position;
+        glm::vec3 objMidToDirtyPoint = dirtyStartIntersectionPoint - objectMid;
+        float projectionAmount  = glm::dot(objMidToDirtyPoint,interactionAxisLocal);
+        glm::vec3 projectedPointOnAxis = objectMid + projectionAmount * interactionAxisLocal;
+        this->_gizmoInteractionState.startInteractionPoint = projectedPointOnAxis;
+    }
+}
+
+void Scene::CalculateGizmoInteraction(int newX, int newY)
+{
+    if(!_isCurrentGizmoInteractedWith) return;
+
+    if(newX < 0 || newX > _viewportWidth || newY < 0 || newY > _viewportHeight) return;
+
+    Ray currentInteractionRay;
+    currentInteractionRay.tMin = 0.0f;
+    currentInteractionRay.tMax = _camera.GetZFar();
+    currentInteractionRay.origin = _camera.GetPosition();
+    currentInteractionRay.direction = CalculateRayDirection(newX,newY);
+
+    float interactionPointDistance = IntersectPlane(currentInteractionRay,
+        _gizmoInteractionState.interactionPlanePoint,_gizmoInteractionState.interactionPlaneNormal);
+    
+    if(interactionPointDistance >= currentInteractionRay.tMax || interactionPointDistance <= currentInteractionRay.tMin) 
+    {
+        return; // Invalid intersection.
+    }
+
+    glm::vec3 dirtyInteractionPoint = currentInteractionRay.origin + interactionPointDistance * currentInteractionRay.direction;
+
+    if(_currentGizmoType == GizmoType::GIZMO_ROTATION)
+    {
+        this->_gizmoInteractionState.currentInteractionPoint = glm::normalize(dirtyInteractionPoint);
+
+
+    }
+    else
+    {
+        //std::cout<<"We run\n";
+        glm::vec3 interactionAxisLocal = glm::vec3(0);
+        //std::cout<<"Axis: " << _currentlyHighlightedGizmoAxis <<"\n";
+        interactionAxisLocal[this->_currentlyHighlightedGizmoAxis] = 1;
+
+        glm::vec3 objMidToDirtyPoint = dirtyInteractionPoint - _gizmoInteractionState.startInteractionPoint;
+        float projectionAmount  = glm::dot(objMidToDirtyPoint,interactionAxisLocal);
+        glm::vec3 projectedPointOnAxis = _gizmoInteractionState.startInteractionPoint + projectionAmount * interactionAxisLocal;
+        this->_gizmoInteractionState.currentInteractionPoint = projectedPointOnAxis;
+
+        
+        glm::vec3 deltaPositionVector = _gizmoInteractionState.currentInteractionPoint - _gizmoInteractionState.startInteractionPoint;
+
+        ObjectState newobjectState;
+        this->GetObjectState(_objectWithGizmoIndex,&newobjectState);
+        if(_currentGizmoType == GizmoType::GIZMO_TRANSLATION)
+        {
+            
+
+            newobjectState.transform.position = _gizmoInteractionState.startObjectWorldTransform.position + deltaPositionVector;
+
+            this->TryAlterObject(_objectWithGizmoIndex,newobjectState);
+        }
+        else // Scaling
+        {
+            // Perhaps we should put this is a system variable
+            const float scalingSensitivity = 1.0f;
+
+            newobjectState.transform.scale = _gizmoInteractionState.startObjectWorldTransform.scale + deltaPositionVector*scalingSensitivity;
+        }
+    }
+
+}
+
+void Scene::LeaveGizmoInteractionMode()
+{
+    if(!_isCurrentGizmoInteractedWith) return; // called in invalid state
+
+    _isCurrentGizmoInteractedWith = false;
 }

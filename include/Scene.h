@@ -307,6 +307,18 @@ struct GizmoPickInfo
     int pickedGizmoIndex = -1;
 };
 
+
+struct GizmoInteractionState
+{
+    glm::vec3 interactionPlanePoint;
+    glm::vec3 interactionPlaneNormal;
+
+    glm::vec3 startInteractionPoint;
+    glm::vec3 currentInteractionPoint; // we know if its the first or not, because click = first, move = later
+
+    Transform startObjectWorldTransform;
+};
+
 /**
  * This class is basically a renderer, it handles IO, and renders the given scene into a texture.
  * In our application it is used to render the scene inside a canvas control.
@@ -351,6 +363,9 @@ private:
     std::vector<BvhNodeData> _gizmoBvhNodeDatas;
     std::vector<int> _gizmoMeshBvhRoots;
     int _currentlyHighlightedGizmoAxis = -1;
+
+    bool _isCurrentGizmoInteractedWith = false;
+    GizmoInteractionState _gizmoInteractionState;
 
     /**
      * Here lie the variables which are necessary for the Pathtraced rendering.
@@ -548,6 +563,7 @@ private:
 
     void ResetPathTracedFrameIndex() {_frameIndex = 1;}
 
+    float IntersectPlane(const Ray& ray, const glm::vec3& planePoint, const glm::vec3& planeNormal);
     float IntersectTriangle(const Ray& ray,const glm::vec3& p0,const glm::vec3& p1,const glm::vec3& p2);
     float IntersectBox(const Ray& ray, const AABB4& box);
     float IntersectBvhNodeRecursive(Ray& ray, 
@@ -567,6 +583,22 @@ private:
 
     void PickScene( int x, int y, PickResult* pickResult);
     void PickCurrentGizmo(int x, int y,PickResult* pickResult);
+
+
+    /**
+     * This function is resposible for the smooth entering into gizmo interaction state.
+     * This procedure calculates the necessary variables for later gizmo-interaction (mouse drag) and
+     *  stores it inside the class' gizmointeractionstate variable.
+     */
+    void EnterGizmoInteractionMode();
+    
+    /**
+     * Based on the perviously calculated start interaction state this procedure calculates the state for the current interaction moment.
+     * This includes calculating the current interaction point, and trasnforming the object according to that point.
+     * It also updates the interaction state.
+     */
+    void CalculateGizmoInteraction(int newX, int newY);
+    void LeaveGizmoInteractionMode();
 };
 
 
