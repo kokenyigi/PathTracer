@@ -325,6 +325,24 @@ struct GizmoInteractionInfo
     int objectIndexWithGizmo = -1;
 };
 
+
+
+
+struct BvhRangeData
+{
+    int startIndex;
+    int nodeCount;
+};
+
+struct IndirectCommandData
+{
+    uint32_t count;
+    uint32_t instanceCount;
+    uint32_t firstIndex;
+    int32_t  baseVertex;
+    uint32_t baseInstance;
+};
+
 /**
  * This class is basically a renderer, it handles IO, and renders the given scene into a texture.
  * In our application it is used to render the scene inside a canvas control.
@@ -423,6 +441,26 @@ private:
     std::vector<Mesh<VertexP3N3T2,Triangles>> _rasterizedMeshes;
     std::vector<Texture> _rasterizedTextures;
 
+
+    //Debug Bvh Rendering Datas
+    bool _isDebugRenderEnabled = true;
+    Shader _debugBvhShader;
+
+    unsigned int _debugBvhVaoId = 0;
+    unsigned int _debugBvhVboId = 0;
+    unsigned int _debugBvhIboId = 0;
+
+    const unsigned int _maximumDebugRenderBvhDepth = 11;
+
+    std::vector<AABB4> _debugBlasBvhBoxes;
+    unsigned int _debugBlasBvhBoxesSsboId = 0;
+    std::vector<BvhRangeData> _debugBlasBvhMeshRanges; // no need to keep the ranges gpu side, since they will be a part of the indirect cmds
+
+    //std::vector<glm::mat4> _debugObjectBvhInstanceWorldTransforms; // are already stored
+    unsigned int _debugBlasBvhObjectWorldtransformsSsboId = 0;
+    std::vector<IndirectCommandData> _debugBlasBvhIndirectCommandDatas;
+    unsigned int _debugBlasBvhIndirectCommandsIndirectBufferObjectId = 0;
+
     
     
     //OpenCL related variables
@@ -516,6 +554,8 @@ private:
     void PathTracedRender();
 
     void RenderGizmo();
+
+    void RenderDebugBvhBoxes();
 
     /**
      * This helper function basically tries to load, and preprocess the necessary data for a pathtraced mesh
@@ -611,6 +651,11 @@ private:
      * If it is, then it toggles highlighting index for that axis, if not, sets it to -1
      */
     void CheckForHighlightedAxis();
+
+
+    void HelperBvhNodeBoxExtractorRecursive(std::vector<BvhNodeData>& bvhNodeDatas,int nodeIndex, int depth,
+         std::vector<AABB4>& extractVector);
+    void AddNewBvhNodeBoxesToDebugSsbo(std::vector<BvhNodeData>& bvhNodeDatas);
 };
 
 

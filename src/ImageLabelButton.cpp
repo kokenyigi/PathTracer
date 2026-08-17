@@ -43,7 +43,7 @@ void ImageLabelButton::ILBResize()
     ButtonBaseResize();
     CalculateRenderBox();
 
-    
+    //std::cout<<"ILB Resized\n";
 
     _buttonImage.Resize();
     _inputName.Resize();

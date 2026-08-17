@@ -52,6 +52,10 @@ void Scene::Reset()
         _bottomLevelBvhNodeDatas.clear();
         clError = clReleaseMemObject(_bottomLevelBvhNodeDatasBuffer);CHECK_ERROR(clError);
         _bottomLevelBvhNodeDatasBuffer = nullptr;
+
+        _debugBlasBvhBoxes.clear();
+        _debugBlasBvhMeshRanges.clear();
+        glDeleteBuffers(1,&this->_debugBlasBvhBoxesSsboId);
     }
     if(_meshBvhRootIndexData.size()>0)
     {
@@ -90,6 +94,7 @@ void Scene::Reset()
     {
         _objectDatas.clear();
         _objectTransforms.clear();
+        _debugBlasBvhIndirectCommandDatas.clear();
     }
     if(_modelDatas.size()>0)
     {
@@ -318,65 +323,74 @@ void Scene::Init()
     _gizmoBvhNodeDatas.insert(_gizmoBvhNodeDatas.end(),tempBvhNodeData.begin(),tempBvhNodeData.end());
     
 
-    //quickly print an .obj file
-    /*
-    std::ofstream ringObj("assets/models/ring.obj");
+    //Lets setup some variables for the bvh accelerational structure's debug rendering view.
+    glGenVertexArrays(1,&this->_debugBvhVaoId);
+    glBindVertexArray(this->_debugBvhVaoId);
 
-    float height = 1.0f/32.0f;
-    float width = 1.0f/8.0f;
-    int detailLevel = 5;
+    glGenBuffers(1,&this->_debugBvhVboId);
+    glBindBuffer(GL_ARRAY_BUFFER,this->_debugBvhVboId);
+    glm::vec3 cubeVertices[8] =
+    {
+        {-0.5f, -0.5f, -0.5f},
+        { 0.5f, -0.5f, -0.5f},
+        { 0.5f,  0.5f, -0.5f},
+        {-0.5f,  0.5f, -0.5f},
 
+        {-0.5f, -0.5f,  0.5f},
+        { 0.5f, -0.5f,  0.5f},
+        { 0.5f,  0.5f,  0.5f},
+        {-0.5f,  0.5f,  0.5f}
+    };
+    glBufferData(GL_ARRAY_BUFFER,sizeof(glm::vec3)*8,cubeVertices,GL_STATIC_DRAW);
+
+    glGenBuffers(1,&this->_debugBvhIboId);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,this->_debugBvhIboId);
+    unsigned int cubeIndices[24] =
+    {
+        // bottom
+        0, 1,
+        1, 2,
+        2, 3,
+        3, 0,
+
+        // top
+        4, 5,
+        5, 6,
+        6, 7,
+        7, 4,
+
+        // vertical
+        0, 4,
+        1, 5,
+        2, 6,
+        3, 7
+    };
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(unsigned int) * 24,cubeIndices,GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(glm::vec3),0);
+    glEnableVertexAttribArray(0);
     
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 
-    float pi = CL_M_PI;
-    int circleSegmentCount = 4 << (detailLevel);
-    float radiusOuter = 1.0f;
-    float radiusInner = 1.0f - height;
+    //now lets set up the indirect command buffer, and the opengl worldtransforms buffer (one is an indirect buffer, other ssbo)
+    glGenBuffers(1,&this->_debugBlasBvhBoxesSsboId);
 
-    float unitSegmentRadian = pi * 2.0f / circleSegmentCount;
-    for(int i=0;i<circleSegmentCount;++i)
-    {
-        float currentSegmentRadian = unitSegmentRadian * i;
+    glGenBuffers(1,&this->_debugBlasBvhObjectWorldtransformsSsboId);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,this->_debugBlasBvhObjectWorldtransformsSsboId);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(glm::mat4)*this->_maximumObjectCount,nullptr,GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,0);
 
-        float yOuter = sin(currentSegmentRadian) * radiusOuter;
-        float yInner = sin(currentSegmentRadian) * radiusInner;
+    glGenBuffers(1,&this->_debugBlasBvhIndirectCommandsIndirectBufferObjectId);
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER,this->_debugBlasBvhIndirectCommandsIndirectBufferObjectId);
+    glBufferData(GL_DRAW_INDIRECT_BUFFER,sizeof(IndirectCommandData)*this->_maximumObjectCount,nullptr,GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER,0);
 
-        float zOuter = cos(currentSegmentRadian) * radiusOuter;
-        float zInner = cos(currentSegmentRadian) * radiusInner;
+    this->_debugBlasBvhIndirectCommandDatas.reserve(this->_maximumObjectCount);
 
-        //Pushing first vert
-        ringObj << "v " << width * 0.5f << " " << yOuter << " " << zOuter<<"\n";
-        ringObj << "v " << -width * 0.5f << " " << yOuter << " " << zOuter<<"\n";
-        ringObj << "v " << -width * 0.5f << " " << yInner << " " << zInner<<"\n";
-        ringObj << "v " << width * 0.5f << " " << yInner << " " << zInner<<"\n";
-    }
+    this->_debugBvhShader.Init("assets/shaders/debug_bvh_shader.vert","assets/shaders/debug_bvh_shader.frag");
 
-    for(int i=0;i<circleSegmentCount;++i)
-    {
-        int currentFirst = i*4 + 1;
-        int currentSecond = i*4 + 2;
-        int currentThird = i* 4 + 3;
-        int currentFourth = i*4 + 4;
-
-        int nextSegment = (i + 1) % circleSegmentCount;
-
-        int currentFifth = nextSegment * 4 + 1;
-        int currentSixth= nextSegment * 4 + 2;
-        int currentSeventh= nextSegment * 4 + 3;
-        int currentEighth= nextSegment * 4 + 4;
-
-        ringObj << "f " << currentFirst << "// " << currentFifth << "// " << currentSixth<<"// " << currentSecond<<"//\n";
-        ringObj << "f " << currentFirst << "// " << currentFourth << "// " << currentEighth<<"// " << currentFifth<<"//\n";
-        ringObj << "f " << currentFourth << "// " << currentThird << "// " << currentSeventh<<"// " << currentEighth<<"//\n";
-        ringObj << "f " << currentThird << "// " << currentSecond << "// " << currentSixth<<"// " << currentSeventh<<"//\n";
-    }
-
-
-
-
-
-    ringObj.close();
-    */
     InitCL();
 }
 
@@ -419,6 +433,11 @@ void Scene::Render()
     else
     {
         RasterizeRender();
+    }
+
+    if(_isDebugRenderEnabled)
+    {
+        RenderDebugBvhBoxes();
     }
 
     RenderGizmo();
@@ -556,6 +575,50 @@ void Scene::RenderGizmo()
     _gizmoShader.Unbind();
 
     glDisable(GL_DEPTH_TEST);
+}
+
+void Scene::RenderDebugBvhBoxes()
+{
+    glViewport(0,0,_viewportWidth,_viewportHeight);
+    
+
+    if (!_isDebugRenderEnabled) return;
+
+    if (_debugBlasBvhIndirectCommandDatas.size() <= 0) return;
+
+    _renderFrameBuffer.Bind();
+
+    glClear( GL_DEPTH_BUFFER_BIT);
+
+    glDisable(GL_DEPTH_TEST);
+
+    _debugBvhShader.Bind();
+
+    glm::mat4 view = _camera.GetViewMatrix();
+
+    glm::mat4 projection = _camera.GetPerspectiveMatrix();
+
+    glm::mat4 viewProjection = projection * view;
+
+    _debugBvhShader.SetUniform<glm::mat4>("uViewProjection",viewProjection);
+
+    glBindBufferBase( GL_SHADER_STORAGE_BUFFER,0,_debugBlasBvhBoxesSsboId);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,1,_debugBlasBvhObjectWorldtransformsSsboId);
+
+    glBindVertexArray(_debugBvhVaoId);
+
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER,_debugBlasBvhIndirectCommandsIndirectBufferObjectId);
+
+    glMultiDrawElementsIndirect(GL_LINES, GL_UNSIGNED_INT, nullptr, _debugBlasBvhIndirectCommandDatas.size(), sizeof(IndirectCommandData));
+
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+    glBindVertexArray(0);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,0,0);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,1,0);
+
+    //glEnable(GL_DEPTH_TEST);
+
+    _renderFrameBuffer.Unbind();
 }
 
 void Scene::Update(float deltaTime)
@@ -1147,6 +1210,8 @@ bool Scene::TryLoadMesh(const std::string &filePathRelative, MeshInfo * meshInfo
 
     if(!wasLoadingSuccesful) return false;
 
+    AddNewBvhNodeBoxesToDebugSsbo(newMeshBvhNodes);
+
     // Lets merge this new mesh data with the already existing ones.
     // But out data is now in its own, normalized indexing system, and we have to translate it to the global one.
     int alreadyExistingVertexCount = _vertexPositionData.size(); //Is equal to attribute size
@@ -1216,6 +1281,8 @@ bool Scene::TryLoadMesh(const std::string &filePathRelative, MeshInfo * meshInfo
     Mesh<VertexP3N3T2> newRasterMesh;
     newRasterMesh.Load(filePathRelative);
     _rasterizedMeshes.push_back(newRasterMesh);
+
+    
 
     return true;
 }
@@ -1457,7 +1524,31 @@ bool Scene::TryAddObject(ObjectInfo *objectInfo)
     clError = clEnqueueWriteBuffer(clCommandQueue,_objectDataBuffer,CL_TRUE,sizeof(ObjectData)*alreadyExistingObjectDataCount,
         sizeof(ObjectData),&newObjectData,0,nullptr,nullptr);
     CHECK_ERROR(clError);
-    //AppendToClBuffer(clContext,clCommandQueue,&_objectDataBuffer,sizeof(ObjectData),alreadyExistingObjectDataCount,1,&newObjectData);
+
+    //now lets append a worldtransform to the debugobjectworldtrasnform ssbo.
+    // and also apppend a a new indirectcommandData to our indirect buffer.
+    
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,this->_debugBlasBvhObjectWorldtransformsSsboId);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER,sizeof(glm::mat4)*alreadyExistingObjectDataCount,sizeof(glm::mat4),&newObjectData.worldTransform);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,0);
+
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER,this->_debugBlasBvhIndirectCommandsIndirectBufferObjectId);
+    int meshIndexOfObject = this->_modelDatas[newObjectData.modelIndex].meshIndex;
+    IndirectCommandData newIndirectObjectDrawCommandData = 
+    { //Fill this bad boi up
+        24, // The number of indices/elements we wanna draw per instance.
+        this->_debugBlasBvhMeshRanges[meshIndexOfObject].nodeCount,
+        0,
+        0,
+        this->_debugBlasBvhMeshRanges[meshIndexOfObject].startIndex
+    };
+
+    _debugBlasBvhIndirectCommandDatas.push_back(newIndirectObjectDrawCommandData);
+
+    glBufferSubData(GL_DRAW_INDIRECT_BUFFER,sizeof(IndirectCommandData) * alreadyExistingObjectDataCount,sizeof(IndirectCommandData),
+        &newIndirectObjectDrawCommandData);
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER,0);
+
     ResetPathTracedFrameIndex();
 
     return true;
@@ -1487,6 +1578,30 @@ bool Scene::TryAlterObject(int objectIndex, const ObjectState& alteredObjectStat
         clError = clEnqueueWriteBuffer(clCommandQueue,_objectDataBuffer,CL_TRUE,sizeof(ObjectData)*objectIndex,
             sizeof(ObjectData),&_objectDatas[objectIndex],0,nullptr,nullptr);
         CHECK_ERROR(clError);
+
+        // We have to write the changes into both object transforms debug buffer ssbo
+        // and we also have to potentially change the indirect draw command of the object.
+        int meshIndex = this->_modelDatas[this->_objectDatas[objectIndex].modelIndex].meshIndex;
+        IndirectCommandData alteredObjectIndirectDrawCommandData=
+        {
+            24,
+            this->_debugBlasBvhMeshRanges[meshIndex].nodeCount,
+            0,
+            0,
+            this->_debugBlasBvhMeshRanges[meshIndex].startIndex
+        };
+
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER,this->_debugBlasBvhIndirectCommandsIndirectBufferObjectId);
+        glBufferSubData(GL_DRAW_INDIRECT_BUFFER,sizeof(IndirectCommandData)*objectIndex,
+            sizeof(IndirectCommandData),&alteredObjectIndirectDrawCommandData); 
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER,0);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER,this->_debugBlasBvhObjectWorldtransformsSsboId);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER,sizeof(glm::mat4)*objectIndex,sizeof(glm::mat4),&this->_objectDatas[objectIndex].worldTransform);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER,0);
+
+        this->_debugBlasBvhIndirectCommandDatas[objectIndex] = alteredObjectIndirectDrawCommandData;
+
         ResetPathTracedFrameIndex();
 
         return true;
@@ -1509,11 +1624,27 @@ bool Scene::TryDeleteObject(int objectIndex)
             clError = clEnqueueWriteBuffer(clCommandQueue,_objectDataBuffer,CL_TRUE,sizeof(ObjectData)*objectIndex,
                 sizeof(ObjectData),&_objectDatas[backIndex],0,nullptr,nullptr);
             CHECK_ERROR(clError);
+
+
+            //Opengl buffer state sortout
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER,this->_debugBlasBvhIndirectCommandsIndirectBufferObjectId);
+            glBufferSubData(GL_DRAW_INDIRECT_BUFFER,sizeof(IndirectCommandData)*objectIndex,
+                sizeof(IndirectCommandData),&this->_debugBlasBvhIndirectCommandDatas[backIndex]); 
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER,0);
+
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER,this->_debugBlasBvhObjectWorldtransformsSsboId);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER,sizeof(glm::mat4)*objectIndex,sizeof(glm::mat4),
+                &this->_objectDatas[backIndex].worldTransform);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER,0);
+
+            this->_debugBlasBvhIndirectCommandDatas[objectIndex] = this->_debugBlasBvhIndirectCommandDatas[backIndex];
         }
 
         //Deletion is simply just forgeting about a given index.
         _objectDatas.pop_back();
         _objectTransforms.pop_back();
+
+        this->_debugBlasBvhIndirectCommandDatas.pop_back();
 
         ResetPathTracedFrameIndex();
         ChooseObject(-1);
@@ -2034,4 +2165,61 @@ void Scene::CheckForHighlightedAxis()
     {
         _currentlyHighlightedGizmoAxis = currentGizmoPickResult.pickedIndex;
     }
+}
+
+void Scene::HelperBvhNodeBoxExtractorRecursive(std::vector<BvhNodeData> &bvhNodeDatas,int nodeIndex, int depth, 
+    std::vector<AABB4> &extractVector)
+{
+    if(depth > this->_maximumDebugRenderBvhDepth) return;
+
+    if(nodeIndex< 0 ) return;
+
+    BvhNodeData* nodePtr = &bvhNodeDatas[nodeIndex];
+
+    extractVector.push_back(nodePtr->box);
+
+    HelperBvhNodeBoxExtractorRecursive(bvhNodeDatas,nodePtr->minChild,depth + 1,extractVector);
+    HelperBvhNodeBoxExtractorRecursive(bvhNodeDatas,nodePtr->maxChild,depth + 1,extractVector);
+}
+
+void Scene::AddNewBvhNodeBoxesToDebugSsbo(std::vector<BvhNodeData> &bvhNodeDatas)
+{
+    if(bvhNodeDatas.size() <= 0) return;
+
+    std::vector<AABB4> tempProcessVector;
+    tempProcessVector.reserve(bvhNodeDatas.size());
+
+    HelperBvhNodeBoxExtractorRecursive(bvhNodeDatas,0,0,tempProcessVector);
+
+    //now, temp vec has all the needed ddebug aabb4 informations, push it into our main debug vector, and also copy it up to the gpu.
+
+    //lets make a new buffer on gpu, and copy our existing buffer into it + our new buffer
+    unsigned int tempSsboBufferId = 0;
+    glGenBuffers(1,&tempSsboBufferId);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,tempSsboBufferId);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(AABB4)*(_debugBlasBvhBoxes.size() + tempProcessVector.size()),nullptr,GL_STATIC_DRAW);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER,sizeof(AABB4)*this->_debugBlasBvhBoxes.size(),sizeof(AABB4)*tempProcessVector.size(),
+        tempProcessVector.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,0);
+
+    if(_debugBlasBvhBoxes.size() > 0)
+    {
+        glBindBuffer(GL_COPY_WRITE_BUFFER,tempSsboBufferId);
+        glBindBuffer(GL_COPY_READ_BUFFER,this->_debugBlasBvhBoxesSsboId);
+        glCopyBufferSubData(GL_COPY_READ_BUFFER,GL_COPY_WRITE_BUFFER,0,0,sizeof(AABB4)*this->_debugBlasBvhBoxes.size());
+        glBindBuffer(GL_COPY_WRITE_BUFFER,0);
+        glBindBuffer(GL_COPY_READ_BUFFER,0);    
+    }
+    
+    glDeleteBuffers(1,&this->_debugBlasBvhBoxesSsboId);
+    this->_debugBlasBvhBoxesSsboId = tempSsboBufferId;
+
+    BvhRangeData newBvhBoxRangeData = 
+    {
+        this->_debugBlasBvhBoxes.size(),
+        tempProcessVector.size()
+    };
+    this->_debugBlasBvhMeshRanges.push_back(newBvhBoxRangeData);
+
+    this->_debugBlasBvhBoxes.insert(this->_debugBlasBvhBoxes.end(),tempProcessVector.begin(),tempProcessVector.end());
 }

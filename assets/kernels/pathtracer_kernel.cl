@@ -447,7 +447,8 @@ typedef struct
 
 typedef struct
 {
-    float3 normal;
+    float3 geometricNormal;
+    float3 shadingNormal;
     float t;
     float2 texCoords;
     int materialIndex;
@@ -578,19 +579,28 @@ TraceResult IntersectObject(const Ray* ray, int objectIndex,const Scene* scene)
     if(retval.t < FLT_MAX)
     {
         // We have the information of the closest triangle stored inside variables
-        float3 normal = 
+        float3 shadingNormal = 
             closestBarycentricWeights.x * scene->vertexAttributeData[closestTriangleIndices.x].normal.xyz +
             closestBarycentricWeights.y * scene->vertexAttributeData[closestTriangleIndices.y].normal.xyz +
             closestBarycentricWeights.z * scene->vertexAttributeData[closestTriangleIndices.z].normal.xyz;
+
+
+
+        float3 p0 = scene->vertexPositionData[closestTriangleIndices.x].xyz;
+        float3 p1 = scene->vertexPositionData[closestTriangleIndices.y].xyz;
+        float3 p2 = scene->vertexPositionData[closestTriangleIndices.z].xyz;
+        float3 geometricNormal = cross(p1-p0,p2-p0);
 
         float2 textureCoords = 
             closestBarycentricWeights.x * scene->vertexAttributeData[closestTriangleIndices.x].texCoords.xy +
             closestBarycentricWeights.y * scene->vertexAttributeData[closestTriangleIndices.y].texCoords.xy +
             closestBarycentricWeights.z * scene->vertexAttributeData[closestTriangleIndices.z].texCoords.xy;
 
-        float3 worldNormal = Matrix4x4TransposeMultVec4(&scene->objectData[objectIndex].invWorldTransform, (float4)(normal, 0.0f));
+        float3 worldShadingNormal = Matrix4x4TransposeMultVec4(&scene->objectData[objectIndex].invWorldTransform, (float4)(shadingNormal, 0.0f));
+        float3 worldGeometricNormal = Matrix4x4TransposeMultVec4(&scene->objectData[objectIndex].invWorldTransform, (float4)(geometricNormal, 0.0f));
 
-        retval.normal = worldNormal;
+        retval.geometricNormal = worldGeometricNormal;
+        retval.shadingNormal = worldShadingNormal;
         retval.texCoords = textureCoords;
         retval.materialIndex = scene->modelData[modelIndex].materialIndex;     
     }
@@ -628,7 +638,7 @@ float3 MissRayColor(float3 rayDirection)
     return mix(horizon, zenith, t);
 }
 
-#define MAX_BOUNCE_COUNT 10
+#define MAX_BOUNCE_COUNT 15
 
 float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
 {
@@ -643,10 +653,11 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
         {
             // Setup basic variables
             // Geometric normal is the avarage normal, defined by the mesh.
-            float3 geometricNormal = normalize(traceResult.normal);
+            float3 geometricNormal = normalize(traceResult.geometricNormal);
+            float3 shadingNormal = normalize(traceResult.shadingNormal);
 
             // This boolean value is true if and only if the ray is hitting the face from its back side
-            bool isBackFace = dot(geometricNormal,ray.direction) > 0;
+            bool isBackFace = dot(geometricNormal,ray.direction) > 0; 
 
             // This hitpoint is the one thats calculated by the triangle-intersection algorithm
             // We will have to disposition this a bit along the geometric normal, so that we dont have shadow acne.
@@ -683,11 +694,13 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             float nextIoR = ior;
             float activeIoR = ior;
             float3 activeGeometricNormal = geometricNormal;
+            float3 activeShadingNormal = shadingNormal;
 
             if(isBackFace)
             {
                 activeIoR = 1.0f / ior;            
                 activeGeometricNormal = -geometricNormal;
+                activeShadingNormal = -shadingNormal;
                 currentIoR = ior;
                 nextIoR = 1.0f;
             }
@@ -699,7 +712,7 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             //  normal distribution in this case.
             float random1 = GenerateRandomFloat(&scene->rngState);
             float random2 = GenerateRandomFloat(&scene->rngState);
-            float3 activeMicrofacetNormal = SampleVisibleGGX(activeGeometricNormal,-ray.direction,roughness,random1, random2);
+            float3 activeMicrofacetNormal = SampleVisibleGGX(activeShadingNormal,-ray.direction,roughness,random1, random2);
             
             
             
@@ -754,15 +767,15 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
             {
                 // Diffuse reflection
                 // We use a cosine-weighted hamisphere sampling around the geometric normal.
-                ray.direction = normalize(geometricNormal + GenerateRandomVector(&scene->rngState)); 
+                ray.direction = normalize(activeShadingNormal + GenerateRandomVector(&scene->rngState)); 
                 throughPut *= albedo; // We only multiply it by the albedo, since the brdf and pdf cancel eachother out.
 
-                ray.origin = hitPoint + ray.direction* 0.00001f;
+                ray.origin = hitPoint + activeGeometricNormal* 0.00001f;
             }
             else
             {
-                float NdotV = dot(activeGeometricNormal,-ray.direction);
-                float NdotM = dot(activeGeometricNormal,activeMicrofacetNormal);
+                float NdotV = dot(activeShadingNormal,-ray.direction);
+                float NdotM = dot(activeShadingNormal,activeMicrofacetNormal);
                 float VdotM = dot(-ray.direction,activeMicrofacetNormal);
 
                 /*
@@ -784,16 +797,25 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                     float3 reflectedDirection = normalize(Reflect(&ray.direction, &activeMicrofacetNormal));
 
                     // Some helper variables for the brdf & pdf
-                    float NdotL = dot(activeGeometricNormal,reflectedDirection);
+                    float NdotL = dot(activeShadingNormal,reflectedDirection);
 
                     
-                
-                    if (NdotL <= 0.0f) 
+                    /*
+                    if(NdotL <= 0.001f) 
                     {
                         // If we have degenerate microfacet normal reflection, we throw the ray away
                         // This isnt taht good... [TODO] fix
                         throughPut = (float3)(0.0f, 0.0f, 0.0f);
                         //retval =  (float3)(0.8f, 0.0f, 0.3f);
+                        break;
+                    }*/
+
+                    float NsDotL = dot(reflectedDirection, activeShadingNormal);
+                
+
+                    if (NsDotL <= 0.0f )
+                    {
+                        throughPut = (float3)(0.0f);
                         break;
                     }
                     
@@ -810,15 +832,16 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                     throughPut *= fresnel  * G1L ;
                     throughPut /= specularComp;
 
-                    ray.origin = hitPoint + ray.direction* 0.00001f;
+                    ray.origin = hitPoint + activeGeometricNormal* 0.00001f;
                 }
                 else
                 {
                     // Refraction based on the microfacet normal, and ray direction, and Snell's law.
                     // Previously we already checked for total internal reflection, therefore if we are here
                     //   we are guaranteed that we can refract.
-                    float NdotL = -dot(refractDirection,activeGeometricNormal);
+                    float NdotL = -dot(refractDirection,activeShadingNormal);
 
+                    
                     if (NdotL <= 0.0f) 
                     {
                         // If we have degenerate microfacet normal reflection, we throw the ray away
@@ -840,10 +863,14 @@ float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
                     float denom = (VdotM + activeIoR * LdotM);
                     float jacobian = fabs(LdotM) / (denom * denom);
                     
+                    /*
                     throughPut *= (1.0f - fresnel) * G1L * jacobian * (4.0f * fabs(VdotM));
                     throughPut /= transmissionComp;
+                    */
 
-                    ray.origin = hitPoint + ray.direction * 0.00001f;
+                    throughPut *= transmission* (1.0f - fresnel)* G1L/ transmissionComp;
+
+                    ray.origin = hitPoint - activeGeometricNormal * 0.00001f;
 
                 }
                 
