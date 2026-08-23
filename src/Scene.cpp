@@ -95,6 +95,8 @@ void Scene::Reset()
         _objectDatas.clear();
         _objectTransforms.clear();
         _debugBlasBvhIndirectCommandDatas.clear();
+        _temporaryObjectBlasInstances.clear();
+        _tlasBvhNodes.clear();
     }
     if(_modelDatas.size()>0)
     {
@@ -187,6 +189,9 @@ void Scene::InitCL()
     CHECK_ERROR(clError);
 
     _objectDataBuffer = clCreateBuffer(clContext,CL_MEM_READ_ONLY,sizeof(ObjectData) * _maximumObjectCount,nullptr,&clError);
+    CHECK_ERROR(clError);
+
+    _tlasBvhNodesBuffer = clCreateBuffer(clContext,CL_MEM_READ_ONLY,sizeof(TlasBvhNode)* _maximumObjectCount * 2, nullptr,&clError);
     CHECK_ERROR(clError);
 
 }
@@ -391,6 +396,19 @@ void Scene::Init()
 
     this->_debugBvhShader.Init("assets/shaders/debug_bvh_shader.vert","assets/shaders/debug_bvh_shader.frag");
 
+
+    // Setting up buffers for tlas nodes, both cpu and gpuside(gpu side reserve happens in initcl)
+    this->_temporaryObjectBlasInstances.reserve(this->_maximumObjectCount);
+    this->_tlasBvhNodes.reserve(this->_maximumObjectCount * 2);
+
+    //setting up debugTlasBvhRendering here
+    this->_debugTlasBvhShader.Init("assets/shaders/debug_tlas_bvh_shader.vert","assets/shaders/debug_tlas_bvh_shader.frag");
+
+    glGenBuffers(1,&this->_debugTlasBvhBoxesSsboId);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,this->_debugTlasBvhBoxesSsboId);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(TlasBvhNode) * this->_maximumObjectCount*2,nullptr,GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,0);
+
     InitCL();
 }
 
@@ -435,9 +453,14 @@ void Scene::Render()
         RasterizeRender();
     }
 
-    if(_isDebugRenderEnabled)
+    if(_isDebugBlasRenderEnabled)
     {
-        RenderDebugBvhBoxes();
+        RenderDebugBlasBvhBoxes();
+    }
+
+    if(_isDebugTlasRenderEnabled)
+    {
+        RenderDebugTlasBvhBoxes();
     }
 
     RenderGizmo();
@@ -577,12 +600,12 @@ void Scene::RenderGizmo()
     glDisable(GL_DEPTH_TEST);
 }
 
-void Scene::RenderDebugBvhBoxes()
+void Scene::RenderDebugBlasBvhBoxes()
 {
     glViewport(0,0,_viewportWidth,_viewportHeight);
     
 
-    if (!_isDebugRenderEnabled) return;
+    if (!_isDebugBlasRenderEnabled) return;
 
     if (_debugBlasBvhIndirectCommandDatas.size() <= 0) return;
 
@@ -617,6 +640,45 @@ void Scene::RenderDebugBvhBoxes()
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,1,0);
 
     //glEnable(GL_DEPTH_TEST);
+
+    _debugBvhShader.Unbind();
+
+    _renderFrameBuffer.Unbind();
+}
+
+void Scene::RenderDebugTlasBvhBoxes()
+{
+    glViewport(0,0,_viewportWidth,_viewportHeight);
+
+    if (!_isDebugTlasRenderEnabled) return;
+
+    if (_tlasBvhNodes.size() <= 0) return;
+
+    _renderFrameBuffer.Bind();
+
+    glClear( GL_DEPTH_BUFFER_BIT);
+
+    glDisable(GL_DEPTH_TEST);
+
+    _debugTlasBvhShader.Bind();
+
+    glm::mat4 view = _camera.GetViewMatrix();
+
+    glm::mat4 projection = _camera.GetPerspectiveMatrix();
+
+    glm::mat4 viewProjection = projection * view;
+
+    _debugTlasBvhShader.SetUniform<glm::mat4>("uViewProjection",viewProjection);
+
+    glBindBufferBase( GL_SHADER_STORAGE_BUFFER,0,_debugTlasBvhBoxesSsboId);
+    glBindVertexArray(_debugBvhVaoId);
+
+    glDrawElementsInstanced(GL_LINES,24,GL_UNSIGNED_INT,0,_tlasBvhNodes.size());
+
+    glBindVertexArray(0);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,0,0);
+
+    _debugTlasBvhShader.Unbind();
 
     _renderFrameBuffer.Unbind();
 }
@@ -1551,6 +1613,8 @@ bool Scene::TryAddObject(ObjectInfo *objectInfo)
 
     ResetPathTracedFrameIndex();
 
+    this->ReconstructTlasBvh();
+
     return true;
 }
 
@@ -1604,6 +1668,8 @@ bool Scene::TryAlterObject(int objectIndex, const ObjectState& alteredObjectStat
 
         ResetPathTracedFrameIndex();
 
+        this->ReconstructTlasBvh();
+
         return true;
     }
     return false;
@@ -1648,6 +1714,8 @@ bool Scene::TryDeleteObject(int objectIndex)
 
         ResetPathTracedFrameIndex();
         ChooseObject(-1);
+
+        this->ReconstructTlasBvh();
         
         return true;
     }
@@ -2222,4 +2290,299 @@ void Scene::AddNewBvhNodeBoxesToDebugSsbo(std::vector<BvhNodeData> &bvhNodeDatas
     this->_debugBlasBvhMeshRanges.push_back(newBvhBoxRangeData);
 
     this->_debugBlasBvhBoxes.insert(this->_debugBlasBvhBoxes.end(),tempProcessVector.begin(),tempProcessVector.end());
+}
+
+static float GetTlasSahSplitCost(const AABB3& minBox, int minCount, const AABB3& maxBox, int maxCount)
+{
+    glm::vec3 minBoxSize = minBox.max - minBox.min;
+    glm::vec3 maxBoxSize = maxBox.max - maxBox.min;
+
+    float minBoxArea = 2.0f* (minBoxSize.x * minBoxSize.y + minBoxSize.x * minBoxSize.z + minBoxSize.y * minBoxSize.z);
+	float maxBoxArea = 2.0f* (maxBoxSize.x * maxBoxSize.y + maxBoxSize.x * maxBoxSize.z + maxBoxSize.y * maxBoxSize.z);
+
+	return minBoxArea  * minCount + maxBoxArea * maxCount;
+}
+
+BestSplitResult Scene::FindBestSahSplitOfInterval(const TlasBvhNode& processedTlasNode, int intervalStart, int intervalEnd)
+{
+    //pre assumptions: atleast 2 tempoarary nodes exist on interval, 
+    // we use SAH for best splitting search, firstly we go through all axes, determining the minside extreme centroid, 
+    // and the maxside extreme centroid, after that we use bins to between these two centroid, first bin is on start centroid, 
+    // last is on the maxside end extreme centroid.
+
+    AABB3 tlasNodeAABB = {
+        processedTlasNode.boundingBoxMin,
+        processedTlasNode.boundingBoxMax
+    };
+
+    float bestSahCost = FLT_MAX;
+    BestSplitResult retvalResult;
+    retvalResult.axis = -1;
+    for(int axis = 0; axis < 3 ;++axis)
+    {
+        //max + min search for extreme centroids on the interval
+        float minCentroidValueOnAxis = FLT_MAX;
+        float maxCentroidValueOnAxis = -FLT_MAX;
+        for(int i = intervalStart ; i<intervalEnd;++i)
+        {
+            if(_temporaryObjectBlasInstances[i].objectCentroid[axis] < minCentroidValueOnAxis)
+            {
+                minCentroidValueOnAxis = _temporaryObjectBlasInstances[i].objectCentroid[axis];
+            }
+
+            if(_temporaryObjectBlasInstances[i].objectCentroid[axis] > maxCentroidValueOnAxis)
+            {
+                maxCentroidValueOnAxis = _temporaryObjectBlasInstances[i].objectCentroid[axis];
+            }
+        }
+
+        //okay, now the two values calculated above hold our end of the binning interval, lets start binning!
+        float lengthOfTheBinningInterval = (maxCentroidValueOnAxis - minCentroidValueOnAxis);
+        float deltaPerBinOnAxis = lengthOfTheBinningInterval / (_tlasSahBinCount -1); // -1, because we want the 
+                                                                                      //last bin to be the last centroid of the 
+                                                                                      //interval on axis
+        for(int bin=0;bin<_tlasSahBinCount;++bin)
+        {
+            float currentBinValueOnAxis = minCentroidValueOnAxis + bin*deltaPerBinOnAxis;
+            AABB3 minSideBox = {glm::vec3(FLT_MAX,FLT_MAX,FLT_MAX),glm::vec3(-FLT_MAX,-FLT_MAX,-FLT_MAX)};
+            int minSideCount = 0;
+            AABB3 maxSideBox = {glm::vec3(FLT_MAX,FLT_MAX,FLT_MAX),glm::vec3(-FLT_MAX,-FLT_MAX,-FLT_MAX)};
+            int maxSideCount = 0;
+            for(int i=intervalStart; i<intervalEnd;++i)
+            {
+                ObjectBlasInstance* tempInstancePtr = &_temporaryObjectBlasInstances[i];
+                if(tempInstancePtr->objectCentroid[axis] < currentBinValueOnAxis)
+                {
+                    ++minSideCount;
+                    FeedAABB3ToAABB3(minSideBox,tempInstancePtr->worldBoundsBox);
+                }
+                else
+                {
+                    ++maxSideCount;
+                    FeedAABB3ToAABB3(maxSideBox,tempInstancePtr->worldBoundsBox);
+                }
+            }
+
+            // Just to filter our degenerate cases.
+            if (minSideCount == 0 || maxSideCount == 0) continue;
+
+            // there should be atleast one blas instance on either side.
+            float determinedSahCostOfSplit = GetTlasSahSplitCost(minSideBox,minSideCount,maxSideBox,maxSideCount);
+
+            if(determinedSahCostOfSplit < bestSahCost)
+            {
+                bestSahCost = determinedSahCostOfSplit;
+                retvalResult.axis = axis;
+                retvalResult.valueOnAxis = currentBinValueOnAxis;
+            }
+        } 
+    }
+
+    return retvalResult;
+}
+
+PartitionResult Scene::PartitionTemporaryInstanceInterval(int partitionAxis, float partitionValueOnAxis, int intervalStart, int intervalEnd)
+{
+    PartitionResult retval;
+    retval.partitionIndex = -1;
+
+    if(intervalEnd - intervalStart < 2) return retval;
+
+    AABB3 minSideBox = {glm::vec3(FLT_MAX,FLT_MAX,FLT_MAX),glm::vec3(-FLT_MAX,-FLT_MAX,-FLT_MAX)};
+    AABB3 maxSideBox = {glm::vec3(FLT_MAX,FLT_MAX,FLT_MAX),glm::vec3(-FLT_MAX,-FLT_MAX,-FLT_MAX)};
+
+    int frontIndex = intervalStart;
+    int endIndex = intervalEnd -1;
+    while(frontIndex <= endIndex)
+    {
+        ObjectBlasInstance* tempInstancePtr = &this->_temporaryObjectBlasInstances[frontIndex];
+        if(tempInstancePtr->objectCentroid[partitionAxis] >= partitionValueOnAxis)
+        {
+            // you are at the wrong side(should be at the max side, but instead is at the min side)
+            // lets put this temp instance to the back of the interval, and lets put the value existing there to the front, and decrease
+            // backindex, because the value we put there is valid.
+            ObjectBlasInstance endTempInstanceTempCopy = this->_temporaryObjectBlasInstances[endIndex];
+            this->_temporaryObjectBlasInstances[endIndex] = this->_temporaryObjectBlasInstances[frontIndex];
+            this->_temporaryObjectBlasInstances[frontIndex] = endTempInstanceTempCopy;
+            --endIndex;
+        }
+        else
+        {
+            //this means the front is at the right place, we just have to increment frontIndex
+            ++frontIndex;
+        }
+    }
+
+    retval.partitionIndex = frontIndex;
+
+    for(int i=intervalStart;i<intervalEnd;++i)
+    {
+        if(i < frontIndex)
+        {
+            //minside
+            FeedAABB3ToAABB3(minSideBox,_temporaryObjectBlasInstances[i].worldBoundsBox);
+        }
+        else
+        {
+            //maxside;
+            FeedAABB3ToAABB3(maxSideBox,_temporaryObjectBlasInstances[i].worldBoundsBox);
+        }
+    }
+
+    retval.minSideAABB = minSideBox;
+    retval.maxSideAABB = maxSideBox;
+
+    return retval; //i hope this is good(seems good) //frontindex should always point to the last last min side object instance + 1
+}
+
+PartitionResult Scene::FallbackPartitionInterval(int intervalStart, int intervalEnd)
+{
+    PartitionResult retvalResult;
+    int partitionIndex = intervalStart + (intervalEnd - intervalStart) / 2;
+    retvalResult.partitionIndex = partitionIndex;
+
+    AABB3 minSideBox = {glm::vec3(FLT_MAX,FLT_MAX,FLT_MAX),glm::vec3(-FLT_MAX,-FLT_MAX,-FLT_MAX)};
+    AABB3 maxSideBox = {glm::vec3(FLT_MAX,FLT_MAX,FLT_MAX),glm::vec3(-FLT_MAX,-FLT_MAX,-FLT_MAX)};
+
+    for(int i=intervalStart;i<intervalEnd;++i)
+    {
+        if(i < partitionIndex)
+        {
+            //minside
+            FeedAABB3ToAABB3(minSideBox,_temporaryObjectBlasInstances[i].worldBoundsBox);
+        }
+        else
+        {
+            //maxside;
+            FeedAABB3ToAABB3(maxSideBox,_temporaryObjectBlasInstances[i].worldBoundsBox);
+        }
+    }
+
+    retvalResult.minSideAABB = minSideBox;
+    retvalResult.maxSideAABB = maxSideBox;
+
+    return retvalResult;
+}
+
+void Scene::TrySplitTlasNodeRecursive(int tlasBvhNodeIndex, int intervalStart, int intervalEnd)
+{
+    TlasBvhNode currentNode = this->_tlasBvhNodes[tlasBvhNodeIndex];
+    if((intervalEnd - intervalStart) > 1)
+    {
+        //internal Node
+        // we know the interval, 
+        BestSplitResult bestWayToSplitCurrentNode = FindBestSahSplitOfInterval(currentNode,intervalStart,intervalEnd);
+
+        int splittingAxis = bestWayToSplitCurrentNode.axis;
+        float splittingValueOnAxis = bestWayToSplitCurrentNode.valueOnAxis;
+
+        PartitionResult partitionOfTlasNodeResult;
+        //It can happen, that sometimes sah cant determine an optimal split, in the case of a lot of objects are in the same place, and the binning
+        // interval is sooo tiny tiny, that producing a good result is not possible, in this degenerate case we will just simply 
+        // split the interval in half, cuz we HAVE to make some kind of split.
+        // the degenerate case mostly happens because of 0 length of axis (all axis) -> the centroid points overlap
+        if(bestWayToSplitCurrentNode.axis >= 0) // good case
+        {
+            partitionOfTlasNodeResult = PartitionTemporaryInstanceInterval(bestWayToSplitCurrentNode.axis,
+                bestWayToSplitCurrentNode.valueOnAxis,intervalStart,intervalEnd);
+        }
+        else // bad case
+        {
+            partitionOfTlasNodeResult = FallbackPartitionInterval(intervalStart,intervalEnd);
+        }
+
+        
+
+        //now we partitioned the given interval, lets create two children nodes for the two new intervals based on partition, and split those
+        // recursively aswell.
+        TlasBvhNode minSideChild;
+        minSideChild.boundingBoxMin = partitionOfTlasNodeResult.minSideAABB.min;
+        minSideChild.boundingBoxMax = partitionOfTlasNodeResult.minSideAABB.max;
+
+        TlasBvhNode maxSideChild;
+        maxSideChild.boundingBoxMin = partitionOfTlasNodeResult.maxSideAABB.min;
+        maxSideChild.boundingBoxMax = partitionOfTlasNodeResult.maxSideAABB.max;
+
+        int minSideChildIndexInTlasNodes = this->_tlasBvhNodes.size();
+        this->_tlasBvhNodes.push_back(minSideChild);
+
+        int maxSideChildIndexInTlasNodes = this->_tlasBvhNodes.size();
+        this->_tlasBvhNodes.push_back(maxSideChild);
+
+        // we also have to set where the children of the currently split(parent) node are located at(its box is already calculated.)
+        this->_tlasBvhNodes[tlasBvhNodeIndex].minChildIndex = minSideChildIndexInTlasNodes;
+        this->_tlasBvhNodes[tlasBvhNodeIndex].maxChildIndex = maxSideChildIndexInTlasNodes;
+
+
+        //std::cout<<"Interval Start: " << intervalStart << " partition: " << partitionOfTlasNodeResult.partitionIndex << " end: "<< intervalEnd << "\n";
+        // Now, everything has been set for the parent node, and the box of the children has been also set(through the partition func)
+        // here, we still have to recursively split down these newly created nodes aswell.
+        TrySplitTlasNodeRecursive(minSideChildIndexInTlasNodes,intervalStart,partitionOfTlasNodeResult.partitionIndex);
+        TrySplitTlasNodeRecursive(maxSideChildIndexInTlasNodes,partitionOfTlasNodeResult.partitionIndex,intervalEnd);
+        // and we are finished.
+    }
+    else
+    {
+        //Leaf node
+        int objectIndex = _temporaryObjectBlasInstances[intervalStart].objectIndex;
+        _tlasBvhNodes[tlasBvhNodeIndex].maxChildIndex = objectIndex;
+        _tlasBvhNodes[tlasBvhNodeIndex].minChildIndex = -1; // the leaf "signal"
+    }
+}
+
+void Scene::ReconstructTlasBvh()
+{
+
+    this->_tlasBvhNodes.clear();
+
+    this->_temporaryObjectBlasInstances.clear();
+
+    if(this->_objectDatas.size() <= 0) return; // no object, no need for any of this shish
+
+    
+    TlasBvhNode rootTlasNode;
+
+    AABB3 aabbOfTlasBvhNodeRoot;
+    aabbOfTlasBvhNodeRoot.min = glm::vec3(FLT_MAX,FLT_MAX,FLT_MAX);
+    aabbOfTlasBvhNodeRoot.max = glm::vec3(-FLT_MAX,-FLT_MAX,-FLT_MAX);
+    //First, we have to calculate and load our temporary objectblasinstances.
+    for(int i=0;i<_objectDatas.size();++i)
+    {
+        ObjectBlasInstance currentTemporaryInstance;
+        currentTemporaryInstance.objectIndex = i;
+
+        int blasBvhRootIndexOfCurrentObject = _meshBvhRootIndexData[_modelDatas[_objectDatas[i].modelIndex].meshIndex];
+        AABB3 localBlasRootBox;
+        localBlasRootBox.min = glm::vec3(_bottomLevelBvhNodeDatas[blasBvhRootIndexOfCurrentObject].box.min);
+        localBlasRootBox.max = glm::vec3(_bottomLevelBvhNodeDatas[blasBvhRootIndexOfCurrentObject].box.max);
+        currentTemporaryInstance.worldBoundsBox = GetWorldBoundsOfTransformedAABB(_objectDatas[i].worldTransform,localBlasRootBox);
+
+        currentTemporaryInstance.objectCentroid = 
+            (currentTemporaryInstance.worldBoundsBox.max + currentTemporaryInstance.worldBoundsBox.min) * 0.5f;
+
+        FeedAABB3ToAABB3(aabbOfTlasBvhNodeRoot,currentTemporaryInstance.worldBoundsBox);
+
+        _temporaryObjectBlasInstances.push_back(currentTemporaryInstance);
+    }
+
+    rootTlasNode.boundingBoxMax = aabbOfTlasBvhNodeRoot.max;
+    rootTlasNode.boundingBoxMin = aabbOfTlasBvhNodeRoot.min;
+
+    this->_tlasBvhNodes.push_back(rootTlasNode);
+    TrySplitTlasNodeRecursive(0,0,this->_temporaryObjectBlasInstances.size());
+
+    //the function called above has calculated all bvh nodes, we now have to upload this data both to opencl and opengl buffers for rendering
+    // lets upload data to GPU
+    cl_int clError;
+    clError = clEnqueueWriteBuffer(clCommandQueue,this->_tlasBvhNodesBuffer,CL_TRUE,0,sizeof(TlasBvhNode) * this->_tlasBvhNodes.size(),
+        this->_tlasBvhNodes.data(),0,nullptr,nullptr);
+    CHECK_ERROR(clError);
+
+    //now to opengl SSBO
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,this->_debugTlasBvhBoxesSsboId);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER,0,sizeof(TlasBvhNode) * this->_tlasBvhNodes.size(),_tlasBvhNodes.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,0);
+
+    //Finish, i think?
+    
 }

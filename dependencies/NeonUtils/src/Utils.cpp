@@ -554,3 +554,49 @@ AABB4 CalculateAABB4BasedOnTriangles(int startIndex, int endIndex,
 	
 	return {boxMin,boxMax};
 }
+
+AABB3 GetWorldBoundsOfTransformedAABB(const glm::mat4 &worldTransform, const AABB3 &localAABB)
+{
+	AABB3 retval;
+	retval.min = glm::vec3(FLT_MAX,FLT_MAX,FLT_MAX);
+	retval.max = glm::vec3(-FLT_MAX,-FLT_MAX,-FLT_MAX);
+
+    glm::vec3 sizeofLocalAABB = localAABB.max - localAABB.min;
+	for(unsigned int i=0;i<8;++i)
+	{
+		glm::vec3 binaryWeights = glm::vec3(
+				float((i >> 0) & 1u),
+				float((i >> 1) & 1u),
+				float((i >> 2) & 1u)
+			);
+		glm::vec3 cornerPoint = localAABB.min + sizeofLocalAABB * binaryWeights;
+
+		glm::vec3 transformedCornerPoint = glm::vec3(worldTransform* glm::vec4(cornerPoint,1));
+		//now we just feed this point to our aabb
+		FeedVec3ToAABB3(retval, transformedCornerPoint);
+	}
+
+	return retval;
+}
+
+void FeedVec3ToAABB3(AABB3& eater, const glm::vec3& food)
+{
+	eater.min.x = fmin(eater.min.x,food.x);
+	eater.min.y = fmin(eater.min.y,food.y);
+	eater.min.z = fmin(eater.min.z,food.z);
+
+	eater.max.x = fmax(eater.max.x,food.x);
+	eater.max.y = fmax(eater.max.y,food.y);
+	eater.max.z = fmax(eater.max.z,food.z);
+}
+
+void FeedAABB3ToAABB3(AABB3 &eater, const AABB3 &food)
+{
+	eater.min.x = fmin(eater.min.x,food.min.x);
+	eater.min.y = fmin(eater.min.y,food.min.y);
+	eater.min.z = fmin(eater.min.z,food.min.z);
+
+	eater.max.x = fmax(eater.max.x,food.max.x);
+	eater.max.y = fmax(eater.max.y,food.max.y);
+	eater.max.z = fmax(eater.max.z,food.max.z);
+}

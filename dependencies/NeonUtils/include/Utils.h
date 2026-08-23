@@ -35,6 +35,12 @@ struct AABB4
     glm::vec4 max;
 };
 
+struct AABB3
+{
+	glm::vec3 min;
+	glm::vec3 max;
+};
+
 enum class ValueType
 {
 	AUTO = 0,
@@ -110,6 +116,15 @@ bool TryLoadObjFile(const std::string& filePathRelative,
 AABB4 CalculateAABB4BasedOnTriangles(int startIndex, int endIndex,
 	const std::vector<glm::vec3>& positions, 
 	const std::vector<glm::vec<3,int>>& triangleIndices);
+
+/**
+ * This function calculates an AABB which perfectly encapsulates the transformed AABB given through the parameters
+ */
+AABB3 GetWorldBoundsOfTransformedAABB(const glm::mat4& worldTransform, const AABB3& localAABB);
+
+void FeedAABB3ToAABB3(AABB3& eater, const AABB3& food);
+void FeedVec3ToAABB3(AABB3& eater, const glm::vec3& food);
+
 
 
 #endif

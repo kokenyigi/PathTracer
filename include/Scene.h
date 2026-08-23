@@ -206,6 +206,28 @@ struct ObjectData
     glm::mat4 invWorldTransform = glm::mat4(1.0f);
 };
 
+/**
+ * So, since we dont want to calculate the real-world aabb bounds of an object each time we need it, we store this temporary structure
+ * in a pre-allocated array for efficiency.
+ */
+struct ObjectBlasInstance
+{
+    glm::vec3 objectCentroid; //of object AABB (OBB)
+    AABB3 worldBoundsBox; // of object
+    int objectIndex; //the objectData
+};
+
+struct TlasBvhNode
+{
+    glm::vec3 boundingBoxMin; //the min corner of the world AABB the TlasbvhNode is in charge of(the chunk of the world that belongs to it)
+    int minChildIndex = -1; //this index if its >= 0 points to an actual child of the bvhnode, in this case, maxchild points to the other
+                            // However, if it is <0(negative) -> it means that this node is a leaf and therefore has no actual children.
+                            // If this is  aleaf node, then maxChildIndex points to the ObjectBlasInstance the bvhnode encapsulates.
+    glm::vec3 boundingBoxMax; // again, just simply the max corner of the world chunk the bvhnode pastors
+    int maxChildIndex = -1; // this index either stores the actual other child index of the node, but if the node is a leaf, this stores
+                            // an objectBLAS instance.
+};
+
 
 /**
  * This structure is just a way to enable communication of Mesh information to the outside eg.: View (App) layer
@@ -343,6 +365,19 @@ struct IndirectCommandData
     uint32_t baseInstance;
 };
 
+struct BestSplitResult
+{
+    float valueOnAxis;
+    int axis;
+};
+
+struct PartitionResult
+{
+    int partitionIndex;
+    AABB3 minSideAABB;
+    AABB3 maxSideAABB;
+};
+
 /**
  * This class is basically a renderer, it handles IO, and renders the given scene into a texture.
  * In our application it is used to render the scene inside a canvas control.
@@ -432,6 +467,11 @@ private:
     std::vector<ObjectData> _objectDatas;
     cl_mem _objectDataBuffer = nullptr;
 
+    const int _tlasSahBinCount = 32;
+    std::vector<ObjectBlasInstance> _temporaryObjectBlasInstances;
+    std::vector<TlasBvhNode> _tlasBvhNodes;
+    cl_mem _tlasBvhNodesBuffer = nullptr;
+
     unsigned int _frameIndex = 0;
 
     //Variables related to Rasterized rendering
@@ -443,7 +483,7 @@ private:
 
 
     //Debug Bvh Rendering Datas
-    bool _isDebugRenderEnabled = true;
+    bool _isDebugBlasRenderEnabled = false;
     Shader _debugBvhShader;
 
     unsigned int _debugBvhVaoId = 0;
@@ -460,6 +500,11 @@ private:
     unsigned int _debugBlasBvhObjectWorldtransformsSsboId = 0;
     std::vector<IndirectCommandData> _debugBlasBvhIndirectCommandDatas;
     unsigned int _debugBlasBvhIndirectCommandsIndirectBufferObjectId = 0;
+
+    // laughably, for the ssbo we only need because we just simply do regular old instancing using an ssbo where data of tlasnodes is stored. 
+    bool _isDebugTlasRenderEnabled = true;
+    Shader _debugTlasBvhShader;
+    unsigned int _debugTlasBvhBoxesSsboId = 0;
 
     
     
@@ -555,7 +600,8 @@ private:
 
     void RenderGizmo();
 
-    void RenderDebugBvhBoxes();
+    void RenderDebugBlasBvhBoxes();
+    void RenderDebugTlasBvhBoxes();
 
     /**
      * This helper function basically tries to load, and preprocess the necessary data for a pathtraced mesh
@@ -656,6 +702,44 @@ private:
     void HelperBvhNodeBoxExtractorRecursive(std::vector<BvhNodeData>& bvhNodeDatas,int nodeIndex, int depth,
          std::vector<AABB4>& extractVector);
     void AddNewBvhNodeBoxesToDebugSsbo(std::vector<BvhNodeData>& bvhNodeDatas);
+
+
+
+    
+
+    /**
+     * This function analyzes the given interval of object-level blas instance world bound AABBs, 
+     *  and determines the best splitting value(on axis value),
+     *  and best axis to split at, using binned(32 usually) Surface Area heuristic.
+     */
+    BestSplitResult FindBestSahSplitOfInterval(const TlasBvhNode& processedTlasNode, int intervalStart, int intervalEnd);
+
+    /**
+     * This functions will be called after the ideal split has been determined by the function above.
+     * based on the data returned there, it will move around the temporary blas instances on an interval, according to the split value and axis
+     * specified in its paramter list. 
+     * Returns the where the middle of the partition is(the first index on the max side)
+     */
+    PartitionResult PartitionTemporaryInstanceInterval(int partitionAxis,float partitionValueOnAxis,int intervalStart, int intervalEnd);
+
+    /**
+     * This functions is called when the interval cant be split by SAH well, therefore we just simply split it by the x axis, and in the
+     * Middle of the interval
+     */
+    PartitionResult FallbackPartitionInterval(int intervalStart, int IntervalEnd);
+
+    /**
+     * This procedure after using the functions above, determines the best split with it, re-arranges the temporary object instances,
+     * and splits the given temporary blas instance interval in two(tries), it fails to split in the case of only one instance existing
+     * inside the interval, int htis case the node we wanted to split becomes a leaf node.
+     */
+    void TrySplitTlasNodeRecursive(int tlasBvhNodeIndex, int intervalStart, int intervalEnd);
+ 
+    /**
+     * This function fully recalculates all temporary objectblasintances, and after that it builds up the tlas bvh tree, by recursively
+     *  splitting the root node 
+     */
+    void ReconstructTlasBvh();
 };
 
 
