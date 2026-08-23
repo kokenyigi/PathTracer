@@ -515,9 +515,11 @@ void Scene::PathTracedRender()
     clError = clSetKernelArg(clPathTracerKernel,11,sizeof(cl_mem),&_materialDataBuffer);CHECK_ERROR(clError);
     clError = clSetKernelArg(clPathTracerKernel,12,sizeof(cl_mem),&_modelDataBuffer);CHECK_ERROR(clError);
     clError = clSetKernelArg(clPathTracerKernel,13,sizeof(cl_mem),&_objectDataBuffer);CHECK_ERROR(clError);
-    cl_int objectCount = _objectDatas.size();
-    clError = clSetKernelArg(clPathTracerKernel,14,sizeof(int),&objectCount);CHECK_ERROR(clError);
-    clError = clSetKernelArg(clPathTracerKernel,15,sizeof(int),&_frameIndex);CHECK_ERROR(clError);
+    //cl_int objectCount = _objectDatas.size();
+    clError = clSetKernelArg(clPathTracerKernel,14,sizeof(cl_mem),&this->_tlasBvhNodesBuffer);CHECK_ERROR(clError);
+    cl_int tlasBvhRootIndexIndicator = this->_tlasBvhNodes.size() > 0 ? 0 : -1;
+    clError = clSetKernelArg(clPathTracerKernel,15,sizeof(int),&tlasBvhRootIndexIndicator);CHECK_ERROR(clError);
+    clError = clSetKernelArg(clPathTracerKernel,16,sizeof(int),&_frameIndex);CHECK_ERROR(clError);
 
     size_t localSize[2] = { 16, 16 };
     size_t globalSize[2] = {((_viewportWidth + localSize[0] -1) / localSize[0]) * localSize[0],
@@ -2311,8 +2313,8 @@ BestSplitResult Scene::FindBestSahSplitOfInterval(const TlasBvhNode& processedTl
     // last is on the maxside end extreme centroid.
 
     AABB3 tlasNodeAABB = {
-        processedTlasNode.boundingBoxMin,
-        processedTlasNode.boundingBoxMax
+        glm::vec3(processedTlasNode.box.min),
+        glm::vec3(processedTlasNode.box.max)
     };
 
     float bestSahCost = FLT_MAX;
@@ -2496,12 +2498,10 @@ void Scene::TrySplitTlasNodeRecursive(int tlasBvhNodeIndex, int intervalStart, i
         //now we partitioned the given interval, lets create two children nodes for the two new intervals based on partition, and split those
         // recursively aswell.
         TlasBvhNode minSideChild;
-        minSideChild.boundingBoxMin = partitionOfTlasNodeResult.minSideAABB.min;
-        minSideChild.boundingBoxMax = partitionOfTlasNodeResult.minSideAABB.max;
+        minSideChild.box = {glm::vec4(partitionOfTlasNodeResult.minSideAABB.min,0),glm::vec4(partitionOfTlasNodeResult.minSideAABB.max,0)};
 
         TlasBvhNode maxSideChild;
-        maxSideChild.boundingBoxMin = partitionOfTlasNodeResult.maxSideAABB.min;
-        maxSideChild.boundingBoxMax = partitionOfTlasNodeResult.maxSideAABB.max;
+        maxSideChild.box = {glm::vec4(partitionOfTlasNodeResult.maxSideAABB.min,0),glm::vec4(partitionOfTlasNodeResult.maxSideAABB.max,0)};
 
         int minSideChildIndexInTlasNodes = this->_tlasBvhNodes.size();
         this->_tlasBvhNodes.push_back(minSideChild);
@@ -2565,14 +2565,13 @@ void Scene::ReconstructTlasBvh()
         _temporaryObjectBlasInstances.push_back(currentTemporaryInstance);
     }
 
-    rootTlasNode.boundingBoxMax = aabbOfTlasBvhNodeRoot.max;
-    rootTlasNode.boundingBoxMin = aabbOfTlasBvhNodeRoot.min;
+    rootTlasNode.box = {glm::vec4(aabbOfTlasBvhNodeRoot.min,0),glm::vec4(aabbOfTlasBvhNodeRoot.max,0)};
 
     this->_tlasBvhNodes.push_back(rootTlasNode);
     TrySplitTlasNodeRecursive(0,0,this->_temporaryObjectBlasInstances.size());
 
     //the function called above has calculated all bvh nodes, we now have to upload this data both to opencl and opengl buffers for rendering
-    // lets upload data to GPU
+    // lets upload data to GPU 
     cl_int clError;
     clError = clEnqueueWriteBuffer(clCommandQueue,this->_tlasBvhNodesBuffer,CL_TRUE,0,sizeof(TlasBvhNode) * this->_tlasBvhNodes.size(),
         this->_tlasBvhNodes.data(),0,nullptr,nullptr);

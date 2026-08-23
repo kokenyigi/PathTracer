@@ -219,13 +219,17 @@ struct ObjectBlasInstance
 
 struct TlasBvhNode
 {
-    glm::vec3 boundingBoxMin; //the min corner of the world AABB the TlasbvhNode is in charge of(the chunk of the world that belongs to it)
+    AABB4 box;
+    //glm::vec3 boundingBoxMin; //the min corner of the world AABB the TlasbvhNode is in charge of(the chunk of the world that belongs to it)
     int minChildIndex = -1; //this index if its >= 0 points to an actual child of the bvhnode, in this case, maxchild points to the other
                             // However, if it is <0(negative) -> it means that this node is a leaf and therefore has no actual children.
                             // If this is  aleaf node, then maxChildIndex points to the ObjectBlasInstance the bvhnode encapsulates.
-    glm::vec3 boundingBoxMax; // again, just simply the max corner of the world chunk the bvhnode pastors
+    //glm::vec3 boundingBoxMax; // again, just simply the max corner of the world chunk the bvhnode pastors
     int maxChildIndex = -1; // this index either stores the actual other child index of the node, but if the node is a leaf, this stores
                             // an objectBLAS instance.
+
+    int padding0;
+    int padding1;
 };
 
 

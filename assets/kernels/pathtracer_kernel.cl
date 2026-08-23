@@ -429,6 +429,58 @@ BoxIntersectResult IntersectAABB4(const Ray* ray,__global const AABB4* box)
     }
 }
 
+BoxIntersectResult IntersectAABB4Private(const Ray* ray,__private const AABB4* box)
+{
+    BoxIntersectResult retval;
+    retval.t = FLT_MAX;
+
+    float tFar = FLT_MAX;
+    float tNear = -FLT_MAX;
+
+    for(int axis = 0; axis < 3; ++axis)
+    {
+        float tLowOnAxis;
+        float tHighOnAxis;
+        tLowOnAxis = (box->min[axis] - ray->origin[axis])*ray->invDirection[axis];
+        tHighOnAxis = (box->max[axis] - ray->origin[axis])*ray->invDirection[axis];
+
+        float tNearOnAxis = min(tLowOnAxis,tHighOnAxis);
+        float tFarOnAxis = max(tLowOnAxis,tHighOnAxis);
+
+        tNear = max(tNear,tNearOnAxis);
+        tFar = min(tFar,tFarOnAxis);
+
+        if(tNear > tFar) // nohit early exit
+        {
+            return retval;
+        }
+    }
+
+    if(tFar < 0)
+    {
+        return retval; //nohit
+    }
+    else
+    {
+        retval.t = max(tNear,0.0f);
+        return retval;
+    }
+}
+
+
+
+typedef struct 
+{
+    AABB4 box;
+
+    int minChildIndex;
+    int maxChildIndex;
+
+    int padding0;
+    int padding1;
+
+} TlasBvhNode;
+
 typedef struct
 {
     uint rngState;
@@ -441,7 +493,8 @@ typedef struct
     __global const MaterialData* materialData;
     __global const ModelData* modelData;
     __global const ObjectData* objectData;
-    int objectCount;
+    __global const TlasBvhNode* tlasBvhNodeData;
+    int tlasBvhRootIndex;
 
 } Scene;
 
@@ -602,17 +655,104 @@ TraceResult IntersectObject(const Ray* ray, int objectIndex,const Scene* scene)
         retval.geometricNormal = worldGeometricNormal;
         retval.shadingNormal = worldShadingNormal;
         retval.texCoords = textureCoords;
-        retval.materialIndex = scene->modelData[modelIndex].materialIndex;     
+        retval.materialIndex = scene->modelData[modelIndex].materialIndex;   
     }
 
     return retval;
 }
+
+// this number has to be larger than the binary logarithm of the maximum object count -> log2(objCOunt) > height of tlas bvh tree
+#define TLAS_STACK_SIZE 10
 
 TraceResult TraceRay(const Ray* ray, const Scene* scene)
 {
     TraceResult retval;
     retval.t = FLT_MAX;
 
+    Ray tlasRay = *ray;
+    // if there are no objects in the scene, therefore no tlas tree, rootindex is negative, so early exit here
+    if(scene->tlasBvhRootIndex >= 0) //normal scene tlas traversal
+    {
+        int tlasBvhNodeIndexStack[TLAS_STACK_SIZE];
+
+        tlasBvhNodeIndexStack[0] = scene->tlasBvhRootIndex;
+        int stackSize = 1;
+        while(stackSize > 0)
+        {
+            int currentTlasBvhNodeIndex = tlasBvhNodeIndexStack[stackSize-1];
+            --stackSize;
+
+            TlasBvhNode currentNode = scene->tlasBvhNodeData[currentTlasBvhNodeIndex];
+            BoxIntersectResult currentNodeBoxIntersectResult = IntersectAABB4(&tlasRay,&scene->tlasBvhNodeData[currentTlasBvhNodeIndex].box);
+            if(currentNodeBoxIntersectResult.t >= 0 && currentNodeBoxIntersectResult.t < tlasRay.tMax)
+            {
+                // we hit the currently processed tlas bvh node.
+                // lets check if this node is a leaf or an internal node.
+                if(currentNode.minChildIndex >= 0) // this is how an internal node is identified: having a positive min CHild index
+                {
+                    //Internal node
+                    int minChildIndex = currentNode.minChildIndex;
+                    int maxChildIndex = currentNode.maxChildIndex;
+
+                    __global const TlasBvhNode* minChildNode = &scene->tlasBvhNodeData[minChildIndex];
+                    
+                    float minChildDistanceFromNode = IntersectAABB4(&tlasRay, &minChildNode->box).t;
+
+                    __global const TlasBvhNode* maxChildNode = &scene->tlasBvhNodeData[maxChildIndex];
+                    float maxChildDistanceFromNode = IntersectAABB4(&tlasRay, &maxChildNode->box).t;
+                    if(minChildDistanceFromNode < tlasRay.tMax && maxChildDistanceFromNode < tlasRay.tMax)
+                    {
+                        //Both children are reachable by the ray, we have to push the one that is closer higher on the stack
+                        if(minChildDistanceFromNode <= maxChildDistanceFromNode)
+                        {
+                           tlasBvhNodeIndexStack[stackSize] = maxChildIndex;
+                           tlasBvhNodeIndexStack[stackSize + 1] = minChildIndex;
+                        }
+                        else
+                        {
+                            tlasBvhNodeIndexStack[stackSize] = minChildIndex;
+                            tlasBvhNodeIndexStack[stackSize + 1] = maxChildIndex;
+                        }
+
+                        stackSize += 2;
+                    }
+                    else
+                    {
+                        // at max only one of the children are reachable.
+                        if(minChildDistanceFromNode < tlasRay.tMax)
+                        {
+                            tlasBvhNodeIndexStack[stackSize] = minChildIndex;
+                            ++stackSize;
+                        }
+                        else if(maxChildDistanceFromNode < tlasRay.tMax)
+                        {
+                            tlasBvhNodeIndexStack[stackSize] = maxChildIndex;
+                            ++stackSize;
+                        }
+                        //else doesnt matter, we just simply dont push anything
+                    }
+
+                }
+                else
+                {
+                    // Leaf node
+                    int objectInstanceIndex = currentNode.maxChildIndex; // because, if minCHild signals that this is a leaf, maxChild stores
+                                                                         // object insatnce index reference.
+                    
+                    TraceResult objectInstanceTraceResult = IntersectObject(&tlasRay,objectInstanceIndex,scene);
+                    if(objectInstanceTraceResult.t > tlasRay.tMin && objectInstanceTraceResult.t < tlasRay.tMax 
+                        && objectInstanceTraceResult.t < retval.t)
+                    {
+                        retval = objectInstanceTraceResult;
+                        tlasRay.tMax = objectInstanceTraceResult.t;
+                    }
+                }
+            }
+            
+        }
+    }
+    
+    /*
     for(int objectIndex = 0; objectIndex < scene->objectCount; ++objectIndex)
     {
         TraceResult currentResult = IntersectObject(ray,objectIndex,scene);
@@ -621,6 +761,7 @@ TraceResult TraceRay(const Ray* ray, const Scene* scene)
             retval = currentResult;
         }
     }
+    */
 
     return retval;
 }
@@ -638,7 +779,7 @@ float3 MissRayColor(float3 rayDirection)
     return mix(horizon, zenith, t);
 }
 
-#define MAX_BOUNCE_COUNT 15
+#define MAX_BOUNCE_COUNT 10
 
 float3 CalculateRayColor(const Ray* primaryRay, const Scene* scene)
 {
@@ -907,7 +1048,8 @@ __kernel void renderimage(
     __global const MaterialData* materialData,
     __global const ModelData* modelData,
     __global const ObjectData* objectData,
-    const int objectCount,
+    __global const TlasBvhNode* tlasBvhNodeData,
+    const int tlasBvhRootIndex,
     const int frameIndex
     )
 {
@@ -927,7 +1069,8 @@ __kernel void renderimage(
     scene.materialData = materialData;
     scene.modelData = modelData;
     scene.objectData = objectData;
-    scene.objectCount = objectCount;
+    scene.tlasBvhNodeData = tlasBvhNodeData;
+    scene.tlasBvhRootIndex = tlasBvhRootIndex;
     scene.rngState = CalculateInitialRngState(threadCoords.x,threadCoords.y,frameIndex);
 
     float halfWorldViewPortWidth =  tan(radians(cameraData->fovx) * 0.5f );

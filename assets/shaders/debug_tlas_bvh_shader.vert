@@ -5,11 +5,13 @@ layout(location = 0) in vec3 aPosition;
 
 struct TlasBvhNode
 {
-    vec3 boundingBoxMin;
-    int minChildIndex;
+    vec4 boundingBoxMin;
+    vec4 boundingBoxMax;
 
-    vec3 boundingBoxMax;
+    int minChildIndex;
     int maxChildIndex;
+    int p0;
+    int p1;
 };
 
 layout(std430, binding = 0) readonly buffer tlasBvhBoxes
