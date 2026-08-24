@@ -17,6 +17,7 @@
 #include "TextInput.h"
 #include "FloatInput.h"
 #include "Canvas.h"
+#include "ToggleButton.h"
 
 #include "Scene.h"
 
@@ -112,6 +113,8 @@ private:
 	Button buttonNewScene;
 	Button buttonSaveScene;
 	Button buttonLoadScene;
+	ToggleButton buttonShowDebugBlasBvh;Label labelShowBlas;
+	ToggleButton buttonShowDebogTlasBvh;Label labelShowTlas;
 	
 
 	
@@ -148,7 +151,10 @@ private:
 
 
 	Container containerFileMenu;
+
 	Container containerExecutionStats;
+	Label labelFps;
+
 	Container containerExtreSettings;
 	
 	
@@ -181,6 +187,9 @@ private:
 	std::vector<Texture> _storedMeshPuppetTextures;
 	std::vector<Texture> _storedModelPuppetTextures;
 
+	// Sets fps when reaches 1
+	const float fpsRefreshRate = 0.5f; //in seconds
+	float displayFpsAccum = 0.0f;
 
 public:
 	App(int windowWidth = 1000, int windowHeight = 800, const char* windowTitle = "_debugTitle");
@@ -260,6 +269,9 @@ public:
 	static void CanvasKeyCallback(void* context, int key, int action, int mods);
 	static void CanvasMouseMoveCallback(void * context , float newX, float newY);
 	static void CanvasMouseClickCallback(void * context , int button, int action);
+
+	static void ShowBlasToggleButtonCallback(void* context, bool isToggled);
+	static void ShowTlasToggleButtonCallback(void* context, bool isToggled);
 	
 
 private:

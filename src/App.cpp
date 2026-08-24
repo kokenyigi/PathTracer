@@ -83,6 +83,44 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	buttonLoadScene.SetCallback(LoadSceneButtonCallback);
 	containerLeft.AddControl(&buttonLoadScene);
 
+	buttonShowDebugBlasBvh.SetMargin(MARGIN_BOTTOM,60.0f);
+	buttonShowDebugBlasBvh.SetMargin(MARGIN_LEFT,10.0f);
+	buttonShowDebugBlasBvh.SetHeight(40.0f);
+	buttonShowDebugBlasBvh.SetWidth(40.0f);
+	buttonShowDebugBlasBvh.SetBGColor(0.4,0.4,0.4);
+	buttonShowDebugBlasBvh.SetClickColor(0.6,0.6,0.6);
+	buttonShowDebugBlasBvh.SetCallBackContext(this);
+	buttonShowDebugBlasBvh.SetCallback(ShowBlasToggleButtonCallback);
+	containerLeft.AddControl(&buttonShowDebugBlasBvh);
+
+	labelShowBlas.SetMargin(MARGIN_BOTTOM,65.0f);
+	labelShowBlas.SetMargin(MARGIN_LEFT,60.0f);
+	labelShowBlas.SetHeight(30.0f);
+	labelShowBlas.SetWidth(200.0f);
+	labelShowBlas.SetTextColor(1,1,1);
+	labelShowBlas.SetText("Show BLAS");
+	containerLeft.AddControl(&labelShowBlas);
+
+	buttonShowDebogTlasBvh.SetMargin(MARGIN_BOTTOM,10.0f);
+	buttonShowDebogTlasBvh.SetMargin(MARGIN_LEFT,10.0f);
+	buttonShowDebogTlasBvh.SetHeight(40.0f);
+	buttonShowDebogTlasBvh.SetWidth(40.0f);
+	buttonShowDebogTlasBvh.SetBGColor(0.4,0.4,0.4);
+	buttonShowDebogTlasBvh.SetClickColor(0.6,0.6,0.6);
+	buttonShowDebogTlasBvh.SetCallBackContext(this);
+	buttonShowDebogTlasBvh.SetCallback(ShowTlasToggleButtonCallback);
+	containerLeft.AddControl(&buttonShowDebogTlasBvh);
+
+	labelShowTlas.SetMargin(MARGIN_BOTTOM,15.0f);
+	labelShowTlas.SetMargin(MARGIN_LEFT,60.0f);
+	labelShowTlas.SetHeight(30.0f);
+	labelShowTlas.SetWidth(200.0f);
+	labelShowTlas.SetTextColor(1,1,1);
+	labelShowTlas.SetText("Show TLAS");
+	containerLeft.AddControl(&labelShowTlas);
+
+
+
 	containerApplication.AddControl(&containerLeft);
 
 	containerRight.SetMargin(MARGIN_TOP,50.0f,ValueType::FIXED);
@@ -1388,6 +1426,13 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerExecutionStats.SetHeight(50.0f);
 	containerExecutionStats.SetBGColor(0.1f,0.1f,0.1f);
 
+	labelFps.SetHeight(40);
+	labelFps.SetWidth(250);
+	labelFps.SetTextColor(1,1,1);
+	labelFps.SetText("0 FPS");
+	labelFps.SetMargin(MARGIN_LEFT,10.0f);
+	containerExecutionStats.AddControl(&labelFps);
+
 	containerApplication.AddControl(&containerExecutionStats);
 
 
@@ -1625,6 +1670,14 @@ void App::Update()
 	timeSinceStart += deltaTime;
 
 	m_GUI.Update(deltaTime);
+
+	displayFpsAccum += deltaTime;
+	if(displayFpsAccum > fpsRefreshRate)
+	{
+		displayFpsAccum -= (int)(displayFpsAccum / fpsRefreshRate) * fpsRefreshRate;
+		labelFps.SetText(std::to_string((int)_scene.GetRenderingFps()) + " FPS");
+	}
+	
 
 	//std::cout<<1.0f/deltaTime<<"\n";
 
@@ -2776,6 +2829,18 @@ void App::CanvasMouseClickCallback(void *context, int button, int action)
 			objectRadioButton->ImitateToggle();
 		}
 	}
+}
+
+void App::ShowBlasToggleButtonCallback(void *context, bool isToggled)
+{
+	App* app = (App*)context;
+	app->_scene.SetBlasDebugView(isToggled);
+}
+
+void App::ShowTlasToggleButtonCallback(void *context, bool isToggled)
+{
+	App* app = (App*)context;
+	app->_scene.SetTlasDebugView(isToggled);
 }
 
 void App::LoadMeshButtonCallback(void *context)

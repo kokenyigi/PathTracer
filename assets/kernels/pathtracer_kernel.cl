@@ -662,7 +662,7 @@ TraceResult IntersectObject(const Ray* ray, int objectIndex,const Scene* scene)
 }
 
 // this number has to be larger than the binary logarithm of the maximum object count -> log2(objCOunt) > height of tlas bvh tree
-#define TLAS_STACK_SIZE 10
+#define TLAS_STACK_SIZE 128
 
 TraceResult TraceRay(const Ray* ray, const Scene* scene)
 {

@@ -506,11 +506,12 @@ private:
     unsigned int _debugBlasBvhIndirectCommandsIndirectBufferObjectId = 0;
 
     // laughably, for the ssbo we only need because we just simply do regular old instancing using an ssbo where data of tlasnodes is stored. 
-    bool _isDebugTlasRenderEnabled = true;
+    bool _isDebugTlasRenderEnabled = false;
     Shader _debugTlasBvhShader;
     unsigned int _debugTlasBvhBoxesSsboId = 0;
 
     
+    float _renderingFps;
     
     //OpenCL related variables
     cl_platform_id clPlatform;
@@ -585,6 +586,10 @@ public:
     bool TryDeleteObject(int objectIndex); // Back-swaps object, and erases end element
     void ChooseObject(int objectIndex);
 
+    void SetBlasDebugView(bool isEnabled){this->_isDebugBlasRenderEnabled = isEnabled;}
+    void SetTlasDebugView(bool isEnabled){this->_isDebugTlasRenderEnabled = isEnabled;}
+
+    float GetRenderingFps(){return this->_renderingFps;}
     /**
      * This functions resets all buffers and vectors, and every single memory 
      *  that has been previously allocated both CPU and GPU side.

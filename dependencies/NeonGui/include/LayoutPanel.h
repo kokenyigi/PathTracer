@@ -136,7 +136,7 @@ public:
     inline bool GetIsObstructed() const {return isLayoutObstructed;}
     
     void SetScrollBarBaseBGColor(float r, float g, float b) {_scrollBar.SetSliderBaseBGColor(r,g,b);}
-    void SetScrollBarBaseColor(float r, float g, float b) {_scrollBar.SetSliderBaseBGColor(r,g,b);}
+    void SetScrollBarBaseColor(float r, float g, float b) {_scrollBar.SetSliderBaseColor(r,g,b);}
     void SetScrollBarHoveredColor(float r, float g, float b) {_scrollBar.SetSliderHoveredColor(r,g,b);}
     void SetScrollBarClickedColor(float r, float g, float b) {_scrollBar.SetSliderClickedColor(r,g,b);}
     

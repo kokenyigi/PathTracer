@@ -6,6 +6,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <vector>
+#include <chrono>
 
 #include <stb_image.h>
 
@@ -444,6 +445,10 @@ void Scene::Resize(int newWidth, int newHeight)
 
 void Scene::Render()
 {
+
+    auto start = std::chrono::steady_clock::now();
+
+
     if(_isRenderingPathTraced)
     {
         PathTracedRender();
@@ -464,6 +469,13 @@ void Scene::Render()
     }
 
     RenderGizmo();
+
+    auto end = std::chrono::steady_clock::now();
+    auto diff = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    auto renderTime = diff.count();
+    _renderingFps = 1000000.0f / renderTime;
+
 }
 
 void Scene::RasterizeRender()
