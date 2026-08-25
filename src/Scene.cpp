@@ -110,7 +110,7 @@ void Scene::Reset()
     ResetPathTracedFrameIndex();
 }
 
-void Scene::InitCL()
+static bool FindCLDeviceAndPlatformForGLContext(cl_platform_id& platform, cl_device_id& device)
 {
     //Initialization of OpenCL
     cl_int clError;
@@ -129,49 +129,63 @@ void Scene::InitCL()
     {
         char buffer[256];
 
+        cl_context_properties properties[] =
+        {
+            CL_GL_CONTEXT_KHR,reinterpret_cast<cl_context_properties>(wglGetCurrentContext()),
+            CL_WGL_HDC_KHR,reinterpret_cast<cl_context_properties>(wglGetCurrentDC()),
+            CL_CONTEXT_PLATFORM, reinterpret_cast<cl_context_properties>(clPlatformIDs[i]),
+            0
+        };
+
+        auto clGetGLContextInfoKHRPtr =
+            reinterpret_cast<clGetGLContextInfoKHR_fn>(
+                clGetExtensionFunctionAddressForPlatform(
+                    clPlatformIDs[i],
+                    "clGetGLContextInfoKHR"
+                )
+            );
+
+        if (clGetGLContextInfoKHRPtr == nullptr)
+        {
+            // Ez a platform nem szolgáltatja a függvényt.
+            continue;
+        }
+
+        cl_device_id currentDevice = nullptr;
+        size_t returnedSize = 0;
+
+        clError = clGetGLContextInfoKHRPtr(properties,CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR,sizeof(currentDevice),&currentDevice,&returnedSize);
+
         clGetPlatformInfo(clPlatformIDs[i],CL_PLATFORM_NAME,sizeof(buffer),buffer,nullptr);
 
         std::cout<< "Platform name: "<<buffer<<"\n";
+
+        if (clError == CL_SUCCESS && returnedSize == sizeof(cl_device_id) && currentDevice != nullptr)
+        {
+            platform = clPlatformIDs[i];
+            device = currentDevice;
+            return true;
+        }
     }
 
-    clPlatform = clPlatformIDs[0];
+    return false;
+}
 
-    cl_uint clPlatformDeviceCount;
-    clError = clGetDeviceIDs(clPlatform,CL_DEVICE_TYPE_GPU,0,nullptr,&clPlatformDeviceCount);
-    CHECK_ERROR(clError);
+void Scene::InitCL()
+{
+    cl_int clError;
 
-    std::vector<cl_device_id> clPlatformDeviceIDs(clPlatformDeviceCount);
-    clError = clGetDeviceIDs(clPlatform,CL_DEVICE_TYPE_GPU,clPlatformDeviceCount,clPlatformDeviceIDs.data(),nullptr);
-    CHECK_ERROR(clError);
+    bool didFindDeviceWithOpenglContext = FindCLDeviceAndPlatformForGLContext(this->clPlatform,this->clDevice);
 
-    std::cout<<"The devices on platform 0. :\n";
-    for(int i=0;i<clPlatformDeviceCount;++i)
+    cl_context_properties clContextProperties[] = 
     {
-        char buffer[256];
-        clGetDeviceInfo(clPlatformDeviceIDs[i],CL_DEVICE_NAME,sizeof(buffer),buffer,nullptr);
-        std::cout<<"    Name: " << buffer<<"\n";
-
-        unsigned int computeUnitCount = 0;
-        clGetDeviceInfo(clPlatformDeviceIDs[i],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(unsigned int),&computeUnitCount,nullptr);
-        std::cout<<"    Compute Units: "<<computeUnitCount <<"\n";
-
-        cl_ulong deviceMemory = 0;
-        clGetDeviceInfo(clPlatformDeviceIDs[i],CL_DEVICE_GLOBAL_MEM_SIZE,sizeof(cl_ulong),&deviceMemory,nullptr);
-        std::cout<<"    Global Memory: "<<deviceMemory <<"\n\n";
-    }
-
-    clDevice = clPlatformDeviceIDs[0];
-
-
-    cl_context_properties clContextProperties[] =
-    {
-        CL_GL_CONTEXT_KHR,   (cl_context_properties)wglGetCurrentContext(),
-        CL_WGL_HDC_KHR,      (cl_context_properties)wglGetCurrentDC(),
-        CL_CONTEXT_PLATFORM, (cl_context_properties)clPlatform,
+        CL_GL_CONTEXT_KHR,reinterpret_cast<cl_context_properties>(wglGetCurrentContext()),
+        CL_WGL_HDC_KHR,reinterpret_cast<cl_context_properties>(wglGetCurrentDC()),
+        CL_CONTEXT_PLATFORM, reinterpret_cast<cl_context_properties>(this->clPlatform),
         0
     };
-
-    clContext = clCreateContext(clContextProperties,1,&clDevice,nullptr,nullptr,&clError);
+    
+    clContext = clCreateContext(clContextProperties,1,&this->clDevice,nullptr,nullptr,&clError);
     CHECK_ERROR(clError);
 
     clCommandQueue = clCreateCommandQueueWithProperties(clContext,clDevice,nullptr,&clError);
@@ -1613,10 +1627,10 @@ bool Scene::TryAddObject(ObjectInfo *objectInfo)
     IndirectCommandData newIndirectObjectDrawCommandData = 
     { //Fill this bad boi up
         24, // The number of indices/elements we wanna draw per instance.
-        this->_debugBlasBvhMeshRanges[meshIndexOfObject].nodeCount,
+        (this->_debugBlasBvhMeshRanges[meshIndexOfObject].nodeCount),
         0,
         0,
-        this->_debugBlasBvhMeshRanges[meshIndexOfObject].startIndex
+        (this->_debugBlasBvhMeshRanges[meshIndexOfObject].startIndex)
     };
 
     _debugBlasBvhIndirectCommandDatas.push_back(newIndirectObjectDrawCommandData);

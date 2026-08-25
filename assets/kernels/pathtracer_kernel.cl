@@ -604,13 +604,14 @@ TraceResult IntersectObject(const Ray* ray, int objectIndex,const Scene* scene)
                 {
                     if(distanceToMinNode < distanceToMaxNode)
                     {
-                        stack[stackCount] = node->minChild;
-                        stack[stackCount + 1] = node->maxChild;
+                        
+                        stack[stackCount] = node->maxChild;
+                        stack[stackCount + 1] = node->minChild;
                     }
                     else
                     {
-                        stack[stackCount] = node->maxChild;
-                        stack[stackCount + 1] = node->minChild;
+                        stack[stackCount] = node->minChild;
+                        stack[stackCount + 1] = node->maxChild;
                     }
                     stackCount += 2;
                 }
@@ -1097,8 +1098,8 @@ __kernel void renderimage(
     Ray primaryRay;
     primaryRay.origin = cameraData->position.xyz;
     primaryRay.direction = rayDirection;
-    primaryRay.tMin = cameraData->zNear;
-    primaryRay.tMax = cameraData->zFar;
+    primaryRay.tMin = 1e-5f;
+    primaryRay.tMax = FLT_MAX;
     primaryRay.invDirection = 1.0f / rayDirection;
 
     float3 calculatedColor = CalculateRayColor(&primaryRay,&scene);
