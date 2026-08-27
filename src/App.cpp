@@ -1308,6 +1308,22 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 
 	containerCanvas.AddControl(&sceneCanvas);
 
+	buttonEnlargeCanvas.SetMargin(MARGIN_BOTTOM,10.0f);
+	buttonEnlargeCanvas.SetMargin(MARGIN_RIGHT,10.0f);
+	buttonEnlargeCanvas.SetWidth(64);
+	buttonEnlargeCanvas.SetHeight(64);
+	buttonEnlargeCanvas.SetBGColor(0.3,0.3,0.3);
+	buttonEnlargeCanvas.SetHoverColor(0.4,0.4,0.4);
+	buttonEnlargeCanvas.SetClickColor(0.5,0.5,0.5);
+	buttonEnlargeCanvas.SetCallBackContext(this);
+	buttonEnlargeCanvas.SetCallback(SwitchCanvasSizeButtonCallback);
+	buttonEnlargeCanvas.SetPriority(2);
+
+	enlargeButtonTexture.Init("assets/textures/enlargebutton.png");
+	buttonEnlargeCanvas.SetTexture(&enlargeButtonTexture);
+
+	containerCanvas.AddControl(&buttonEnlargeCanvas);
+
 	containerApplication.AddControl(&containerCanvas);
 
 
@@ -1539,6 +1555,7 @@ App::App(int windowWidth, int windowHeight, const char* windowTitle)
 	containerFileSelection.SetInactive();
 
 
+	meshButton.ImitateToggle();
 }
 
 
@@ -2690,6 +2707,10 @@ void App::MouseButtonCallback(GLFWwindow* window, int button, int action, int mo
 		app->m_GUI.MouseClick(0,1);
 		
 	}
+	else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+	{
+		app->m_GUI.MouseClick(1,0);
+	}
 }
 
 void App::ScrollCallback(GLFWwindow *window, double xoffset, double yoffset)
@@ -2816,19 +2837,29 @@ void App::CanvasMouseClickCallback(void *context, int button, int action)
 {
 	App* app = (App*)context;
 
+	
+
 	ObjectPickInfo scenePickInfo;
 	app->_scene.MouseClick(button,action,&scenePickInfo);
 
-	if(scenePickInfo.pickedObjectIndex != -1)
+	if(action == 0)
 	{
-		int objInd = scenePickInfo.pickedObjectIndex;
-		if(app->chosenObjectIndex != objInd)
+		if(scenePickInfo.pickedObjectIndex != -1)
 		{
-			app->objectButton.ImitateToggle();
-			RadioButton* objectRadioButton = (RadioButton*)app->objectPanel.GetChildren()[1 + objInd];
-			objectRadioButton->ImitateToggle();
+			int objInd = scenePickInfo.pickedObjectIndex;
+			if(app->chosenObjectIndex != objInd)
+			{
+				app->objectButton.ImitateToggle();
+				RadioButton* objectRadioButton = (RadioButton*)app->objectPanel.GetChildren()[1 + objInd];
+				objectRadioButton->ImitateToggle();
+			}
+		}
+		else
+		{
+			app->chosenObjectGroup.SetToggledOff();
 		}
 	}
+	
 }
 
 void App::ShowBlasToggleButtonCallback(void *context, bool isToggled)
@@ -2841,6 +2872,87 @@ void App::ShowTlasToggleButtonCallback(void *context, bool isToggled)
 {
 	App* app = (App*)context;
 	app->_scene.SetTlasDebugView(isToggled);
+}
+
+void App::SwitchCanvasSizeButtonCallback(void *context, bool isEnlarging)
+{
+	App* app = (App*)context;
+
+	if(isEnlarging)
+	{
+		app->chosenMeshGroup.SetToggledOff();
+		app->chosenTextureGroup.SetToggledOff();
+		app->chosenMaterialGroup.SetToggledOff();
+		app->chosenModelGroup.SetToggledOff();
+		app->chosenObjectGroup.SetToggledOff();
+
+		app->containerLeft.SetInactive();
+		app->containerExecutionStats.SetInactive();
+		app->containerExtreSettings.SetInactive();
+		app->containerFileMenu.SetInactive();
+
+		app->containerMeshData.SetInactive();
+		app->containerTextureData.SetInactive();
+		app->containerMaterialData.SetInactive();
+		app->containerModelData.SetInactive();
+		app->containerObjectData.SetInactive();
+		app->containerRight.SetInactive();
+
+		app->containerMainButtons.SetInactive();
+
+		app->meshPanel.SetInactive();
+		app->texturePanel.SetInactive();
+		app->materialPanel.SetInactive();
+		app->modelPanel.SetInactive();
+		app->objectPanel.SetInactive();
+
+		app->containerCanvas.SetMargin(MARGIN_BOTTOM,0);
+		app->containerCanvas.SetMargin(MARGIN_TOP,0);
+		app->containerCanvas.SetMargin(MARGIN_LEFT,0);
+		app->containerCanvas.SetMargin(MARGIN_RIGHT,0);
+
+		app->containerCanvas.Resize();
+
+		app->buttonShowDebugBlasBvh.ImitateTurnOff();
+		app->buttonShowDebogTlasBvh.ImitateTurnOff();
+
+		app->_scene.MaximizeView();
+
+		app->sceneCanvas.SetFocused();
+	}
+	else
+	{
+		app->_scene.MinimizeView();
+
+		app->sceneCanvas.SetUnfocused();
+
+		app->containerCanvas.SetMargin(MARGIN_BOTTOM,310.0f,ValueType::FIXED);
+		app->containerCanvas.SetMargin(MARGIN_LEFT,250.0f,ValueType::FIXED);
+		app->containerCanvas.SetMargin(MARGIN_RIGHT,500.0f,ValueType::FIXED);
+		app->containerCanvas.SetMargin(MARGIN_TOP,50.0f,ValueType::FIXED);
+		app->containerCanvas.Resize();
+
+		app->containerLeft.SetActive();
+		app->containerExecutionStats.SetActive();
+		app->containerExtreSettings.SetActive();
+		app->containerFileMenu.SetActive();
+		app->containerRight.SetActive();
+
+		app->containerMainButtons.SetActive();
+
+		RadioButton* tempPtr = app->mainButtonsGroup._currentToggled;
+		app->mainButtonsGroup.SetToggledOff();
+		if(tempPtr != nullptr)
+		{
+			tempPtr->ImitateToggle();
+		}
+		else
+		{
+			app->meshPanel.SetActive();
+			app->meshButton.ImitateToggle();
+		}
+		
+	}	
 }
 
 void App::LoadMeshButtonCallback(void *context)

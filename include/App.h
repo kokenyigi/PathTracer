@@ -119,7 +119,8 @@ private:
 
 	
 	Container containerCanvas;
-	Canvas sceneCanvas;Texture testTexture;
+	Canvas sceneCanvas;
+	ToggleButton buttonEnlargeCanvas;Texture enlargeButtonTexture;
 
 	
 	Container containerMainButtons;
@@ -273,6 +274,7 @@ public:
 	static void ShowBlasToggleButtonCallback(void* context, bool isToggled);
 	static void ShowTlasToggleButtonCallback(void* context, bool isToggled);
 	
+	static void SwitchCanvasSizeButtonCallback(void * context, bool isEnlarging);
 
 private:
 	void GlfwInit(int windowWidth, int windowHeight, const char* windowTitle);

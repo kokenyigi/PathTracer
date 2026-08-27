@@ -27,6 +27,25 @@ Scene::Scene()
     _objectDatas.reserve(_maximumObjectCount);
 }
 
+void Scene::MaximizeView()
+{
+    if(_isViewEnlarged == true) return; //false state
+
+    _isViewEnlarged = true;
+
+    
+
+    //disable any currently ongoing gizmo interactions and object picking stored result.
+    ChooseObject(-1); // we disable gizmo here and any chosen object also
+}
+
+void Scene::MinimizeView()
+{
+    if(_isViewEnlarged == false) return; // wrong state
+
+    _isViewEnlarged = false;
+}
+
 void Scene::Reset()
 {
     cl_int clError;
@@ -782,25 +801,34 @@ void Scene::MouseClick(int button, int action, ObjectPickInfo* objectPickInfo)
 
         if(x >= 0 && x < _viewportWidth && y >= 0 && y < _viewportHeight)
         {
-            if(_currentlyHighlightedGizmoAxis >= 0) // If we are hovering above a gizmo axis
+            if(_currentlyHighlightedGizmoAxis >= 0 && _isViewEnlarged == false) // If we are hovering above a gizmo axis
             {
                 EnterGizmoInteractionMode();
             }
             else
             {
-                //std::cout<< "Picking starts at x: " << x << " and y: "<<y<<"\n";
-                PickResult pickResult;
-                PickScene(x,y,&pickResult);
-                if(pickResult.type == PickResultType::OBJECT)
+                if(_isViewEnlarged == false)
                 {
-                    //std::cout<<"Picked object with id: " << pickResult->pickedObjectIndex<<"\n";
-                    ChooseObject(pickResult.pickedIndex);
+                    //std::cout<< "Picking starts at x: " << x << " and y: "<<y<<"\n";
+                    PickResult pickResult;
+                    PickScene(x,y,&pickResult);
+                    if(pickResult.type == PickResultType::OBJECT)
+                    {
+                        //std::cout<<"Picked object with id: " << pickResult->pickedObjectIndex<<"\n";
+                        ChooseObject(pickResult.pickedIndex);
 
-                    objectPickInfo->pickedObjectIndex = pickResult.pickedIndex;
+                        objectPickInfo->pickedObjectIndex = pickResult.pickedIndex;
+                    }
+                    else if(pickResult.type == PickResultType::NONE)
+                    {
+                        ChooseObject(-1);
+                        objectPickInfo->pickedObjectIndex = -1;
+                    }
                 }
-                else if(pickResult.type == PickResultType::NONE)
+                else
                 {
                     ChooseObject(-1);
+                    objectPickInfo->pickedObjectIndex = -1;
                 }
             }
             
@@ -809,6 +837,12 @@ void Scene::MouseClick(int button, int action, ObjectPickInfo* objectPickInfo)
     else if(button == 0 && action == 1) // left release
     {
         LeaveGizmoInteractionMode(); // handles proper state
+    }
+    else if(button == 1 && action == 0) // right click -> we also leave gizmo state
+    {
+        LeaveGizmoInteractionMode();
+        ChooseObject(-1);
+        objectPickInfo->pickedObjectIndex = -1;
     }
 }
 
@@ -892,6 +926,31 @@ void Scene::KeyInput(int key, int action, int mods)
             }
 
             CheckForHighlightedAxis();
+        }
+    }
+
+    if( key == 341) // CTRL
+    {
+        if(action == 1)// press
+        {
+            _isCtrlPressed = true;
+            
+        }
+        else if(action == 0) // release
+        {
+            _isCtrlPressed = false;
+
+            
+        }
+    }
+
+    if(key == 82) // R
+    {
+        if(action == 1)//Press
+        {
+            //toggle camera zoomies
+            _doesCameraHaveTheZoomies = !_doesCameraHaveTheZoomies;
+            this->_camera.SetIsSpeedy(_doesCameraHaveTheZoomies);
         }
     }
 }

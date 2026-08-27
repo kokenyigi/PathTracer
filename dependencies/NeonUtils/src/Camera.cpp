@@ -24,12 +24,12 @@ void Camera::Init(const glm::vec3& position, const glm::vec3& at, const glm::vec
 void Camera::Update(float deltatime)
 {
 	float deltaspeed = velocity * deltatime;
-	/*
+	
 	if (isSpeedy)
 	{
 		deltaspeed = speedyVelocity * deltatime;
 	}
-	*/
+	
 	position += u * deltaspeed * (float)motionMults[0];
 	position += v * deltaspeed * (float)motionMults[1];
 	position += w * deltaspeed * (float)motionMults[2];

@@ -28,6 +28,8 @@ public:
     }
 
     void SetCallback(void(*callBack)(void*,bool)){this->_callBack = callBack;}
+
+    void ImitateTurnOff();
 protected:
 
     bool ToggleButtonClick(int button, int action);

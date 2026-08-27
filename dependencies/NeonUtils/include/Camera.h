@@ -40,6 +40,8 @@ private:
 	glm::vec3 v;
 	glm::vec3 w;
 
+	bool isSpeedy = false;
+
 	//Gets action inside update(dt) -> this array influences which cardinal direction the cam should move at
 	int motionMults[3] = {0,0,0};
 
@@ -94,6 +96,8 @@ public:
 	//axisIndex -> 0,1,2 -> x,y,z
 	void TryInfluenceMovement(int axisIndex, int direction, int influence);
 	//..^^have to calculate fovy from fovx using math
+
+	void SetIsSpeedy(bool isSpeedy){this->isSpeedy = isSpeedy;}
 private:
 	void CalculateUVW();
 	void CalculateFront();

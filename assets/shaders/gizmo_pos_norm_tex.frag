@@ -37,7 +37,7 @@ void main()
 
     shadedColor *= vec4(uColor,1);
 
-    fragcolor = shadedColor;
+    fragcolor =  vec4(uColor,1);
     
     
     return;

@@ -398,12 +398,13 @@ private:
 
     Camera _camera;
     bool _isFreeCam = false;
+    bool _isCtrlPressed = false;
 	bool _isMouseFirstPos = true;
     glm::vec2 _previousMousePos = glm::vec2(0,0);
     glm::vec2 _currentMousePos = glm::vec2(0,0);
     int _viewportWidth = 100;
     int _viewportHeight = 100;
-
+    bool _doesCameraHaveTheZoomies = false;
     bool _isRenderingPathTraced = true;
 
 
@@ -513,6 +514,8 @@ private:
 
     
     float _renderingFps;
+
+    bool _isViewEnlarged = false;
     
     //OpenCL related variables
     cl_platform_id clPlatform;
@@ -591,6 +594,15 @@ public:
     void SetTlasDebugView(bool isEnabled){this->_isDebugTlasRenderEnabled = isEnabled;}
 
     float GetRenderingFps(){return this->_renderingFps;}
+
+    /**
+     * This function is called whenever the scene canvas in the APP layer becomes full screen, if this is the case, we want to disable
+     * all gizmo interaction, rendering, all that stuff, debug tlas and blas views will be disabled in the app layer, so no need to do 
+     * anything with that
+     */
+    void MaximizeView();
+    void MinimizeView();
+
     /**
      * This functions resets all buffers and vectors, and every single memory 
      *  that has been previously allocated both CPU and GPU side.

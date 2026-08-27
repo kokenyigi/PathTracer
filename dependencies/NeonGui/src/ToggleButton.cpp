@@ -1,5 +1,16 @@
 #include "ToggleButton.h"
 
+void ToggleButton::ImitateTurnOff()
+{
+    if(this->_isToggled == false) return;
+
+    this->_isToggled = false;
+    if(this->_callBack != nullptr && this->_callBackContext != nullptr)
+    {
+        this->_callBack(this->_callBackContext,this->_isToggled);
+    }
+}
+
 bool ToggleButton::ToggleButtonClick(int button, int action)
 {
     bool isControlClicked = ControlClick(button, action);
@@ -48,7 +59,16 @@ void ToggleButton::ToggleButtonRender()
 
 		//guiContext->renderer.RenderTexturedRectangle(ndcControlRenderRect,srcRect,*_renderTexture);
 
-		guiContext->renderer.RenderColoredTexturedRectangle(ndcControlRenderRect,srcRect,_baseBGColor,*_renderTexture);
+        if(_isToggled)
+        {
+            _renderColor = _clickBGColor;
+        }
+        else
+        {
+            _renderColor = _baseBGColor;
+        }
+
+		guiContext->renderer.RenderColoredTexturedRectangle(ndcControlRenderRect,srcRect,_renderColor,*_renderTexture);
 
 		//std::cout<< "texture: " << _renderTexture->GetWidth() <<" " << _renderTexture->GetHeight() << "\n";
 	}
